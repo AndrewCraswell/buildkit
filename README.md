@@ -15,6 +15,4 @@ builds).
 
 Apps and examples belong under `apps/`; independently reusable libraries belong under `packages/`.
 
-See [engineering docs](docs/README.md), [agent instructions](AGENTS.md), and [MIT license](LICENSE). Tooling, editor
-settings, and conventions are adapted from Agency. Releases are published by maintainers; automated publishing is not
-configured.
+See [engineering docs](docs/README.md), [agent instructions](AGENTS.md), and [MIT license](LICENSE).

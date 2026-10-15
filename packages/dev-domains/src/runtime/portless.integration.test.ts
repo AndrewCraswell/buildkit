@@ -75,7 +75,7 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
         path.join(directory!, "dev-domains.json"),
         JSON.stringify({
           project,
-          domain: project === "second" ? "spawnkit.test" : "copacker.test",
+          domain: project === "second" ? "second.test" : "first.test",
           proxy: { port, https: false, syncHosts: false },
           endpoints: {
             app: {

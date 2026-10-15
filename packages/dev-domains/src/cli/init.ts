@@ -105,7 +105,7 @@ export async function initialize(
       )
       if (endpoint.kind === "e2e") {
         prompts.note(
-          "This starts a separate copy of the app server. For frameworks with build locks, use DEV_DOMAINS_OUTPUT_DIR for a separate output directory. Configure Playwright to use this endpoint; databases remain shared.",
+          "This starts a separate copy of the app server. Configure Playwright to use its URL and isolate framework output and application resources as needed.",
           "Test server isolation"
         )
       }
@@ -130,7 +130,6 @@ export async function initialize(
           .map((value) => value.trim())
       }
       if (capabilities.includes("e2e")) {
-        const script = await ask("Script for the dedicated test server", endpoint.script || "dev")
         const name = `${key}-e2e`
         if (candidate.endpoints[name]) {
           throw new Error(`Endpoint ${name} already exists`)
@@ -138,15 +137,12 @@ export async function initialize(
         additions[name] = {
           ...endpoint,
           kind: "e2e",
-          command: undefined,
-          script,
           primaryName: "{project}-{service}",
           name: "{project}-{worktree}-{service}",
-          auth: [],
-          env: { DEV_DOMAINS_OUTPUT_DIR: `.dev-domains/${name}` }
+          auth: []
         }
         prompts.note(
-          "For frameworks with build locks, configure the test server to use DEV_DOMAINS_OUTPUT_DIR as a separate output directory. Databases remain shared.",
+          "The test endpoint uses the same server command. Edit its configuration if tests need a different command, build output, or application resources.",
           "Test server isolation"
         )
       }
@@ -179,8 +175,10 @@ export async function initialize(
   }
   const file = await saveConfig(identity.root, candidate)
   if (options.yes) {
-    text(`Saved ${file}\nNext: dev-domains setup, then dev-domains run <endpoint>`)
+    text(`Saved ${file}\nNext: npx @buildkitgg/dev-domains setup, then npx @buildkitgg/dev-domains run <endpoint>`)
   } else {
-    prompts.outro(`Saved ${file}\nNext: dev-domains setup, then dev-domains run <endpoint>`)
+    prompts.outro(
+      `Saved ${file}\nNext: npx @buildkitgg/dev-domains setup, then npx @buildkitgg/dev-domains run <endpoint>`
+    )
   }
 }

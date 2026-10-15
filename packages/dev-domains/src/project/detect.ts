@@ -61,13 +61,9 @@ export async function detectConfig(root: string): Promise<DevDomainsConfig> {
         ...endpoint
       }
     }
-    const dev = ["dev:app", "dev:raw", "dev"]
-      .map((name) =>
-        scripts.find(
-          ([script, source]) => script === name && !storybookDev.test(source) && !playwrightTest.test(source)
-        )
-      )
-      .find((entry) => entry !== undefined)
+    const dev = scripts.find(
+      ([script, source]) => script === "dev" && !storybookDev.test(source) && !playwrightTest.test(source)
+    )
     if (dev) {
       const [script, source] = dev
       add("app", { kind: "app", script, framework: frameworkFor(source) })
@@ -103,8 +99,7 @@ export async function detectConfig(root: string): Promise<DevDomainsConfig> {
       add("app-e2e", {
         kind: "e2e",
         script: dev[0],
-        framework: frameworkFor(dev[1]),
-        env: { DEV_DOMAINS_OUTPUT_DIR: `.dev-domains/${prefix}app-e2e` }
+        framework: frameworkFor(dev[1])
       })
     }
   }

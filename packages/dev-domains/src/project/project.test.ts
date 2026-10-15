@@ -54,8 +54,7 @@ describe("project conventions", () => {
     await manifest(path.join(root, "apps/web"), {
       name: "@shop/web",
       scripts: {
-        dev: "dev-domains run web-app",
-        "dev:app": "next dev",
+        dev: "next dev",
         storybook: "storybook dev",
         build: "vite build"
       }
@@ -66,7 +65,7 @@ describe("project conventions", () => {
     expect(config.project).toBe("org-shop")
     expect(config.packageManager).toBe("pnpm")
     expect(Object.keys(config.endpoints)).toEqual(["admin-app", "web-app", "web-stories"])
-    expect(config.endpoints["web-app"]).toMatchObject({ framework: "next", script: "dev:app" })
+    expect(config.endpoints["web-app"]).toMatchObject({ framework: "next", script: "dev" })
     expect(config.endpoints["admin-app"]).toMatchObject({ framework: "vite" })
   })
   it("uses lockfiles and leaves compound commands explicit", async () => {
@@ -79,6 +78,15 @@ describe("project conventions", () => {
     })
     await writeFile(path.join(root, "package.json"), "broken")
     await expect(readManifest(root)).rejects.toThrow("Cannot read")
+  })
+  it("uses dev without giving project-specific script names special meaning", async () => {
+    const root = await directory()
+    await manifest(root, { scripts: { "dev:app": "next dev", "dev:raw": "next dev", dev: "vite" } })
+    expect((await detectConfig(root)).endpoints.app).toMatchObject({ script: "dev", framework: "vite" })
+    await manifest(root, { scripts: { "dev:app": "next dev", "dev:raw": "vite", start: "node server.js" } })
+    expect((await detectConfig(root)).endpoints).toEqual({})
+    await manifest(root, { scripts: { dev: "dev-domains run app", "dev:raw": "vite" } })
+    expect((await detectConfig(root)).endpoints).toEqual({})
   })
   it("prefers an explicitly selected package manager over stale lockfiles", async () => {
     const root = await directory()
@@ -225,6 +233,7 @@ describe("project conventions", () => {
     const root = await directory()
     await manifest(root, { ...tooling, scripts: { ...tooling.scripts, dev: "vite" } })
     expect((await detectConfig(root)).endpoints["app-e2e"]).toMatchObject({ script: "dev", kind: "e2e" })
+    expect((await detectConfig(root)).endpoints["app-e2e"]?.env).toBeUndefined()
   })
   it("does not infer E2E servers from browser dependencies or test-only projects", async () => {
     const root = await directory()

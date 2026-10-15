@@ -60,7 +60,6 @@ it("guides selection, naming, callbacks, tests, and webhook configuration", asyn
     .mockResolvedValueOnce("{project}")
     .mockResolvedValueOnce("{project}-{worktree}")
     .mockResolvedValueOnce("/callback")
-    .mockResolvedValueOnce("dev")
     .mockResolvedValueOnce('["tunnel", "{url}"]')
     .mockResolvedValueOnce("/hooks")
   vi.mocked(prompts.multiselect).mockResolvedValueOnce(["app"]).mockResolvedValueOnce(["auth", "e2e", "webhooks"])
@@ -105,7 +104,20 @@ it("offers detected E2E servers unchecked and saves them only when selected", as
   const saved = JSON.parse(await readFile(path.join(root, "dev-domains.json"), "utf8"))
   expect(saved.endpoints["app-e2e"]).toMatchObject({ kind: "e2e", script: "dev" })
   expect(Object.keys(saved.endpoints)).toEqual(["app", "app-e2e"])
-  expect(prompts.note).toHaveBeenCalledWith(expect.stringContaining("DEV_DOMAINS_OUTPUT_DIR"), "Test server isolation")
+  expect(saved.endpoints["app-e2e"].env).toBeUndefined()
+})
+
+it("keeps a manually entered command when adding a dedicated test server", async () => {
+  const root = await fixture()
+  await writeFile(path.join(root, "package.json"), JSON.stringify({ name: "demo" }))
+  vi.spyOn(process.stdin, "isTTY", "get").mockReturnValue(true)
+  vi.mocked(prompts.text).mockImplementation(async (options) => options.defaultValue || "")
+  vi.mocked(prompts.multiselect).mockResolvedValueOnce(["e2e"])
+  vi.mocked(prompts.confirm).mockResolvedValue(true)
+  await initialize(root, {})
+  const saved = JSON.parse(await readFile(path.join(root, "dev-domains.json"), "utf8"))
+  expect(saved.endpoints["app-e2e"]).toMatchObject({ kind: "e2e", command: ["node", "server.js"] })
+  expect(saved.endpoints["app-e2e"].script).toBeUndefined()
 })
 
 it("keeps init --yes limited to ordinary servers when Playwright is detected", async () => {
