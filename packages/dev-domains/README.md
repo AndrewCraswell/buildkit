@@ -48,8 +48,8 @@ The package follows a few principles:
   configuration when your project needs different names or commands.
 - **Readable checkout names.** Identify linked worktrees by their folder names. The primary checkout has no `main`
   label, and hostnames do not acquire random hashes.
-- **Reuse Portless.** Portless owns the proxy, certificates, routing, and server-port allocation. This package adds
-  project conventions and integrations around it.
+- **Reuse Portless.** Portless owns the proxy, certificates, and shared route registry. This package adds project
+  conventions and integrations around it.
 - **Report conflicts.** A running endpoint keeps its hostname. Another process must choose a different name instead of
   taking over the route.
 - **Keep application choices with the application.** Authentication providers, cloud resources, DNS administration, and
@@ -425,12 +425,12 @@ Names, paths, and templates are validated when the config is loaded or resolved.
 
 ### Proxy fields
 
-| Field             | Type                  | Default                 | Description                                                                                              |
-| ----------------- | --------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------- |
-| `proxy.port`      | Integer, 1–65535      | `443`                   | Browser-facing proxy port, not an app's upstream port                                                    |
-| `proxy.https`     | `boolean`             | `true`                  | Serve local origins over HTTPS                                                                           |
-| `proxy.syncHosts` | `boolean`             | `true`                  | Allow Portless to synchronize local hosts entries                                                        |
-| `proxy.domains`   | Nonempty string array | `[domain]` when omitted | Shared suffix list; must include this project's `domain`; each suffix follows the same rules as `domain` |
+| Field             | Type                  | Default                 | Description                                                                                                  |
+| ----------------- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `proxy.port`      | Integer, 1–65535      | `443`                   | Browser-facing proxy port, not an app's upstream port                                                        |
+| `proxy.https`     | `boolean`             | `true`                  | Serve local origins over HTTPS                                                                               |
+| `proxy.syncHosts` | `boolean`             | `true`                  | Allow Portless to synchronize local hosts entries                                                            |
+| `proxy.domains`   | Nonempty string array | `[domain]` when omitted | Explicit aliases for this project; must include its `domain`; each suffix follows the same rules as `domain` |
 
 ### Endpoint fields
 
@@ -658,8 +658,8 @@ running. A hosted receiver, durable delivery, and replay are not included.
 
 ## Sharing a proxy across projects
 
-One machine can run many endpoints through one Portless proxy. Use distinct project names and keep participating
-projects' proxy settings aligned. A project can choose its preferred suffix from a shared list:
+One machine can run many endpoints through one Portless proxy, with a separate domain for each project. Keep the proxy
+port and TLS mode aligned. To give one project's endpoints additional aliases, configure an explicit list:
 
 ```ts
 // Root configuration fields, alongside project and endpoints.
@@ -672,18 +672,23 @@ proxy: {
 }
 ```
 
-Use the same ordered `proxy.domains` list in each participating project, including every project's `domain`. Portless
-registers each endpoint name under every suffix in that list, so names must be unique across the shared proxy. The
-chosen `domain` determines the origin reported for this project.
+Each project registers complete hostnames in Portless's shared route registry. Projects can use different domains
+without coordinating a suffix list: `local.copacker.ai` and `local.spawnkit.cloud` can run together on the same proxy.
+Leave `proxy.domains` unset unless this project's endpoints should have additional aliases. An explicit list registers
+each endpoint under those suffixes only; `domain` selects its canonical origin. This preserves existing alias configs. A
+collision means the **complete hostname** is occupied, not just the endpoint name.
 
-An existing proxy with incompatible domain, port, or TLS settings is not forcibly restarted. Coordinate changes with
-other users and agents before changing the shared proxy. `npx @buildkitgg/dev-domains doctor` helps diagnose the current
-state.
+Projects sharing one proxy must agree on its port and TLS settings. Buildkit reuses a compatible proxy without changing
+its startup suffixes or restarting it. DNS must resolve every custom hostname to loopback; either use Portless's hosts
+synchronization or configure DNS yourself. If the existing proxy was started with hosts synchronization disabled,
+`syncHosts: true` cannot change that running process. Coordinate proxy configuration or configure DNS separately.
+`npx @buildkitgg/dev-domains doctor` helps diagnose the current state.
 
-Portless probes for an available upstream port. This is not an atomic reservation: another process can bind the port
-before the app does. `dev-domains` makes at most three attempts, retrying only after an explicit `EADDRINUSE` or
-address-in-use failure. Make startup safe to repeat. A hostname collision is a different error and does not trigger a
-forced route takeover.
+Buildkit holds an OS-assigned loopback port while registering the route, then releases the socket immediately before
+starting the server. Other Buildkit launchers avoid ports in the shared registry, including servers still starting. Most
+framework CLIs cannot inherit the reserved socket, so unrelated programs can still race that final handoff. Buildkit
+makes at most three attempts, retrying only an explicit `EADDRINUSE` or address-in-use failure. Make startup safe to
+repeat. A hostname collision never triggers a forced route takeover.
 
 ## CI usage
 
@@ -735,7 +740,7 @@ stops. The shared proxy is left running. After a hard crash, Portless handles st
 | Multiple configs or Storybook candidates were found  | Keep one dev-domains config per directory; select the intended Storybook script or config directory explicitly       |
 | The wrong package manager is used                    | In a saved config, set `packageManager`; during discovery, check the root declaration and conflicting lockfiles      |
 | A hostname is already in use                         | Check `status`, then choose a distinct name or stop the server you own; do not take over another process's route     |
-| The proxy has different settings                     | Align domains, port, and TLS settings with the existing shared proxy before restarting your endpoint                 |
+| The proxy has different settings                     | Align port and TLS settings with the existing shared proxy before restarting your endpoint                           |
 | The hostname does not resolve or HTTPS is untrusted  | Run `doctor`; check loopback DNS or hosts synchronization and complete Portless certificate setup                    |
 | The framework rejects the hostname                   | Configure its allowed hosts or development origins for your generated domains                                        |
 | App and E2E servers conflict despite different ports | Configure separate framework build/output directories; verify the app consumes `DEV_DOMAINS_OUTPUT_DIR`              |

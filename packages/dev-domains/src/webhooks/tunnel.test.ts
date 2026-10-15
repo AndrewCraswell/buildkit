@@ -1,12 +1,12 @@
 import { expect, it, vi } from "vitest"
 import { configSchema } from "../config/schema.js"
 import { resolveEndpoints } from "../domains/resolve.js"
-import { routeStore } from "../runtime/portless.js"
 import { runProcess } from "../runtime/process.js"
+import { routeStore } from "../runtime/state.js"
 import { startGateway } from "./gateway.js"
 import { runTunnel } from "./tunnel.js"
 
-vi.mock("../runtime/portless.js", () => ({ routeStore: vi.fn<typeof routeStore>() }))
+vi.mock("../runtime/state.js", () => ({ routeStore: vi.fn<typeof routeStore>() }))
 vi.mock("../runtime/process.js", () => ({ runProcess: vi.fn<typeof runProcess>() }))
 vi.mock("./gateway.js", () => ({ startGateway: vi.fn<typeof startGateway>() }))
 it("requires explicit exposure, binds the restricted target, and always closes it", async () => {

@@ -5,8 +5,8 @@ import { afterEach, expect, it } from "vitest"
 import { configSchema } from "../config/schema.js"
 import { resolveEndpoints } from "../domains/resolve.js"
 import { serverCommand, serverEnvironment } from "./command.js"
-import { proxyEnvironment } from "./portless.js"
 import { runProcess, withSignals } from "./process.js"
+import { proxyEnvironment } from "./proxy.js"
 
 const dirs: string[] = []
 afterEach(async () => {

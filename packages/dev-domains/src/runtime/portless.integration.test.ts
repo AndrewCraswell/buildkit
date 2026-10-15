@@ -5,7 +5,9 @@ import os from "node:os"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { expect, it } from "vitest"
-import { proxyCommand, routeStore, runEndpoint } from "../../dist/runtime/portless.js"
+import { runEndpoint } from "../../dist/runtime/portless.js"
+import { proxyCommand } from "../../dist/runtime/proxy.js"
+import { routeStore } from "../../dist/runtime/state.js"
 import { loadProject } from "../config/load.js"
 import { resolveEndpoints } from "../domains/resolve.js"
 import { runProcess } from "./process.js"
@@ -73,13 +75,13 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
         path.join(directory!, "dev-domains.json"),
         JSON.stringify({
           project,
-          domain: project === "second" ? "local.example.test" : "localhost",
-          proxy: { port, https: false, syncHosts: false, domains: ["localhost", "local.example.test"] },
+          domain: project === "second" ? "spawnkit.test" : "copacker.test",
+          proxy: { port, https: false, syncHosts: false },
           endpoints: {
             app: {
               command: [process.execPath, "server.mjs"],
-              primaryName: "{project}.local",
-              name: "{worktree}.{project}.local"
+              primaryName: "local",
+              name: "{worktree}.local"
             }
           }
         })
@@ -109,7 +111,7 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
       controllers.push(controller)
       running.push(runEndpoint(project, endpoint, controller.signal, false))
     }
-    await waitFor(() => routeStore().loadRoutes().length === 6)
+    await waitFor(() => routeStore().loadRoutes().length === 3)
     const routes = routeStore().loadRoutes()
     expect(new Set(routes.map((route) => route.port)).size).toBe(3)
     for (const project of projects) {
@@ -129,10 +131,10 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
     await expect(runEndpoint(projects[0]!, resolveEndpoints(projects[0]!)[0]!, undefined, true)).rejects.toThrow(
       "already in use"
     )
-    expect(routeStore().loadRoutes().length).toBe(6)
+    expect(routeStore().loadRoutes().length).toBe(3)
     controllers[0]!.abort()
     await running[0]
-    expect(routeStore().loadRoutes().length).toBe(4)
+    expect(routeStore().loadRoutes().length).toBe(2)
     const survivor = resolveEndpoints(projects[1]!)[0]!
     expect(await get(port, survivor.hostname)).toBe(survivor.origin)
     const packedCli = fileURLToPath(new URL("../../dist/cli/main.js", import.meta.url))
