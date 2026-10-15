@@ -30,7 +30,6 @@ Requires Node.js 24 or later. Supports Windows, macOS, and Linux.
 - [CI usage](#ci-usage)
 - [Command reference](#command-reference)
 - [Troubleshooting](#troubleshooting)
-- [Contributing and license](#contributing-and-license)
 
 ## Motivation and philosophy
 
@@ -712,12 +711,3 @@ directory; most consumers should keep the default shared state.
 | App and E2E servers conflict despite different ports | Configure separate framework build/output directories or caches                                                      |
 | A webhook returns 404                                | Confirm it is a POST request to an exact allowed path; GET verification challenges are not supported by this gateway |
 | A webhook cannot reach the app                       | Start the target endpoint first, verify the provider's current public URL, and check the tunnel process              |
-
-## Contributing and license
-
-See the
-[architecture and testing guide](https://github.com/AndrewCraswell/buildkit/blob/main/packages/dev-domains/docs/README.md)
-and [contributor guide](https://github.com/AndrewCraswell/buildkit/blob/main/CONTRIBUTING.md) for development details.
-
-[MIT licensed](https://github.com/AndrewCraswell/buildkit/blob/main/LICENSE). Part of Buildkit, whose domain is
-[buildkit.gg](https://buildkit.gg). No Buildkit hosted service is required to use this package.
