@@ -1,0 +1,7 @@
+{
+  "name": "@buildkit/dev-domains",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Worktree-aware development domains built on Portless"
+}

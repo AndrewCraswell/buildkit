@@ -1,0 +1,19 @@
+# Buildkit
+
+Small, focused libraries for building apps with React, shadcn/ui, and TypeScript. Brand domain: **buildkit.gg**.
+
+## Development
+
+Use Node 24+ and pnpm 12. Run `pnpm install`, then `pnpm verify` (format, lint, types, unused code, coverage, and
+builds).
+
+## Packages
+
+- [@buildkit/dev-domains](packages/dev-domains/README.md): planned Portless domain CLI. Private and unpublished during
+  incubation.
+- Private `@repo/*` packages share TypeScript, oxlint, and Storybook configuration.
+
+Apps and examples belong under `apps/`; independently reusable libraries belong under `packages/`.
+
+See [engineering docs](docs/README.md), [agent instructions](AGENTS.md), and [MIT license](LICENSE). Tooling, editor
+settings, and conventions are adapted from Agency. No deployment or npm publishing is configured yet.

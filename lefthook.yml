@@ -1,0 +1,14 @@
+pre-commit:
+  commands:
+    lint:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs}"
+      run: node node_modules/oxlint/bin/oxlint --fix {staged_files}
+      stage_fixed: true
+    format:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,md,yml,yaml}"
+      run: node node_modules/oxfmt/bin/oxfmt {staged_files}
+      stage_fixed: true
+pre-push:
+  commands:
+    types:
+      run: pnpm check:types

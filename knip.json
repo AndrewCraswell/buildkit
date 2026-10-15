@@ -1,0 +1,11 @@
+{
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    ".": {
+      "entry": ["beachball.config.js"]
+    },
+    "packages/storybook-config": {
+      "ignoreDependencies": ["@chromatic-com/storybook", "@storybook/addon-a11y", "@storybook/addon-vitest"]
+    }
+  }
+}

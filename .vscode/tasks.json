@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Buildkit: verify",
+      "type": "shell",
+      "command": "pnpm verify",
+      "problemMatcher": []
+    },
+    {
+      "label": "Buildkit: build",
+      "type": "shell",
+      "command": "pnpm build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Buildkit: check:types",
+      "type": "shell",
+      "command": "pnpm check:types",
+      "problemMatcher": []
+    },
+    {
+      "label": "Buildkit: test",
+      "type": "shell",
+      "command": "pnpm test",
+      "problemMatcher": []
+    }
+  ]
+}
