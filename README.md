@@ -10,7 +10,7 @@ builds).
 ## Packages
 
 - [@buildkitgg/dev-domains](packages/dev-domains/README.md): Portless domain CLI with typed configuration, guided setup,
-  and webhook tunnels. Initial public release: `0.0.1`.
+  and webhook tunnels.
 - Private `@repo/*` packages share TypeScript, oxlint, and Storybook configuration.
 
 Apps and examples belong under `apps/`; independently reusable libraries belong under `packages/`.

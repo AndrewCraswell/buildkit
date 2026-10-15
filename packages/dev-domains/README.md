@@ -7,7 +7,7 @@ Stable local URLs for your app, Storybook, and end-to-end test servers, across r
 `https://shop-fix-login.localhost` in a worktree, while Portless assigns the underlying ports. A configuration file lets
 you choose your own names, use a real domain, describe authentication callbacks, and expose selected webhook routes.
 
-**Initial release: 0.0.1.** Requires Node.js 24 or later. Supports Windows, macOS, and Linux.
+Requires Node.js 24 or later. Supports Windows, macOS, and Linux.
 
 ## Table of contents
 
@@ -60,18 +60,10 @@ package manages local server addresses and processes; resource isolation remains
 
 ## Installation
 
-The commands below install version 0.0.1 from npm. For an unreleased revision, use
-[Building from source](#building-from-source). Install the package as a development dependency in your project:
+Install the package from npm as a development dependency in your project:
 
 ```sh
-npm install --save-dev @buildkitgg/dev-domains@0.0.1
-```
-
-Use your package manager's equivalent if you use pnpm, Yarn, or Bun. For a pnpm monorepo with a root configuration,
-install it at the repository root:
-
-```sh
-pnpm add -Dw @buildkitgg/dev-domains@0.0.1
+npm install --save-dev @buildkitgg/dev-domains
 ```
 
 Install where the configuration and CLI are used. A root `dev-domains.config.ts` must be able to import the package from
@@ -82,27 +74,6 @@ when your package manager isolates workspace dependencies.
 Consumer-facing commands use `npx @buildkitgg/dev-domains`, which runs the locally installed package's CLI. Installing
 and locking the dependency keeps the CLI and configuration helpers on the same version. Portless is included; a separate
 global installation is unnecessary. Your application frameworks and any tunnel executable must already be installed.
-
-### Building from source
-
-To try an unreleased revision, check out the corresponding branch or commit from the
-[Buildkit repository](https://github.com/AndrewCraswell/buildkit). With Node.js 24+ and pnpm 12, run these commands from
-that checkout's root:
-
-```sh
-pnpm install --frozen-lockfile
-pnpm --filter @buildkitgg/dev-domains pack
-```
-
-The pack command builds the package and prints the tarball location. In the project where you want to use it, install
-that file as a development dependency, replacing the example path:
-
-```sh
-npm install --save-dev /absolute/path/to/buildkitgg-dev-domains-0.0.1.tgz
-```
-
-Use the versioned tarball path printed by the pack command if it differs from this example. Install the tarball in the
-same location you would install the registry package.
 
 On Windows, Portless also requires OpenSSL on `PATH`. Initial HTTPS setup can require permission to trust a local
 certificate authority, bind the proxy port, or update the hosts file. Run setup interactively on each development
