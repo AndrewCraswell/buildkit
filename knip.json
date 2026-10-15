@@ -6,6 +6,9 @@
     },
     "packages/storybook-config": {
       "ignoreDependencies": ["@chromatic-com/storybook", "@storybook/addon-a11y", "@storybook/addon-vitest"]
+    },
+    "packages/dev-domains": {
+      "entry": ["src/cli/main.ts", "src/runtime/runner.ts", "src/config/schema.ts", "src/playwright.ts"]
     }
   }
 }

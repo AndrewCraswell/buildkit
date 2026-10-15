@@ -1,54 +1,42 @@
-# Development domains
+# Architecture and contribution guide
 
-## Configuration and CLI
+The [package README](../README.md) is the user-facing contract and configuration reference.
 
-The brand is Buildkit (`buildkit.gg`); consuming apps use their own domains. Interactive setup should discover workspace
-apps and npm scripts, suggest dev server, Storybook, Playwright, auth, and webhook capabilities, then let users select
-and rename them. Save explicit commands, working directories, domains, and capability settings in versioned
-configuration. Show changes before writing; support noninteractive use for agents and CI. Avoid recursive script
-wrappers. Stay close to Portless command semantics. Auth callbacks usually share the app endpoint.
+| Module              | Responsibility                                                            |
+| ------------------- | ------------------------------------------------------------------------- |
+| `src/config`        | Zod schema, typed `defineConfig`, bounded c12 discovery, exclusive writes |
+| `src/project`       | Read-only manifest discovery and stable checkout identity                 |
+| `src/domains`       | Pure template/origin resolution and directory boundaries                  |
+| `src/runtime`       | Command adaptation, process lifecycle, pinned Portless bridge             |
+| `src/webhooks`      | Restricted loopback gateway and independently owned tunnel                |
+| `src/cli`           | Citty commands and Clack interactive presentation                         |
+| `src/playwright.ts` | Structural integration without importing Playwright                       |
 
-## Domain patterns
+Dependencies point from presentation to operations to domain/configuration helpers. Keep provider SDKs out of the core.
+Public exports are the config helper/types/schema and Playwright helper; runtime modules are internal. Portless owns
+certificates, proxy state, routing, and upstream allocation. Buildkit does not maintain a competing proxy or port
+registry. Cleanup removes only routes owned by the exact Portless child PID.
 
-| Endpoint   | Example                                         | Purpose               |
-| ---------- | ----------------------------------------------- | --------------------- |
-| App        | `<checkout>.local.example.com`                  | Local app             |
-| Storybook  | `<checkout>-stories.local.example.com`          | Component workshop    |
-| Playwright | `<checkout>-e2e.local.example.com`              | Dedicated test server |
-| Auth       | App origin plus explicit callback path          | Authentication return |
-| Webhooks   | Owned public tunnel hostname plus allowed paths | External delivery     |
+The Windows bootstrap passes user configuration through the environment because Portless 0.15.8 joins Windows child
+commands through cmd.exe. Buildkit uses argument arrays and cross-spawn. Never put user values into that bootstrap
+expression or add --force. Review this boundary when updating the pinned Portless dependency.
 
-Examples are configurable conventions, not provisioned DNS. Checkout identity must remain stable across branch changes
-and include repository and service identity where necessary.
+Runtime dependencies each have one job: Portless for networking, c12 for loading, Zod for contracts, Citty for command
+parsing, Clack for prompts, and cross-spawn for portable execution. Node supplies HTTP, files, crypto, and terminal
+colors.
 
-## Ports and ownership
+## Verification
 
-Let Portless own proxy routing and upstream port allocation. A free-port probe alone does not reserve a port: another
-process can bind before the child starts. Verify the pinned Portless version’s behavior; handle bind races with bounded
-retries and require applications to respect assigned ports. Never stop another checkout’s server or steal an existing
-route. Validate simultaneous repositories, services, and worktrees through one local HTTPS proxy. Spike custom domains
-and native worktree naming before promising support. Track only owned processes and safely clean stale registrations.
-Playwright needs its own route and build output; CI may use loopback. Domain isolation does not isolate databases.
+Run root `pnpm verify` for formatting, lint, types, unused code, coverage, and builds. Run
+`pnpm --filter @buildkit/dev-domains test:integration` for real routing, concurrent repositories and linked worktrees,
+takeover refusal, cancellation, and cleanup. These tests use isolated state, unprivileged HTTP, and no hosts/certificate
+changes. They do not stop the developer's shared proxy.
 
-## Webhooks
+Full verification runs on Linux. Focused runtime tests run on Linux, Windows, and macOS. HTTP tests do not prove OS
+certificate trust or privileged port setup; those remain manual platform checks delegated to Portless.
 
-Include an optional public tunnel with an explicit local target and allowed paths. Keep credentials out of Git. Preserve
-raw bodies and signature headers; apps remain responsible for signature verification. Display exposure and lifecycle
-clearly.
+## Boundaries
 
-A hosted receiver is a later optional service: authenticated forwarding, durable buffering, bounded retries, replay,
-retention limits, and payload privacy need design before deployment.
-
-## Delivery sequence
-
-1. Monorepo foundation (implemented).
-2. Config schema, detection, interactive setup, and noninteractive commands.
-3. Portless lifecycle adapter and dev server, Storybook, Playwright, and auth endpoints.
-4. Optional tunnel integration and cleanup.
-5. Acceptance in two independent monorepos with concurrent worktrees, restart, collisions, and cleanup.
-6. Confirm npm scope ownership, consumer validation, and release setup.
-7. Optional hosted webhook receiver.
-
-Provider-specific auth/API configuration remains deferred so apps choose their own services. Database and storage
-provisioning are out of scope; Copacker previews defer those until Neon and Cloudflare migration. This package does not
-perform that migration.
+No npm publication, hosted receiver, provider credentials, DNS provisioning, or database/storage migration is performed.
+Packages stay private until npm scope ownership and release automation are configured. Copacker database and storage
+previews remain deferred until its Neon and Cloudflare migration.
