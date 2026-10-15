@@ -48,7 +48,8 @@ export async function serverCommand(
 export function serverEnvironment(
   endpoint: ResolvedEndpoint,
   port: number,
-  inherited: NodeJS.ProcessEnv
+  inherited: NodeJS.ProcessEnv,
+  hostnames = [endpoint.hostname]
 ): NodeJS.ProcessEnv {
   const env = {
     ...inherited,
@@ -82,7 +83,7 @@ export function serverEnvironment(
     PORT: String(port),
     HOST: "127.0.0.1",
     PORTLESS_URL: endpoint.origin,
-    __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: endpoint.hostname,
+    __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: hostnames.join(","),
     BUILDKIT_ACTIVE: "1",
     DEV_DOMAINS_ORIGIN: endpoint.origin,
     DEV_DOMAINS_HOSTNAME: endpoint.hostname,

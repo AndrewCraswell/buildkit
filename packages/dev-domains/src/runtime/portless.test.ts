@@ -94,7 +94,10 @@ it("preserves explicit aliases without inheriting another project's domains", as
     ...project,
     config: configSchema.parse({ ...config, proxy: { domains: ["localhost", "example.test"] } })
   }
-  vi.mocked(runProcess).mockImplementation(async () => {
+  vi.mocked(runProcess).mockImplementation(async (_command, options) => {
+    expect(options.env?.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS).toBe(
+      `${endpoint.hostname},${endpoint.name}.example.test`
+    )
     expect(
       routeStore()
         .loadRoutes()
