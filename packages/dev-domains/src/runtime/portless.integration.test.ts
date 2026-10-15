@@ -101,7 +101,7 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
       const endpoint = resolveEndpoints(project)[0]!
       const controller = new AbortController()
       controllers.push(controller)
-      running.push(runEndpoint(project, endpoint, controller.signal, true))
+      running.push(runEndpoint(project, endpoint, controller.signal, false))
     }
     await waitFor(() => routeStore().loadRoutes().length === 6)
     const routes = routeStore().loadRoutes()

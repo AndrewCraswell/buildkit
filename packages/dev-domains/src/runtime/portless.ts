@@ -16,6 +16,10 @@ export function proxyEnvironment(project: Project): NodeJS.ProcessEnv {
   const proxy = project.config.proxy
   return {
     ...process.env,
+    // We invoke our pinned local dependency directly, not through a package
+    // downloader. Do not pass the caller's pnpm exec/npx launcher markers.
+    npm_command: undefined,
+    PNPM_SCRIPT_SRC_DIR: undefined,
     PORTLESS: "1",
     PORTLESS_TLD: (proxy.domains ?? [project.config.domain]).join(","),
     PORTLESS_PORT: String(proxy.port),

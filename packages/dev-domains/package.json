@@ -51,7 +51,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "check:types": "tsc --noEmit",
+    "check:types": "pnpm build && tsc --noEmit",
     "lint": "oxlint --max-warnings=0",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

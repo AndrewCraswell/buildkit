@@ -27,14 +27,20 @@ try {
     )
   }
   const port = z.coerce.number().int().min(1).max(65535).parse(process.env.PORT)
-  if (
+  // Registrations are written in place by Portless. Concurrent writers can
+  // briefly produce an empty read; wait for our exact route to settle.
+  const deadline = Date.now() + 2000
+  while (
     !routeStore()
       .loadRoutes()
       .some((route) => route.hostname === endpoint.hostname && route.port === port)
   ) {
-    throw new Error(
-      `The running proxy did not register ${endpoint.hostname}. Align proxy.domains across your projects.`
-    )
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `The running proxy did not register ${endpoint.hostname}. Align proxy.domains across your projects.`
+      )
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50))
   }
   const command = await serverCommand(
     endpoint.endpoint,
