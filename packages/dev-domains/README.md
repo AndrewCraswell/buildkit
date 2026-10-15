@@ -47,7 +47,8 @@ The package follows a few principles:
   configuration when your project needs different names or commands.
 - **Readable checkout names.** Identify linked worktrees by their folder names. The primary checkout has no `main`
   label, and hostnames do not acquire random hashes.
-- **Reuse Portless.** Use Portless for local routing and HTTPS, with project conventions and integrations around it.
+- **A convenience helper around Portless.** [Portless](https://github.com/vercel-labs/portless) provides local routing
+  and HTTPS. This package adds tool detection, typed configuration, and consistent domains across apps and worktrees.
 - **Report conflicts.** A running endpoint keeps its hostname. Another process must choose a different name instead of
   taking over the route.
 - **Keep application choices with the application.** Authentication providers, cloud resources, DNS administration, and
