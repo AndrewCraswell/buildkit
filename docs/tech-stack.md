@@ -33,11 +33,12 @@ For building publishable TypeScript libraries.
 
 For building command-line tools.
 
-- **commander** — command / argument framework.
+- **citty** — typed command / argument framework (used by dev-domains).
 - **@clack/prompts** — interactive prompts.
 - **picocolors** — terminal colors (tiny, fast).
 - **ink** — React for the terminal, for rich interactive CLIs.
 - **c12** — Configuration file management.
+- **package-manager-detector** — package-manager discovery and command resolution for dev-domains.
 
 ## Testing
 

@@ -1,6 +1,6 @@
 # Package lifecycle
 
-Public libraries use `@buildkit/*`; shared configuration uses private `@repo/*` packages. Apps remain private. Every
+Public libraries use `@buildkitgg/*`; shared configuration uses private `@repo/*` packages. Apps remain private. Every
 package owns its README, indexed docs, explicit exports, types, build, and relevant tests. Keep Node and browser entry
 points separate. React libraries declare React as a peer dependency. Choose source distribution explicitly for shadcn
 components.
@@ -10,5 +10,5 @@ notices, verify the packed artifact in a separate consumer, and configure releas
 independent package version changes; no automatic publishing is configured. Remove `private` only when ready for
 release.
 
-Run `pnpm verify` before committing. CI repeats verification on Windows and Linux. UI changes require browser
-acceptance.
+Run `pnpm verify` before committing. CI runs full verification on Linux and focused dev-domains integration on Linux,
+Windows, and macOS. UI changes require browser acceptance.

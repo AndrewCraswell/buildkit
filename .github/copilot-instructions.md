@@ -27,7 +27,7 @@ Git hooks (lefthook): **pre-commit** runs `oxlint --fix` + `oxfmt` on staged fil
 ## Workspace layout
 
 - `apps/` — documentation, examples, and test applications.
-- `packages/` — reusable `@buildkit/*` libraries and private shared configs.
+- `packages/` — reusable `@buildkitgg/*` libraries and private shared configs.
 - **Reusable shared config** (extend these; don't redefine per package): `@repo/oxlint-config`,
   `@repo/storybook-config`, `@repo/typescript-config`.
 
