@@ -37,6 +37,16 @@ before upgrading it.
 The proxy adapter validates the live proxy's port, TLS mode, and response identity. HTTPS probes verify its certificate
 using Portless's local CA. Startup suffixes do not restrict exact routing or per-hostname SNI certificates.
 
+Port reservations are released immediately before the child starts, because framework CLIs generally accept a port
+rather than an inherited socket. Other Buildkit launchers avoid registered ports; an unrelated process can still bind
+during the handoff. The launcher retries at most three times, only for an explicit address-in-use failure. Hostname
+conflicts never trigger a takeover.
+
+Discovery makes one bounded walk for Storybook and Playwright configs. It skips dependencies, generated output, hidden
+directories other than `.storybook`, and symlinks. It stops above 1,000 packages or 10,000 visited directories. c12
+loads only the chosen local file, with rc files, implicit dotenv, package.json config, remote extensions, and
+environment merging disabled. These implementation choices belong here, not in consumer setup instructions.
+
 Runtime dependencies each have one job: Portless for networking, c12 for loading, Zod for contracts, Citty for command
 parsing, Clack for prompts, package-manager-detector for package-manager discovery and script commands, and cross-spawn
 for portable execution. Node supplies HTTP, files, crypto, and terminal colors.
@@ -53,7 +63,36 @@ certificate trust or privileged port setup; those remain manual platform checks 
 
 ## Boundaries
 
-Version `0.0.2` is a compatible patch: canonical domains and explicit alias lists are preserved, while projects no
-longer need matching proxy suffix lists. Publishing is a maintainer operation; the CLI does not publish packages,
-provision DNS, configure provider credentials, or create cloud resources. Hosted webhook receivers, durable delivery,
-and database/storage isolation are outside the package's scope.
+Version `0.1.0` deliberately changes inferred defaults: only `dev` is selected as the app script, and suggested E2E
+endpoints do not invent framework output-directory environment variables. Saved explicit configurations stay valid. The
+pre-1.0 minor version makes the discovery changes visible. Publishing is a maintainer operation; the CLI does not
+publish packages, provision DNS, configure provider credentials, or create cloud resources. Hosted webhook receivers,
+durable delivery, and database/storage isolation are outside the package's scope.
+
+## Consumer-independence audit
+
+Review scope: every production module, public export, CLI workflow, configuration default, README example, package
+metadata, and contributor documentation. The baseline was the published 0.0.2 release.
+
+| Area                         | Finding and disposition                                                                                                                                                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App detection                | Removed preference for repository-specific `dev:app` and `dev:raw` names. `dev` is a documented convention, not a required universal standard. Any script can be selected explicitly.                                                                                                       |
+| E2E output                   | Removed automatically injected `DEV_DOMAINS_OUTPUT_DIR`: the package does not configure any framework to read it. Output and resource isolation belong to the application.                                                                                                                  |
+| Wizard E2E command           | Fixed the assumption that a manually configured server has a `dev` script. A suggested test endpoint preserves the actual server command.                                                                                                                                                   |
+| Examples and fixtures        | Replaced real consumer domains with neutral example/test domains. The root README no longer describes its private template provenance.                                                                                                                                                      |
+| Consumer documentation       | Moved route registration, reservation handoff, retry counts, discovery walk limits, and configuration-loader internals here. Kept observable constraints and supported configuration in the README.                                                                                         |
+| CLI guidance                 | Setup completion now prints the public npm invocation instead of assuming the binary is globally available.                                                                                                                                                                                 |
+| Providers                    | No application-specific auth provider, OAuth client, cloud account, storage, database, deployment, or DNS provisioning is implemented. `auth` describes paths; tunnel commands are supplied by users. Cloudflared is an optional example, not a dependency or default.                      |
+| Frameworks                   | Next.js, Vite, and Storybook have explicit adapters. Other servers must accept the assigned port/host through environment variables or configured arguments. Framework-specific allowed hosts and caches remain application settings.                                                       |
+| Playwright                   | Detection is evidence that tests exist, not knowledge of their server topology. Suggested E2E endpoints reuse the package's dev server; no Playwright config is executed or its `webServer` imported. Cross-package, production-build, and remote test targets need explicit configuration. |
+| Monorepos                    | Workspace declarations control discovery; no `apps/` or `packages/` folder layout is hard-coded. Without workspace declarations, discovery searches nested packages; use explicit configuration to exclude unrelated projects.                                                              |
+| Project root                 | Git checkout boundaries and the selected non-Git directory are deliberate discovery rules. Nested standalone applications can use their own config. Saved endpoint directories must remain within the config root.                                                                          |
+| Package managers             | npm, pnpm, Yarn, and Bun use package-manager-detector. Zero-config and the wizard detect the manager. A manually authored config currently defaults to npm when omitted; other managers must be explicit. This is a documented API limitation, not provider coupling.                       |
+| Naming                       | Project/service/worktree templates are configurable. `.localhost`, HTTPS, and port 443 are defaults, not real consumer domains. The 32-character discovered-label cap and normalization can produce collisions; the README documents overrides and collision errors.                        |
+| Process and network defaults | IPv4 loopback, one server per invocation, shared proxy settings, normal-exit cleanup, and inherited environment are supported runtime boundaries. No fixed application port or preferred checkout name is used.                                                                             |
+| Webhooks                     | POST-only exact paths, 1 MiB requests, and a 15-second upstream timeout are current capability limits. GET verification, custom limits, hosted reception, delivery persistence, and replay are not implemented. Do not describe this as a general hosted webhook service.                   |
+| Wizard scope                 | The wizard selects detected endpoints and adds callbacks, test servers, and tunnels. Arbitrary extra API/worker/other service endpoints can be configured manually; a broader preset checklist is not implemented.                                                                          |
+| Technical prerequisites      | Node 24+, Windows OpenSSL, certificate trust, and framework/tunnel installations are actual prerequisites and remain in consumer documentation. Repository tools and contributor architecture stay in engineering docs.                                                                     |
+
+Regression tests cover conventional and nonconventional scripts, declared and nonstandard workspace layouts, custom
+commands, optional test-server suggestions, and independent domains. Do not add prose assertion tests for this audit.
