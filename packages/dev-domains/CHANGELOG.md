@@ -24,8 +24,8 @@ that relied on the previous inferred values should save their intended scripts a
 - Allow projects with different domains to share Portless without endpoint-name collisions. For example,
   `local.example.com` and `local.example.org` now remain separate routes on one proxy.
 - Preserve explicit `proxy.domains` aliases and reject occupied complete hostnames without takeover.
-- Reserve an OS-assigned port through route registration, retry bounded bind failures, and clean only owned routes.
-- Execute framework commands directly with argument arrays on Windows, Linux, and macOS.
+- Assign backend ports automatically and leave other projects running when a server stops.
+- Run server commands consistently on Windows, Linux, and macOS.
 
 Existing configuration files and public APIs remain compatible. Shared projects still need the same proxy port and TLS
 mode, and custom domains must resolve locally. No DNS or provider settings are changed automatically.
