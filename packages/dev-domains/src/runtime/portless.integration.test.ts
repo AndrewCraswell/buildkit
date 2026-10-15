@@ -75,7 +75,13 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
           project,
           domain: project === "second" ? "local.example.test" : "localhost",
           proxy: { port, https: false, syncHosts: false, domains: ["localhost", "local.example.test"] },
-          endpoints: { app: { command: [process.execPath, "server.mjs"], name: "{project}-{worktree}" } }
+          endpoints: {
+            app: {
+              command: [process.execPath, "server.mjs"],
+              primaryName: "{project}.local",
+              name: "{worktree}.{project}.local"
+            }
+          }
         })
       )
     }
@@ -95,7 +101,7 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
     )
     git("worktree", "add", "--detach", worktree, "HEAD")
     const projects = await Promise.all([primary, secondary, worktree].map((directory) => loadProject(directory)))
-    expect(projects[2]!.worktree).not.toBe("main")
+    expect(projects[2]!.worktree).not.toBeNull()
     expect((await proxyCommand(projects[0]!, "setup")).code).toBe(0)
     for (const project of projects) {
       const endpoint = resolveEndpoints(project)[0]!
@@ -120,8 +126,9 @@ it("isolates real repositories and linked worktrees, rejects takeover, and clean
         )
       }
     }
-    const duplicate = await runEndpoint(projects[0]!, resolveEndpoints(projects[0]!)[0]!, undefined, true)
-    expect(duplicate).not.toBe(0)
+    await expect(runEndpoint(projects[0]!, resolveEndpoints(projects[0]!)[0]!, undefined, true)).rejects.toThrow(
+      "already in use"
+    )
     expect(routeStore().loadRoutes().length).toBe(6)
     controllers[0]!.abort()
     await running[0]

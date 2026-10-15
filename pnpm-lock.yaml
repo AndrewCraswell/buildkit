@@ -212,6 +212,9 @@ importers:
       cross-spawn:
         specifier: ^7.0.6
         version: 7.0.6
+      package-manager-detector:
+        specifier: 1.9.0
+        version: 1.9.0
       portless:
         specifier: 0.15.8
         version: 0.15.8

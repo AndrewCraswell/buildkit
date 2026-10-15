@@ -44,6 +44,16 @@ export async function initialize(
   const candidate = await detectConfig(identity.root)
   candidate.project = options.project || candidate.project
   candidate.domain = options.domain || "localhost"
+  const detectedE2E = new Set(
+    Object.entries(candidate.endpoints)
+      .filter(([, endpoint]) => endpoint.kind === "e2e")
+      .map(([key]) => key)
+  )
+  if (options.yes) {
+    candidate.endpoints = Object.fromEntries(
+      Object.entries(candidate.endpoints).filter(([, endpoint]) => endpoint.kind !== "e2e")
+    )
+  }
   if (!options.yes) {
     if (!process.stdin.isTTY) {
       throw new Error("Interactive setup needs a terminal. Use init --yes to accept detected defaults.")
@@ -63,11 +73,11 @@ export async function initialize(
           showInstructions: false,
           message: "Which detected servers should have domains?",
           required: true,
-          initialValues: entries.map(([key]) => key),
+          initialValues: entries.filter(([, endpoint]) => endpoint.kind !== "e2e").map(([key]) => key),
           options: entries.map(([key, endpoint]) => ({
             value: key,
             label: key,
-            hint: `${endpoint.cwd} / ${endpoint.script}`
+            hint: `${endpoint.cwd} / ${endpoint.script || endpoint.command?.join(" ")}${endpoint.kind === "e2e" ? " (dedicated Playwright server)" : ""}`
           }))
         })
       )
@@ -77,15 +87,29 @@ export async function initialize(
         "No dev server scripts were detected. Add a command that listens on PORT or accepts {port}.",
         "Add a server"
       )
-      candidate.endpoints.app = { command: await commandInput(), name: "{project}-{worktree}" }
+      candidate.endpoints.app = {
+        command: await commandInput(),
+        primaryName: "{project}",
+        name: "{project}-{worktree}"
+      }
     }
     const additions: DevDomainsConfig["endpoints"] = {}
     for (const [key, endpoint] of Object.entries(candidate.endpoints)) {
+      endpoint.primaryName = await ask(
+        `Primary checkout name for ${key} ({project}, {service} supported)`,
+        endpoint.primaryName || "{project}-{service}"
+      )
       endpoint.name = await ask(
-        `Domain name for ${key} ({project}, {worktree}, {service} supported)`,
+        `Worktree name for ${key} ({project}, {worktree}, {service} supported)`,
         endpoint.name || "{project}-{worktree}-{service}"
       )
-      if (endpoint.kind === "storybook") {
+      if (endpoint.kind === "e2e") {
+        prompts.note(
+          "This starts a separate copy of the app server. For frameworks with build locks, use DEV_DOMAINS_OUTPUT_DIR for a separate output directory. Configure Playwright to use this endpoint; databases remain shared.",
+          "Test server isolation"
+        )
+      }
+      if (endpoint.kind === "storybook" || endpoint.kind === "e2e") {
         continue
       }
       const capabilities = answer(
@@ -95,7 +119,7 @@ export async function initialize(
           required: false,
           options: [
             { value: "auth", label: "Authentication callback paths" },
-            { value: "e2e", label: "Dedicated Playwright server" },
+            ...(!detectedE2E.has(`${key}-e2e`) ? [{ value: "e2e", label: "Dedicated Playwright server" }] : []),
             { value: "webhooks", label: "Webhook tunnel" }
           ]
         })
@@ -116,6 +140,7 @@ export async function initialize(
           kind: "e2e",
           command: undefined,
           script,
+          primaryName: "{project}-{service}",
           name: "{project}-{worktree}-{service}",
           auth: [],
           env: { DEV_DOMAINS_OUTPUT_DIR: `.dev-domains/${name}` }

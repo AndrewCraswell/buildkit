@@ -1,7 +1,9 @@
 {
-  "name": "@buildkit/dev-domains",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@buildkitgg/dev-domains",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "description": "Worktree-aware development domains built on Portless",
   "dependencies": {
@@ -9,6 +11,7 @@
     "c12": "^3.3.4",
     "citty": "0.2.2",
     "cross-spawn": "^7.0.6",
+    "package-manager-detector": "1.9.0",
     "portless": "0.15.8",
     "zod": "4.6.7"
   },
@@ -38,6 +41,10 @@
     ".": {
       "types": "./dist/config/schema.d.ts",
       "import": "./dist/config/schema.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
     },
     "./playwright": {
       "types": "./dist/playwright.d.ts",

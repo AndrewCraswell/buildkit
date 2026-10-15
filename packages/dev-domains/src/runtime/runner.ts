@@ -5,7 +5,12 @@ import { serverCommand, serverEnvironment } from "./command.js"
 import { routeStore } from "./portless.js"
 import { runProcess, withSignals } from "./process.js"
 
-const contextSchema = z.object({ config: configSchema, root: z.string(), worktree: z.string(), service: z.string() })
+const contextSchema = z.object({
+  config: configSchema,
+  root: z.string(),
+  worktree: z.string().nullable(),
+  service: z.string()
+})
 try {
   const context = contextSchema.parse(JSON.parse(process.env.BUILDKIT_RUN_CONTEXT || "null"))
   const endpoint = resolveEndpoints({ ...context, file: undefined }).find(

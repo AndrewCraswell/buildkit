@@ -12,7 +12,7 @@ it("uses a dedicated endpoint without reusing other sessions", async () => {
       JSON.stringify({ project: "demo", endpoints: { tests: { kind: "e2e", command: ["node"] } } })
     )
     expect(await playwrightServer("tests", root)).toMatchObject({
-      use: { baseURL: "https://demo-main-tests.localhost" },
+      use: { baseURL: "https://demo-tests.localhost" },
       webServer: { command: "dev-domains run tests", cwd: root, reuseExistingServer: false }
     })
     await expect(playwrightServer("missing", root)).rejects.toThrow("kind: e2e")

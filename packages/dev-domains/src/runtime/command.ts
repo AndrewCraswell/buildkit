@@ -1,11 +1,12 @@
 import path from "node:path"
-import { type Endpoint } from "../config/schema.js"
+import { resolveCommand } from "package-manager-detector/commands"
+import { type Endpoint, type ResolvedConfig } from "../config/schema.js"
 import { interpolate, type ResolvedEndpoint } from "../domains/resolve.js"
-import { readManifest } from "../project/detect.js"
+import { readManifest } from "../project/manifest.js"
 
 export async function serverCommand(
   endpoint: Endpoint,
-  packageManager: string,
+  packageManager: ResolvedConfig["packageManager"],
   cwd: string,
   variables: Record<string, string>,
   port: number
@@ -21,10 +22,7 @@ export async function serverCommand(
     if (/\b(dev-domains|portless)\b/.test(source)) {
       throw new Error(`Script ${endpoint.script} wraps a domain CLI. Point to the underlying server script instead.`)
     }
-    command = [packageManager, "run", endpoint.script]
-    if (packageManager === "npm") {
-      command.push("--")
-    }
+    command = []
   } else {
     command = (endpoint.command ?? []).map((arg) => interpolate(arg, values))
   }
@@ -36,6 +34,13 @@ export async function serverCommand(
   }
   if (endpoint.framework === "storybook") {
     command.push("--host", "127.0.0.1", "--port", String(port), "--exact-port", "--no-open", "--ci")
+  }
+  if (endpoint.script) {
+    const resolved = resolveCommand(packageManager, "run", [endpoint.script, ...command])
+    if (!resolved) {
+      throw new Error(`Cannot run scripts with ${packageManager}`)
+    }
+    return [resolved.command, ...resolved.args]
   }
   return command
 }

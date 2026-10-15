@@ -33,6 +33,7 @@ export const endpointSchema = z
     kind: z.enum(["app", "storybook", "e2e"]).default("app"),
     cwd: z.string().default("."),
     name: z.string().default("{project}-{worktree}-{service}"),
+    primaryName: z.string().default("{project}-{service}"),
     command: command.optional(),
     script: argument.optional(),
     framework: z.enum(["next", "vite", "storybook", "custom"]).default("custom"),

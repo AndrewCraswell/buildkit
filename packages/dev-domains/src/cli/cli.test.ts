@@ -39,7 +39,7 @@ it("prints detection, resolved URLs, and schema without writing config", async (
   await runCommand(commands.detect, { rawArgs: ["--cwd", root] })
   await runCommand(commands.urls, { rawArgs: ["--cwd", root] })
   await runCommand(commands.schema, { rawArgs: [] })
-  expect(write.mock.calls.map(([value]) => String(value)).join("\n")).toContain("https://demo-main.localhost")
+  expect(write.mock.calls.map(([value]) => String(value)).join("\n")).toContain("https://demo.localhost")
   await expect(readFile(path.join(root, "dev-domains.json"))).rejects.toThrow(Error)
 })
 it("supports noninteractive dry runs and refuses overwrite", async () => {
@@ -57,6 +57,7 @@ it("guides selection, naming, callbacks, tests, and webhook configuration", asyn
   vi.mocked(prompts.text)
     .mockResolvedValueOnce("demo")
     .mockResolvedValueOnce("local.example.com")
+    .mockResolvedValueOnce("{project}")
     .mockResolvedValueOnce("{project}-{worktree}")
     .mockResolvedValueOnce("/callback")
     .mockResolvedValueOnce("dev")
@@ -90,4 +91,28 @@ it("handles cancellation and endpoint selection without implicit choices", async
       { service: "b", origin: "http://b" }
     ])
   ).toBe("a")
+})
+
+it("offers detected E2E servers unchecked and saves them only when selected", async () => {
+  const root = await fixture()
+  await writeFile(path.join(root, "playwright.config.ts"), 'throw new Error("must not load")')
+  vi.spyOn(process.stdin, "isTTY", "get").mockReturnValue(true)
+  vi.mocked(prompts.text).mockImplementation(async (options) => options.defaultValue || "")
+  vi.mocked(prompts.multiselect).mockResolvedValueOnce(["app", "app-e2e"]).mockResolvedValueOnce([])
+  vi.mocked(prompts.confirm).mockResolvedValue(true)
+  await initialize(root, {})
+  expect(prompts.multiselect).toHaveBeenNthCalledWith(1, expect.objectContaining({ initialValues: ["app", "stories"] }))
+  const saved = JSON.parse(await readFile(path.join(root, "dev-domains.json"), "utf8"))
+  expect(saved.endpoints["app-e2e"]).toMatchObject({ kind: "e2e", script: "dev" })
+  expect(Object.keys(saved.endpoints)).toEqual(["app", "app-e2e"])
+  expect(prompts.note).toHaveBeenCalledWith(expect.stringContaining("DEV_DOMAINS_OUTPUT_DIR"), "Test server isolation")
+})
+
+it("keeps init --yes limited to ordinary servers when Playwright is detected", async () => {
+  const root = await fixture()
+  await writeFile(path.join(root, "playwright.config.ts"), "export default {}")
+  vi.spyOn(process.stdout, "write").mockReturnValue(true)
+  await initialize(root, { yes: true })
+  const saved = JSON.parse(await readFile(path.join(root, "dev-domains.json"), "utf8"))
+  expect(Object.keys(saved.endpoints)).toEqual(["app", "stories"])
 })

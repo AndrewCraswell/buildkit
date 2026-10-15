@@ -9,7 +9,7 @@ builds).
 
 ## Packages
 
-- [@buildkit/dev-domains](packages/dev-domains/README.md): Portless domain CLI with typed configuration, guided setup,
+- [@buildkitgg/dev-domains](packages/dev-domains/README.md): Portless domain CLI with typed configuration, guided setup,
   and webhook tunnels. Private and unpublished during incubation.
 - Private `@repo/*` packages share TypeScript, oxlint, and Storybook configuration.
 

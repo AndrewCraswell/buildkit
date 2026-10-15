@@ -5,28 +5,49 @@ import { expect, it } from "vitest"
 import { configSchema } from "../config/schema.js"
 import { endpointDirectory, interpolate, resolveEndpoints } from "./resolve.js"
 
-it("resolves flat custom domains, callbacks, and environment templates", () => {
+it("resolves distinct primary and worktree names, callbacks, and environment templates", () => {
   const config = configSchema.parse({
     project: "demo",
-    domain: "local.example.com",
-    endpoints: { app: { command: ["node"], name: "{worktree}", auth: ["/callback"] }, stories: { command: ["node"] } }
+    domain: "example.com",
+    endpoints: {
+      app: { command: ["node"], primaryName: "local", name: "{worktree}.local", auth: ["/callback"] },
+      stories: { command: ["node"], primaryName: "stories.local", name: "{worktree}.stories.local" },
+      tests: {
+        kind: "e2e",
+        command: ["node"],
+        primaryName: "e2e.local",
+        name: "{worktree}.e2e.local",
+        auth: ["/callback"]
+      }
+    }
   })
-  const endpoints = resolveEndpoints({ config, root: process.cwd(), worktree: "main", file: undefined })
+  const endpoints = resolveEndpoints({ config, root: process.cwd(), worktree: null, file: undefined })
   expect(endpoints[0]).toMatchObject({
-    origin: "https://main.local.example.com",
-    callbacks: ["https://main.local.example.com/callback"]
+    origin: "https://local.example.com",
+    callbacks: ["https://local.example.com/callback"]
   })
-  expect(endpoints[1]?.origin).toBe("https://demo-main-stories.local.example.com")
+  expect(endpoints[1]?.origin).toBe("https://stories.local.example.com")
+  expect(endpoints[2]?.origin).toBe("https://e2e.local.example.com")
+  const worktree = resolveEndpoints({ config, root: process.cwd(), worktree: "fix-ui", file: undefined })
+  expect(worktree.map((endpoint) => endpoint.origin)).toEqual([
+    "https://fix-ui.local.example.com",
+    "https://fix-ui.stories.local.example.com",
+    "https://fix-ui.e2e.local.example.com"
+  ])
+  expect(worktree[2]?.callbacks).toEqual(["https://fix-ui.e2e.local.example.com/callback"])
   expect(interpolate("{origin}/callback", { origin: "https://example.test" })).toBe("https://example.test/callback")
   expect(() => interpolate("{missing}", {})).toThrow("Unknown template")
 })
 it("rejects conflicting or invalid resolved names", () => {
-  for (const name of ["shared", "x".repeat(64), "nested.name"]) {
+  for (const name of ["shared", "x".repeat(64), "nested..name", "UPPER", "-name"]) {
     const config = configSchema.parse({
       project: "demo",
-      endpoints: { a: { command: ["node"], name }, b: { command: ["node"], name } }
+      endpoints: {
+        a: { command: ["node"], primaryName: name, name },
+        b: { command: ["node"], primaryName: name, name }
+      }
     })
-    expect(() => resolveEndpoints({ config, root: ".", worktree: "main", file: undefined })).toThrow(Error)
+    expect(() => resolveEndpoints({ config, root: ".", worktree: null, file: undefined })).toThrow(Error)
   }
 })
 it("uses custom ports and refuses directories outside the project", async () => {
@@ -37,9 +58,9 @@ it("uses custom ports and refuses directories outside the project", async () => 
       proxy: { https: false, port: 8080 },
       endpoints: { app: { command: ["node"], cwd: ".." } }
     })
-    const project = { config, root, worktree: "main", file: undefined }
+    const project = { config, root, worktree: null, file: undefined }
     const endpoint = resolveEndpoints(project)[0]!
-    expect(endpoint.origin).toBe("http://demo-main-app.localhost:8080")
+    expect(endpoint.origin).toBe("http://demo-app.localhost:8080")
     await expect(endpointDirectory(project, endpoint)).rejects.toThrow("outside")
     endpoint.cwd = root
     expect(await endpointDirectory(project, endpoint)).toBe(root)

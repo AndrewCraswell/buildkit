@@ -53,6 +53,17 @@ export async function runEndpoint(project: Project, endpoint: ResolvedEndpoint, 
     throw new Error("Recursive dev-domains invocation. Configure the underlying server command.")
   }
   await endpointDirectory(project, endpoint)
+  const hostnames = (project.config.proxy.domains ?? [project.config.domain]).map(
+    (domain) => `${endpoint.name}.${domain}`
+  )
+  const conflict = routeStore()
+    .loadRoutes()
+    .find((route) => hostnames.includes(route.hostname))
+  if (conflict) {
+    throw new Error(
+      `Domain ${conflict.hostname} is already in use on port ${conflict.port}. Rename the worktree or configure a different endpoint name. The existing server was left running.`
+    )
+  }
   const env = proxyEnvironment(project)
   env.BUILDKIT_RUN_CONTEXT = JSON.stringify({
     config: project.config,

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto"
 import { realpath } from "node:fs/promises"
 import path from "node:path"
 import { type loadProject } from "../config/load.js"
@@ -18,20 +17,21 @@ export function resolveEndpoints(project: Project) {
   const { config, worktree, root } = project
   const names = new Set<string>()
   return Object.entries(config.endpoints).map(([service, endpoint]) => {
-    const variables = { project: config.project, worktree, service, root }
-    const expanded = interpolate(endpoint.name, variables)
-    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(expanded)) {
-      throw new Error(`Endpoint ${service}: resolved name must be one lowercase DNS label`)
+    const variables = { project: config.project, worktree: worktree ?? "", service, root }
+    const expanded = interpolate(worktree === null ? endpoint.primaryName : endpoint.name, variables)
+    const labels = expanded.split(".")
+    if (!labels.every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) {
+      throw new Error(`Endpoint ${service}: use lowercase DNS labels of at most 63 characters`)
     }
-    const name =
-      expanded.length > 63
-        ? `${expanded.slice(0, 52).replace(/-+$/, "")}-${createHash("sha256").update(expanded).digest("hex").slice(0, 10)}`
-        : expanded
+    const name = expanded
     if (names.has(name)) {
       throw new Error(`Multiple endpoints resolve to ${name}`)
     }
     names.add(name)
     const hostname = `${name}.${config.domain}`
+    if (hostname.length > 253) {
+      throw new Error(`Endpoint ${service}: hostname exceeds the 253-character DNS limit`)
+    }
     const protocol = config.proxy.https ? "https" : "http"
     const port = config.proxy.port === (config.proxy.https ? 443 : 80) ? "" : `:${config.proxy.port}`
     const origin = `${protocol}://${hostname}${port}`

@@ -11,7 +11,7 @@ vi.mock("../runtime/process.js", () => ({ runProcess: vi.fn<typeof runProcess>()
 vi.mock("./gateway.js", () => ({ startGateway: vi.fn<typeof startGateway>() }))
 it("requires explicit exposure, binds the restricted target, and always closes it", async () => {
   const config = configSchema.parse({ project: "demo", endpoints: { app: { command: ["node"] } } })
-  const project = { config, root: ".", worktree: "main", file: undefined }
+  const project = { config, root: ".", worktree: null, file: undefined }
   const endpoint = resolveEndpoints(project)[0]!
   await expect(runTunnel(project, endpoint)).rejects.toThrow("No tunnel")
   endpoint.endpoint.tunnel = { command: ["tunnel"], paths: ["/hooks"] }

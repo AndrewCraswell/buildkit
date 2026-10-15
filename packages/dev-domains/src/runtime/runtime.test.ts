@@ -24,7 +24,7 @@ it("constructs strict framework commands with argument boundaries intact", async
       project: "demo",
       endpoints: { app: { script: "dev", framework, env: { APP_URL: "{origin}" } } }
     })
-    const endpoint = resolveEndpoints({ config, root, worktree: "main", file: undefined })[0]!
+    const endpoint = resolveEndpoints({ config, root, worktree: null, file: undefined })[0]!
     const command = await serverCommand(endpoint.endpoint, "npm", root, endpoint.variables, 4555)
     expect(command.slice(0, 4)).toEqual(["npm", "run", "dev", "--"])
     expect(command).toContain("4555")
@@ -46,6 +46,29 @@ it("constructs strict framework commands with argument boundaries intact", async
   }).endpoints.app!
   expect(await serverCommand(endpoint, "npm", root, {}, 4555)).toEqual(["node", "a file.js", "--port=4555"])
 })
+it.each(["npm", "pnpm", "yarn", "bun"] as const)(
+  "uses %s script argument rules without shell concatenation",
+  async (manager) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "buildkit-command-"))
+    dirs.push(root)
+    await writeFile(path.join(root, "package.json"), JSON.stringify({ scripts: { "dev app": "vite" } }))
+    const endpoint = configSchema.parse({
+      project: "demo",
+      endpoints: { app: { script: "dev app", framework: "vite" } }
+    }).endpoints.app!
+    expect(await serverCommand(endpoint, manager, root, {}, 4567)).toEqual([
+      manager,
+      "run",
+      "dev app",
+      ...(manager === "npm" ? ["--"] : []),
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "4567",
+      "--strictPort"
+    ])
+  }
+)
 it("isolates proxy options from inherited public-sharing settings", () => {
   const config = configSchema.parse({
     project: "demo",
@@ -53,7 +76,7 @@ it("isolates proxy options from inherited public-sharing settings", () => {
     proxy: { domains: ["localhost", "local.example.com"], https: false, port: 8080, syncHosts: false },
     endpoints: { app: { command: ["node"] } }
   })
-  expect(proxyEnvironment({ config, root: ".", worktree: "main", file: undefined })).toMatchObject({
+  expect(proxyEnvironment({ config, root: ".", worktree: null, file: undefined })).toMatchObject({
     PORTLESS_TLD: "localhost,local.example.com",
     PORTLESS_HTTPS: "0",
     PORTLESS_NGROK: "0",

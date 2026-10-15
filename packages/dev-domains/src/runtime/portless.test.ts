@@ -13,7 +13,7 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 const config = configSchema.parse({ project: "demo", endpoints: { app: { command: ["node"] } } })
-const project = { config, root: process.cwd(), worktree: "main", file: undefined }
+const project = { config, root: process.cwd(), worktree: null, file: undefined }
 
 it("retries only explicit bind failures and stops at the bounded limit", async () => {
   const state = await mkdtemp(path.join(os.tmpdir(), "buildkit-routes-"))

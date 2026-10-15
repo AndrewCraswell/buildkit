@@ -7,7 +7,7 @@ Keep public packages focused and independently usable. Expose deliberate entry p
 operations, and document observable behavior and limitations. Add behavioral tests and regression cases. Prefer small
 real fixtures to mock-heavy tests where possible.
 
-For dev-domains, also run `pnpm --filter @buildkit/dev-domains test:integration`. It uses isolated Portless state and
+For dev-domains, also run `pnpm --filter @buildkitgg/dev-domains test:integration`. It uses isolated Portless state and
 does not alter the developer's shared proxy. Exercise changed CLI presentation in an interactive terminal.
 
 Open a pull request with the problem, resulting behavior, and validation. Public APIs need a versioning decision;

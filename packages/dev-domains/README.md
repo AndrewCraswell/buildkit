@@ -1,153 +1,561 @@
-# @buildkit/dev-domains
+# @buildkitgg/dev-domains
 
-Stable local domains for every app and checkout, built on [Portless](https://github.com/vercel-labs/portless).
-Interactive setup, zero-config discovery, typed configuration, Storybook, Playwright, auth callback URLs, and optional
-webhook tunnels.
+Stable local URLs for your app, Storybook, and end-to-end test servers, across repositories and Git worktrees.
 
-Requires Node 24+. Windows, macOS, and Linux are supported. This package is not yet published to npm. Build it with
-`pnpm --filter @buildkit/dev-domains build` in this repository; the CLI is `node packages/dev-domains/dist/cli/main.js`.
-Use `pnpm --filter @buildkit/dev-domains pack` to install a local tarball in another project. Commands below assume the
-package is installed and `dev-domains` is on PATH (for example, through `pnpm exec`).
+`@buildkitgg/dev-domains` gives each server a predictable hostname and runs it through
+[Portless](https://github.com/vercel-labs/portless). You can open `https://shop.localhost` in your primary checkout and
+`https://shop-fix-login.localhost` in a worktree, while Portless assigns the underlying ports. A configuration file lets
+you choose your own names, use a real domain, describe authentication callbacks, and expose selected webhook routes.
 
-## Zero configuration
+**Initial release: 0.0.1.** Requires Node.js 24 or later. Supports Windows, macOS, and Linux.
 
-Run `dev-domains` in your project. A single detected server starts immediately; multiple servers produce a picker.
-Noninteractive sessions must specify an endpoint when there is more than one. Run `dev-domains detect` to see candidates
-or `dev-domains urls` to see exact URLs without starting servers or creating files.
+## Table of contents
 
-| Convention                | Default                                                                                                                      |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Project root              | Current Git checkout root; current directory outside Git                                                                     |
-| Project name              | Root package name, otherwise directory name, normalized to a DNS label                                                       |
-| Package manager           | Root `packageManager`, then pnpm/yarn/bun lockfile, otherwise npm                                                            |
-| App scripts               | `dev:app` or `dev:raw` before `dev`                                                                                          |
-| Storybook                 | Scripts containing `storybook dev`                                                                                           |
-| Workspace discovery       | Declared pnpm/npm/yarn workspaces; otherwise root plus `apps/*` and `packages/*`; excludes dependencies and generated output |
-| Root app                  | `https://<project>-<checkout>.localhost`                                                                                     |
-| Workspace app             | `https://<project>-<checkout>-<package>-app.localhost`                                                                       |
-| Storybook                 | `https://<project>-<checkout>-<package>-stories.localhost` (no package segment at root)                                      |
-| Main checkout             | `main`                                                                                                                       |
-| Linked checkout           | Readable checkout directory plus a short hash of its canonical path                                                          |
-| Proxy                     | Shared Portless HTTPS proxy on port 443; upstream ports assigned dynamically                                                 |
-| Auth, E2E, public tunnels | Opt-in; no paths, public exposure, or test isolation guessed                                                                 |
+- [Motivation and philosophy](#motivation-and-philosophy)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Guided setup](#guided-setup)
+- [Zero-configuration behavior](#zero-configuration-behavior)
+- [Domain naming](#domain-naming)
+- [Domain normalization and collisions](#domain-normalization-and-collisions)
+- [Configuration files](#configuration-files)
+- [Configuration schema](#configuration-schema)
+- [Templates and environment variables](#templates-and-environment-variables)
+- [Server commands and frameworks](#server-commands-and-frameworks)
+- [Playwright](#playwright)
+- [Node.js tooling](#nodejs-tooling)
+- [Authentication callbacks](#authentication-callbacks)
+- [Webhook tunnels](#webhook-tunnels)
+- [Sharing a proxy across projects](#sharing-a-proxy-across-projects)
+- [CI usage](#ci-usage)
+- [Command reference](#command-reference)
+- [Troubleshooting](#troubleshooting)
+- [Contributing and license](#contributing-and-license)
 
-Branch changes do not change the checkout URL. Moving a checkout does. Windows drive paths normalize case and
-separators; POSIX paths remain case-sensitive. Two independent clones with the same project name both use `main`: rename
-a project or endpoint if they must run concurrently. Name conflicts fail rather than replacing another server.
+## Motivation and philosophy
 
-Scripts wrapping `dev-domains`, `portless`, Turbo, or detected aggregate runners are skipped. Simple Next.js, Vite, and
-Storybook commands receive explicit loopback and assigned-port flags; Vite and Storybook use the exact port. Other
-commands must honor `PORT` or use `{port}` in an explicit command array. Compound scripts are treated as custom
-commands. Review detection before relying on it: discovery never executes scripts or edits manifests.
+Running several apps or worktrees often means competing for ports, updating bookmarks, and keeping callback URLs in
+sync. An app might start on port 3000 today and 3001 tomorrow. Storybook and test servers add more addresses to track,
+and several developers or coding agents working on the same machine make those conflicts more frequent.
 
-Portless may need administrator access to bind port 443, trust local certificates, and synchronize hosts. Run
-`dev-domains setup` interactively once. `dev-domains doctor` reports DNS and trust problems. Local domains do not become
-public merely by using this CLI. On Windows, Portless also requires OpenSSL on PATH.
+`@buildkitgg/dev-domains` keeps the browser-facing address separate from the server's port. An **endpoint** is one
+server process, such as a web app, API, or Storybook, paired with a hostname and the command that starts it. Multiple
+routes served by the same process share that endpoint.
+
+The package follows a few principles:
+
+- **Useful defaults, explicit overrides.** Discover conventional setups without a config file, then save a typed
+  configuration when your project needs different names or commands.
+- **Readable checkout names.** Identify linked worktrees by their folder names. The primary checkout has no `main`
+  label, and hostnames do not acquire random hashes.
+- **Reuse Portless.** Portless owns the proxy, certificates, routing, and server-port allocation. This package adds
+  project conventions and integrations around it.
+- **Report conflicts.** A running endpoint keeps its hostname. Another process must choose a different name instead of
+  taking over the route.
+- **Keep application choices with the application.** Authentication providers, cloud resources, DNS administration, and
+  deployment remain under your control. A Buildkit account or hosted service is not required.
+
+Separate hostnames and ports do not isolate databases, storage, credentials, or framework build directories. This
+package manages local server addresses and processes; resource isolation remains part of your application setup.
+
+## Installation
+
+The commands below install version 0.0.1 from npm. For an unreleased revision, use
+[Building from source](#building-from-source). Install the package as a development dependency in your project:
+
+```sh
+npm install --save-dev @buildkitgg/dev-domains@0.0.1
+```
+
+Use your package manager's equivalent if you use pnpm, Yarn, or Bun. For a pnpm monorepo with a root configuration,
+install it at the repository root:
+
+```sh
+pnpm add -Dw @buildkitgg/dev-domains@0.0.1
+```
+
+Install where the configuration and CLI are used. A root `dev-domains.config.ts` must be able to import the package from
+the root; installing it only in `apps/web` may not satisfy that import. A workspace that imports the Playwright helper
+or owns its own typed configuration must also be able to resolve the package. Declare a dependency in that workspace
+when your package manager isolates workspace dependencies.
+
+Consumer-facing commands use `npx @buildkitgg/dev-domains`, which runs the locally installed package's CLI. Installing
+and locking the dependency keeps the CLI and configuration helpers on the same version. Portless is included; a separate
+global installation is unnecessary. Your application frameworks and any tunnel executable must already be installed.
+
+### Building from source
+
+To try an unreleased revision, check out the corresponding branch or commit from the
+[Buildkit repository](https://github.com/AndrewCraswell/buildkit). With Node.js 24+ and pnpm 12, run these commands from
+that checkout's root:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm --filter @buildkitgg/dev-domains pack
+```
+
+The pack command builds the package and prints the tarball location. In the project where you want to use it, install
+that file as a development dependency, replacing the example path:
+
+```sh
+npm install --save-dev /absolute/path/to/buildkitgg-dev-domains-0.0.1.tgz
+```
+
+Use the versioned tarball path printed by the pack command if it differs from this example. Install the tarball in the
+same location you would install the registry package.
+
+On Windows, Portless also requires OpenSSL on `PATH`. Initial HTTPS setup can require permission to trust a local
+certificate authority, bind the proxy port, or update the hosts file. Run setup interactively on each development
+machine.
+
+## Quick start
+
+Start in the project you want to run. These commands inspect the detected servers and URLs, prepare the proxy, and start
+one server:
+
+```sh
+npx @buildkitgg/dev-domains detect
+npx @buildkitgg/dev-domains urls
+npx @buildkitgg/dev-domains setup
+npx @buildkitgg/dev-domains run
+```
+
+For a root package named `shop` with a `"dev": "vite"` script, the detected endpoint is `app`, at
+`https://shop.localhost`. Run it directly with:
+
+```sh
+npx @buildkitgg/dev-domains run app
+```
+
+Open the URL printed by the CLI. A linked worktree folder named `fix-login` uses `https://shop-fix-login.localhost`. The
+checked-out branch does not change either name.
+
+`detect` and `urls` do not start servers or write configuration. With several endpoints, `run` displays a picker in an
+interactive terminal. In automation, pass the endpoint name explicitly. Each invocation starts one endpoint; use
+separate terminals or your existing task runner for additional servers.
+
+Press Ctrl+C to stop the server and remove its owned routes. The shared proxy remains available for other servers.
 
 ## Guided setup
 
+Run the wizard when you want to choose and save your endpoints:
+
 ```sh
-dev-domains init
-dev-domains init --yes --project shop --domain local.example.com
-dev-domains init --yes --dry-run
+npx @buildkitgg/dev-domains init
 ```
 
-Setup follows Spawn's compact guided flow with a blue Buildkit accent. Select servers, rename domain templates, choose
-callback paths, add a test server or webhook tunnel, review domains, and save `dev-domains.json`. Existing files are
-never overwritten. Cancellation writes nothing. `NO_COLOR` and noninteractive terminals are supported.
+The wizard detects servers, lets you select them and rename the primary-checkout and worktree templates, and offers
+optional authentication callback paths, a dedicated Playwright server, and webhook tunneling. Detected E2E servers start
+unchecked. Review the resulting domains before saving `dev-domains.json` at the checkout root.
 
-## Typed configuration
+Use arrow keys to move, Space to toggle a selection, and Enter to continue. Cancellation writes nothing. Existing
+configuration files are never overwritten, and package scripts are not rewritten.
+
+For noninteractive setup:
+
+```sh
+npx @buildkitgg/dev-domains init --yes --dry-run
+npx @buildkitgg/dev-domains init --yes --project shop --domain localhost
+```
+
+`--yes` accepts detected ordinary servers and omits optional E2E servers. `--dry-run` prints the proposed configuration
+without saving it. Without `--yes`, a dry run still uses the interactive wizard. `--domain` changes the suffix; custom
+hostname layouts also require the name templates described under [Domain naming](#domain-naming).
+
+## Zero-configuration behavior
+
+When no configuration file is found, these conventions determine the candidates:
+
+| Concern                | Behavior                                                                                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project root           | The current Git checkout root; outside Git, the current directory or `--cwd`                                                                       |
+| Project name           | Root `package.json` name, otherwise the root folder name, normalized as described below                                                            |
+| Package manager        | Root `packageManager`, then `devEngines.packageManager`, then lockfiles, then installation metadata; npm if none is found                          |
+| Workspace packages     | Root plus declared `pnpm-workspace.yaml` packages or `package.json` workspaces; without declarations, packages found recursively below the root    |
+| App server             | First eligible script in this order: `dev:app`, `dev:raw`, `dev`                                                                                   |
+| Storybook server       | A script containing `storybook dev`; otherwise a discovered `.storybook/main.*` config                                                             |
+| Playwright candidate   | A `playwright.config.*` file, an `@playwright/test` dependency, or a `playwright test` script, together with an app dev script in the same package |
+| Framework              | Recognized simple Next.js, Vite, and Storybook commands receive framework-specific flags; other commands are `custom`                              |
+| Local proxy            | HTTPS on port 443, suffix `localhost`, hosts synchronization enabled                                                                               |
+| Auth and public access | No callback paths or tunnels are inferred                                                                                                          |
+
+Package-manager detection uses
+[`package-manager-detector`](https://github.com/antfu-collective/package-manager-detector). It stays at the selected
+project root instead of inheriting a manager from an unrelated parent folder. A declaration takes precedence over stale
+lockfiles. Conflicting lockfiles without a declaration require you to choose a manager in `package.json` or an explicit
+dev-domains config.
+
+Scripts that invoke `dev-domains`, `portless`, `turbo`, `run-p`, or `concurrently` are excluded from detection. Point
+configuration at the underlying server script when an aggregate or wrapper command is involved. A `playwright test`
+script is never used as the app server.
+
+### Storybook and Playwright discovery
+
+One read-only directory walk finds both `.storybook/main.*` and `playwright.config.*`. It recognizes `ts`, `mts`, `cts`,
+`js`, `mjs`, `cjs`, `tsx`, and `jsx` filenames. Configs belong to their nearest package, including nested paths such as
+`tests/playwright.config.ts`. Tool configuration files are located without being imported or executed.
+
+The walk honors workspace exclusions and skips symlinks, hidden directories other than `.storybook`, `node_modules`,
+`dist`, `build`, `out`, `coverage`, `storybook-static`, `playwright-report`, and `test-results`. It stops with an error
+above 1,000 packages or 10,000 visited directories; use explicit configuration for larger or unusual layouts.
+
+For Storybook, a dev script takes precedence over config-file discovery. With one config and no dev script, the
+candidate runs the installed `storybook dev --config-dir <directory>` binary. Nothing is downloaded. Multiple dev
+scripts, or multiple configs without a clear dev script, require explicit configuration. An empty `.storybook` folder or
+a Storybook dependency alone does not establish a runnable server.
+
+For Playwright, the candidate starts a separate copy of the app dev server. It is named `app-e2e`, or
+`<package>-app-e2e` in a workspace. Select it explicitly in the wizard or run it by name when using zero configuration.
+`init --yes` omits it. A dependency on the `playwright` browser library alone does not imply an E2E test setup. Separate
+test-only packages and cross-package server relationships need explicit configuration. See [Playwright](#playwright)
+before running an E2E server alongside your app.
+
+## Domain naming
+
+A hostname consists of the resolved endpoint name followed by `domain`:
+
+```text
+<resolved name>.<domain>
+```
+
+The origin adds the protocol and, when it is not the protocol's standard port, the proxy port. For example,
+`proxy: { https: false, port: 8080 }` produces `http://shop.localhost:8080`. The dynamically assigned app port does not
+appear in the browser-facing origin.
+
+### Default names
+
+For a project named `shop`, a workspace package named `web`, and a worktree folder named `fix-login`:
+
+| Detected endpoint                  | Primary checkout             | Linked worktree                        |
+| ---------------------------------- | ---------------------------- | -------------------------------------- |
+| Root app: `app`                    | `shop.localhost`             | `shop-fix-login.localhost`             |
+| Root Storybook: `stories`          | `shop-stories.localhost`     | `shop-fix-login-stories.localhost`     |
+| Root E2E: `app-e2e`                | `shop-app-e2e.localhost`     | `shop-fix-login-app-e2e.localhost`     |
+| Workspace app: `web-app`           | `shop-web-app.localhost`     | `shop-fix-login-web-app.localhost`     |
+| Workspace Storybook: `web-stories` | `shop-web-stories.localhost` | `shop-fix-login-web-stories.localhost` |
+| Workspace E2E: `web-app-e2e`       | `shop-web-app-e2e.localhost` | `shop-fix-login-web-app-e2e.localhost` |
+
+These are discovery conventions. In a manually written config, the schema defaults are
+`primaryName: "{project}-{service}"` and `name: "{project}-{worktree}-{service}"`. Set the templates explicitly when you
+want a shorter root app name, as in the configuration example below.
+
+The **primary checkout** is Git's original working checkout. A **linked worktree** is another checkout created with Git
+worktrees. The primary checkout never receives a `main` label, even when its branch is named `main`. A linked worktree
+folder named `main` does receive that label. Outside Git, the project is treated as a primary checkout.
+
+### Using your own domain
+
+For a domain you control, such as `example.com`, this configuration puts the primary app at `local.example.com` and
+Storybook at `stories.local.example.com`:
 
 ```ts
 // dev-domains.config.ts
-import { defineConfig } from "@buildkit/dev-domains"
+import { defineConfig } from "@buildkitgg/dev-domains"
 
 export default defineConfig({
   project: "shop",
-  domain: "local.example.com",
+  domain: "example.com",
   packageManager: "pnpm",
   endpoints: {
     app: {
       cwd: "apps/web",
       script: "dev:raw",
       framework: "next",
-      name: "{worktree}",
-      env: { APP_URL: "{origin}", AUTH_REDIRECT_URI: "{origin}/callback" },
-      auth: ["/callback"]
+      primaryName: "local",
+      name: "{worktree}.local"
     },
     stories: {
       kind: "storybook",
       cwd: "apps/web",
       script: "storybook",
       framework: "storybook",
-      name: "{worktree}-stories"
+      primaryName: "stories.local",
+      name: "{worktree}.stories.local"
     }
   }
 })
 ```
 
-`defineConfig` supplies TypeScript checking and runtime validation. JSON receives identical runtime validation. Generate
-editor metadata with `dev-domains schema > dev-domains.schema.json` and reference it using `$schema` in JSON.
+Use `domain: "example.com"` with `primaryName: "local"` to get the bare `local.example.com` address. Setting only
+`domain: "local.example.com"` retains an endpoint-name prefix, such as `shop.local.example.com`.
 
-Configuration is loaded by **c12**. Discovery walks from `--cwd` to the checkout boundary and stops at the nearest
-config. Supported names: `dev-domains.config.ts`, `.mts`, `.js`, `.mjs`, `.json`, or `dev-domains.json`. Multiple files
-in one directory are an error. `--config` selects a file relative to `--cwd`. Endpoint directories are relative to the
-config and must stay inside its root, including resolved symlinks.
+The same convention can cover additional servers you configure:
 
-Precedence is **explicit config file → nearest config → detected defaults**. Explicit configurations are complete:
-detected endpoints are not silently merged in. There is no home config, implicit `.env` loading, package.json config,
-remote extension downloading, or environment-specific override merging. JavaScript/TypeScript config is executable code;
-use only trusted repositories. `detect` reads manifests without loading executable config.
+| Server        | `primaryName`   | `name` for linked worktrees | Primary hostname            |
+| ------------- | --------------- | --------------------------- | --------------------------- |
+| Web app       | `local`         | `{worktree}.local`          | `local.example.com`         |
+| Separate API  | `api.local`     | `{worktree}.api.local`      | `api.local.example.com`     |
+| Storybook     | `stories.local` | `{worktree}.stories.local`  | `stories.local.example.com` |
+| Dedicated E2E | `e2e.local`     | `{worktree}.e2e.local`      | `e2e.local.example.com`     |
 
-## Configuration reference
+A separate API server uses an endpoint key such as `api` with `kind: "app"`; there is no separate `api` kind. When API
+routes, auth callbacks, or webhook handlers live in the web app, they share its origin and use paths such as `/api`,
+`/callback`, or `/api/webhooks/payments`.
 
-| Field                | Meaning                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `project`            | Required lowercase DNS label                                                          |
-| `domain`             | Local suffix; `localhost` by default                                                  |
-| `packageManager`     | `npm`, `pnpm`, `yarn`, or `bun`; default `npm` in explicit config                     |
-| `proxy`              | `port` (443), `https` (true), `syncHosts` (true), optional shared `domains` list      |
-| `endpoints`          | Nonempty map of DNS-label keys                                                        |
-| `endpoint.kind`      | `app`, `storybook`, or `e2e`; default `app`                                           |
-| `endpoint.cwd`       | Directory relative to config; default `.`                                             |
-| `endpoint.name`      | DNS label template; explicit-config default `{project}-{worktree}-{service}`          |
-| `endpoint.script`    | Package script name, mutually exclusive with `command`                                |
-| `endpoint.command`   | Executable and argument array; never a shell command string                           |
-| `endpoint.framework` | `next`, `vite`, `storybook`, or `custom`; explicit-config default `custom`            |
-| `endpoint.env`       | Child environment variables with templates; secrets should remain in your environment |
-| `endpoint.auth`      | Callback path list for `urls`; does not configure an auth provider                    |
-| `endpoint.tunnel`    | Command array, exact allowed POST `paths`, optional stable HTTPS `publicUrl`          |
+Use Portless hosts synchronization, or arrange loopback DNS for every generated hostname. If managing DNS yourself,
+cover the base `local.example.com` as well as the worktree and service names, and set `proxy.syncHosts: false`.
+`dev-domains` does not create DNS records or provider registrations. A real domain resolving to loopback still points to
+your machine; public webhook delivery requires a [tunnel](#webhook-tunnels).
 
-Templates: `{project}`, `{worktree}`, `{service}`, `{root}`, `{hostname}`, `{origin}`; commands and environment also
-accept `{port}`. Names use only the first four. Tunnel commands use `{url}` for the local gateway. Unknown variables
-fail. Resolved names must be a single DNS label. Names longer than 63 characters receive a stable truncated prefix and
-hash.
+## Domain normalization and collisions
 
-Servers receive `PORT`, `HOST=127.0.0.1`, `DEV_DOMAINS_ORIGIN`, `DEV_DOMAINS_HOSTNAME`, and `DEV_DOMAINS_WORKTREE`.
-`PORT`, `HOST`, `PORTLESS*`, and `BUILDKIT_*` are reserved in `endpoint.env`. Frameworks retain responsibility for their
-allowed-host and development-origin configuration. Add local hosts to Next.js `allowedDevOrigins`, for example.
+Automatically discovered names are normalized before they enter the templates. Values you write explicitly in a
+configuration file are validated, rather than silently rewritten.
 
-## Several projects and custom domains
+| Input                                   | Normalization                                                                                                                                                                                                                |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discovered project name                 | Remove the leading npm scope marker, convert the scope separator to a hyphen, lowercase, replace runs of characters other than `a-z`, `0-9`, and `-` with `-`, limit to 32 characters, trim edge hyphens; use `app` if empty |
+| Discovered workspace label              | Use the unscoped package name or folder name, then apply the same lowercase, replacement, 32-character limit, and fallback rules                                                                                             |
+| Linked worktree name                    | Use the folder basename, lowercase, replace unsupported character runs with `-`, and trim edge hyphens; reject empty names or names longer than 63 characters                                                                |
+| Explicit project name and endpoint keys | Require lowercase DNS labels of 1–63 characters, beginning and ending with a letter or digit                                                                                                                                 |
+| Resolved name templates                 | Allow dot-separated lowercase DNS labels; each label must be 1–63 characters                                                                                                                                                 |
+| Full hostname                           | At most 253 characters, including the configured suffix                                                                                                                                                                      |
 
-Prefer unique project-prefixed names when sharing a machine. Portless can serve several suffixes from one proxy, but
-registers every app name under each configured suffix. Configure the same ordered `proxy.domains` list in participating
-projects and include each project's `domain`. Project origins may use any suffix in that list.
+For example, `@acme/shop` becomes project `acme-shop`, `@acme/web` supplies workspace label `web`, and a worktree folder
+named `Fix_Login!` becomes `fix-login`. No branch name, commit ID, or path hash is added. Moving a linked worktree
+without renaming its folder keeps its name; renaming the folder changes it.
 
-An existing proxy is never forcibly restarted or taken over. Coordinate proxy configuration changes with other users and
-agents first. The runner rejects incompatible port/TLS/domain settings. For custom domains, use Portless's hosts sync or
-arrange DNS to resolve to loopback and set `syncHosts: false`. This package does not provision DNS records.
+Normalization can produce collisions: `fix_login` and `fix-login` become the same label, and long discovered project
+names can share the same first 32 characters. Independent clones with identical names can also collide. Duplicate
+endpoint keys are rejected during discovery. Resolution rejects endpoints that produce the same name, and startup
+reports a hostname already owned by a running server. Choose a distinct project name, worktree folder, or name template.
+Existing routes are never forcibly replaced.
 
-Portless 0.15.8 is pinned. It probes free ports; a probe is not an atomic reservation. Buildkit retries at most three
-runs only after an explicit `EADDRINUSE`/address-in-use failure. Custom servers must fail on conflicts rather than
-silently use another port. Commands may restart, so keep startup idempotent. Route conflicts never use `--force`.
+Custom layouts can also overlap service and worktree names: a worktree named `stories` would put its app at the same
+address as the primary Storybook in the example above. Choose different names or templates for that layout.
+
+## Configuration files
+
+Use a saved configuration when you need custom naming, a server the detector cannot identify, or application-specific
+settings. TypeScript configuration uses the exported `defineConfig` helper:
+
+```ts
+// dev-domains.config.ts
+import { defineConfig } from "@buildkitgg/dev-domains"
+
+export default defineConfig({
+  project: "shop",
+  packageManager: "pnpm",
+  endpoints: {
+    app: {
+      script: "dev",
+      framework: "vite",
+      primaryName: "{project}",
+      name: "{project}-{worktree}"
+    }
+  }
+})
+```
+
+`defineConfig` supplies TypeScript checking and runtime validation. A plain JSON config receives the same runtime
+validation. The wizard writes `dev-domains.json`; you can maintain that file or replace it with a typed config.
+
+### File discovery and precedence
+
+The supported automatically discovered filenames are:
+
+- `dev-domains.config.ts`
+- `dev-domains.config.mts`
+- `dev-domains.config.js`
+- `dev-domains.config.mjs`
+- `dev-domains.config.json`
+- `dev-domains.json`
+
+Resolution follows this order:
+
+1. A file selected with `--config`, relative to `--cwd`.
+2. The nearest supported config, searching from `--cwd` up to the Git checkout boundary. Outside Git, only the selected
+   directory is searched.
+3. Detected defaults when no file is found.
+
+Multiple supported configs in one directory are an error. The selected file's directory becomes the configuration root;
+endpoint `cwd` paths are relative to it. At startup, endpoint directories must stay within that root, including after
+resolving symlinks.
+
+A saved configuration is complete: detected endpoints are not merged into it. In particular, an omitted `packageManager`
+in a saved config defaults to **npm**, while zero-config discovery detects the manager. Specify your manager when
+authoring a config for pnpm, Yarn, or Bun.
+
+Configuration loading uses c12 with home configuration, implicit `.env` loading, package.json config, remote extensions,
+and environment-specific merging disabled. Your framework may still load its own environment files. JavaScript and
+TypeScript configs execute as code when loaded; use configs from repositories you trust. The `detect` command always
+inspects project conventions without loading a dev-domains config.
+
+### JSON editor support
+
+Generate the schema from the installed version:
+
+```sh
+npx @buildkitgg/dev-domains schema > dev-domains.schema.json
+```
+
+Then reference it from `dev-domains.json` for editor completion and validation:
+
+```json
+{
+  "$schema": "./dev-domains.schema.json",
+  "project": "shop",
+  "packageManager": "pnpm",
+  "endpoints": {
+    "app": {
+      "script": "dev",
+      "framework": "vite",
+      "primaryName": "{project}",
+      "name": "{project}-{worktree}"
+    }
+  }
+}
+```
+
+## Configuration schema
+
+Unknown keys are rejected. Defaults below describe a saved configuration; discovery may generate more specific values.
+Names, paths, and templates are validated when the config is loaded or resolved.
+
+### Root fields
+
+| Field            | Type                                    | Default or requirement       | Description                                                                                 |
+| ---------------- | --------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `$schema`        | `string`                                | Optional                     | JSON editor schema reference                                                                |
+| `project`        | `string`                                | Required                     | Lowercase DNS label identifying the project                                                 |
+| `domain`         | `string`                                | `"localhost"`                | Hostname suffix without protocol, path, or port; lowercase DNS labels, up to 190 characters |
+| `packageManager` | `"npm"`, `"pnpm"`, `"yarn"`, or `"bun"` | `"npm"`                      | Manager used to run endpoint scripts                                                        |
+| `proxy`          | Object                                  | Defaults below               | Shared Portless proxy settings                                                              |
+| `endpoints`      | Record of endpoint objects              | Required, at least one entry | Keys are lowercase DNS labels used in CLI commands and the `{service}` template             |
+
+### Proxy fields
+
+| Field             | Type                  | Default                 | Description                                                                                              |
+| ----------------- | --------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `proxy.port`      | Integer, 1–65535      | `443`                   | Browser-facing proxy port, not an app's upstream port                                                    |
+| `proxy.https`     | `boolean`             | `true`                  | Serve local origins over HTTPS                                                                           |
+| `proxy.syncHosts` | `boolean`             | `true`                  | Allow Portless to synchronize local hosts entries                                                        |
+| `proxy.domains`   | Nonempty string array | `[domain]` when omitted | Shared suffix list; must include this project's `domain`; each suffix follows the same rules as `domain` |
+
+### Endpoint fields
+
+Each entry in `endpoints` has these fields. Set **exactly one** of `script` or `command`.
+
+| Field         | Type                                             | Default or requirement             | Description                                                                                  |
+| ------------- | ------------------------------------------------ | ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `kind`        | `"app"`, `"storybook"`, or `"e2e"`               | `"app"`                            | Endpoint purpose; the Playwright helper requires `"e2e"`                                     |
+| `cwd`         | `string`                                         | `"."`                              | Server working directory, relative to the configuration root                                 |
+| `primaryName` | `string`                                         | `"{project}-{service}"`            | Name template used in the primary checkout                                                   |
+| `name`        | `string`                                         | `"{project}-{worktree}-{service}"` | Name template used in a linked worktree                                                      |
+| `script`      | Nonempty string                                  | Required unless `command` is set   | Script from `cwd`'s `package.json`; the script must exist                                    |
+| `command`     | Nonempty string array                            | Required unless `script` is set    | Executable followed by arguments; each element must be nonempty and contain no NUL character |
+| `framework`   | `"next"`, `"vite"`, `"storybook"`, or `"custom"` | `"custom"`                         | Selects host and port flag adaptation; it is independent of `kind`                           |
+| `env`         | Record of string values                          | `{}`                               | Additional child-process environment variables; supports templates                           |
+| `auth`        | String array                                     | `[]`                               | Callback paths included in the `urls` output                                                 |
+| `tunnel`      | Object                                           | Omitted                            | Optional public webhook tunnel settings below                                                |
+
+Environment keys must start with a letter or underscore and contain only letters, digits, and underscores. `PORT`,
+`HOST`, keys starting with `PORTLESS`, and keys starting with `BUILDKIT_` are reserved. Keep secrets in your environment
+or your application's secret-loading mechanism rather than committing them to this file.
+
+### Tunnel fields
+
+These fields apply only when an endpoint has a `tunnel` object:
+
+| Field              | Type                  | Default or requirement | Description                                                                                          |
+| ------------------ | --------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `tunnel.command`   | Nonempty string array | Required               | Tunnel executable and arguments; must contain `{url}` to target the restricted local gateway         |
+| `tunnel.paths`     | Nonempty string array | Required               | Exact allowed POST paths                                                                             |
+| `tunnel.publicUrl` | HTTPS origin string   | Optional               | An existing stable public origin, used for display and `urls` output; it does not provision a tunnel |
+
+`auth` and `tunnel.paths` values must begin with one `/`. They cannot include query strings, fragments, backslashes,
+percent encoding, or `.` / `..` path segments. Tunnel paths are exact matches, not wildcard patterns. `tunnel.publicUrl`
+cannot include credentials, a query, a fragment, or a path other than `/`.
+
+## Templates and environment variables
+
+Templates expand in name fields, command arguments, and environment values. Unknown template variables cause an error.
+`script` and `cwd` are literal values; callback and allowed webhook paths are also literal.
+
+| Variable     | Meaning                                                                | Where it can be used                                                                                               |
+| ------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `{project}`  | Configured project name                                                | Name templates, server command/env, tunnel command                                                                 |
+| `{worktree}` | Normalized linked-worktree folder name; empty for the primary checkout | Name templates, server command/env, tunnel command                                                                 |
+| `{service}`  | Endpoint key, such as `app` or `stories`                               | Name templates, server command/env, tunnel command                                                                 |
+| `{root}`     | Absolute configuration or detected project root                        | Name templates, server command/env, tunnel command; filesystem separators usually make it unsuitable for DNS names |
+| `{hostname}` | Resolved hostname without protocol or port                             | Server command/env and tunnel command                                                                              |
+| `{origin}`   | Resolved browser-facing origin, including a nonstandard proxy port     | Server command/env and tunnel command                                                                              |
+| `{port}`     | Dynamically assigned app-server port                                   | Server command and env only                                                                                        |
+| `{url}`      | Restricted webhook gateway's loopback URL                              | Tunnel command only                                                                                                |
+
+Every server receives these environment variables:
+
+| Variable               | Value                                                             |
+| ---------------------- | ----------------------------------------------------------------- |
+| `PORT`                 | Assigned app-server port                                          |
+| `HOST`                 | `127.0.0.1`                                                       |
+| `DEV_DOMAINS_ORIGIN`   | Resolved browser-facing origin                                    |
+| `DEV_DOMAINS_HOSTNAME` | Resolved hostname                                                 |
+| `DEV_DOMAINS_WORKTREE` | Normalized worktree folder name, or empty in the primary checkout |
+
+For example, an endpoint can set `env: { APP_URL: "{origin}", AUTH_REDIRECT_URI: "{origin}/callback" }`. Standard
+process environment variables are inherited. The runtime values listed above take precedence over same-named values
+inherited from the shell or supplied through `env`.
+
+## Server commands and frameworks
+
+Use `script` to run an existing package script, or `command` for an executable and argument array. Arguments remain
+separate, so a file path containing spaces stays one argument. Command arrays are not interpreted as shell expressions.
+
+For a custom server that accepts a port flag:
+
+```ts
+api: {
+  kind: "app",
+  cwd: "apps/api",
+  command: ["node", "server.js", "--port", "{port}"],
+  framework: "custom"
+}
+```
+
+For a custom server that reads `PORT` and `HOST` directly, `command: ["node", "server.js"]` is sufficient. Package-local
+binaries are available on the server's `PATH`.
+
+| Framework   | Flags appended to the server invocation                                    |
+| ----------- | -------------------------------------------------------------------------- |
+| `next`      | `--hostname 127.0.0.1 --port <assigned port>`                              |
+| `vite`      | `--host 127.0.0.1 --port <assigned port> --strictPort`                     |
+| `storybook` | `--host 127.0.0.1 --port <assigned port> --exact-port --no-open --ci`      |
+| `custom`    | None; the server must honor `PORT` / `HOST` or explicit `{port}` arguments |
+
+Use `framework: "custom"` for compound shell scripts or commands that cannot accept appended flags. Detection does this
+automatically for compound scripts. In a saved config, choose the appropriate framework yourself. `kind` does not select
+it for you.
+
+Keep the underlying server script free of another `dev-domains` or Portless invocation. For example, a package can use
+`"dev": "npx @buildkitgg/dev-domains run app"` together with `"dev:raw": "vite"`, while the endpoint references
+`script: "dev:raw"`. Configuring `script: "dev"` in that example would recurse and is rejected.
+
+Your framework still controls allowed hosts, development origins, and output directories. Add your generated hostnames
+to its configuration where required. When a server exits, its exit code is propagated. Custom servers must fail on a
+port conflict rather than silently switching ports.
 
 ## Playwright
 
-Configure a separate `kind: 'e2e'` endpoint. Its script must launch a server, not `playwright test`.
+You can test an already running app by setting Playwright's `use.baseURL` to its origin. To let Playwright manage a
+separate server, configure a dedicated endpoint:
+
+```ts
+// Add under endpoints in dev-domains.config.ts.
+"app-e2e": {
+  kind: "e2e",
+  cwd: "apps/web",
+  script: "dev:raw",
+  framework: "next",
+  env: { DEV_DOMAINS_OUTPUT_DIR: ".dev-domains/app-e2e" }
+}
+```
+
+Then use the helper in `playwright.config.ts`:
 
 ```ts
 import { defineConfig } from "@playwright/test"
-import { playwrightServer } from "@buildkit/dev-domains/playwright"
+import { playwrightServer } from "@buildkitgg/dev-domains/playwright"
 
 export default defineConfig({
   ...(await playwrightServer("app-e2e")),
@@ -155,52 +563,190 @@ export default defineConfig({
 })
 ```
 
-The helper sets `baseURL`, starts the named server, and refuses reuse of an existing server. Separate domains/ports do
-not separate build output, databases, storage, or credentials. Setup adds `DEV_DOMAINS_OUTPUT_DIR` for E2E; configure
-your framework to consume it (for Next.js, `distDir: process.env.DEV_DOMAINS_OUTPUT_DIR || '.next'`). In CI, use an
-isolated Portless state directory and unprivileged HTTP proxy, or your existing loopback Playwright server
-configuration. Trusted HTTPS and certificate setup remain Portless responsibilities.
+`playwrightServer(endpoint, cwd?)` loads the project from `cwd` or `process.cwd()`. It returns `use.baseURL` and a
+`webServer` configuration that runs the endpoint, waits up to 120 seconds, and sets `reuseExistingServer: false`. If you
+add other Playwright `use` or `webServer` options, merge those nested objects so you preserve the helper's values. In a
+monorepo, use the exact configured endpoint key, such as `web-app-e2e`, and a working directory from which the intended
+dev-domains config can be found.
 
-## Webhooks
+The endpoint's script must start a server, not run `playwright test`. The helper does not install Playwright or edit its
+configuration. Run `npx @buildkitgg/dev-domains setup` before the test run on a development machine.
+
+A dedicated endpoint gets a separate hostname and port, but you must also isolate build output when the framework
+requires it. Detection and the wizard set `DEV_DOMAINS_OUTPUT_DIR` for E2E candidates. The framework must consume that
+variable; for example, a Next.js config can set `distDir: process.env.DEV_DOMAINS_OUTPUT_DIR || ".next"`. Databases,
+storage, and credentials are still shared unless you configure them separately.
+
+## Node.js tooling
+
+Build scripts and local workers can read an endpoint without starting a server:
 
 ```ts
+import { getEndpoint } from "@buildkitgg/dev-domains/node"
+
+const app = await getEndpoint("app")
+process.env.APP_URL = app.origin
+```
+
+`getEndpoint(service, cwd?)` returns a promise containing `service`, `hostname`, `origin`, `callbacks` (resolved auth
+URLs), and `cwd` (the server's absolute working directory). It uses the CLI's configuration discovery and worktree
+naming rules; `cwd` defaults to `process.cwd()`. An unknown endpoint throws. The exported `EndpointInfo` type describes
+the result. This Node.js-only helper can execute trusted local configuration files, just like the CLI. It does not
+allocate a port, start the proxy, or register a route.
+
+## Authentication callbacks
+
+Auth callbacks are paths on the server that handles authentication. Add paths to `auth` to include their full URLs in
+`npx @buildkitgg/dev-domains urls` output:
+
+```ts
+// Add to the endpoint that serves these routes.
+auth: ["/callback", "/api/auth/callback/github"],
+env: { AUTH_REDIRECT_URI: "{origin}/callback" }
+```
+
+Register the resulting URLs with your authentication or OAuth provider and connect the environment variables to your
+application's auth configuration. `auth` is descriptive: it does not create routes, update provider dashboards, or
+configure an SDK. The environment variable names in these examples are application choices.
+
+When a provider requires a real domain, use the custom-domain layout above. Keep primary and worktree origins in the
+appropriate redirect, allowed-origin, or API-key restriction settings. Accepted wildcard patterns differ by service; use
+the exact `urls` output where required. A separate auth subdomain is only useful if you actually run a separate auth
+server.
+
+## Webhook tunnels
+
+A remote service cannot deliver a webhook to a loopback-only address. An optional tunnel makes selected POST routes
+reachable through a public URL while the rest of the app remains behind the local proxy.
+
+Add a tunnel to the endpoint that already serves the webhook handler. For example, with `cloudflared` installed:
+
+```ts
+// Add to the app or API endpoint.
 tunnel: {
-  command: ['cloudflared', 'tunnel', '--url', '{url}'],
-  paths: ['/api/webhooks/payments'],
-  // publicUrl: 'https://hooks.example.com', // separately configured stable tunnel
+  command: ["cloudflared", "tunnel", "--url", "{url}"],
+  paths: ["/api/webhooks/payments"]
 }
 ```
 
-Start the app, then run `dev-domains tunnel app` in another terminal. The gateway binds an OS-assigned loopback port and
-keeps the socket open. Only POST requests matching exact configured paths reach the app; query strings are preserved.
-Raw bytes and signature headers are preserved, hop-by-hop headers are stripped, and payloads are not logged or stored.
-Bodies are limited to 1 MiB and target requests to 15 seconds. The app must validate provider signatures. Closing the
-command terminates its tunnel tree and gateway; the app and shared proxy continue running.
+Start the app first, then open the tunnel in another terminal:
 
-Install and authenticate your tunnel executable separately. Quick tunnels change URL on restart; stable provider
-registrations need a stable tunnel configured with that provider. `publicUrl` describes it and does not create it. Do
-not put credentials in commands or config. A hosted durable receiver, replay, storage, and provider-specific auth/API
-setup remain outside this release.
+```sh
+npx @buildkitgg/dev-domains run app
+```
 
-## Commands
+```sh
+npx @buildkitgg/dev-domains tunnel app
+```
 
-| Command                        | Purpose                                                      |
-| ------------------------------ | ------------------------------------------------------------ |
-| `dev-domains [run] [endpoint]` | Run one server; pick if ambiguous in a terminal              |
-| `init [--yes] [--dry-run]`     | Detect, configure, and save defaults                         |
-| `detect`                       | JSON defaults without loading executable config              |
-| `urls`                         | JSON origins, auth callbacks, and configured webhook origins |
-| `setup`                        | Start Portless with project settings                         |
-| `status`                       | List active routes                                           |
-| `doctor`                       | Diagnose proxy, DNS, and trust                               |
-| `tunnel [endpoint]`            | Explicit public webhook exposure                             |
-| `schema`                       | Print configuration JSON Schema                              |
+The tunnel provider prints its public URL. Register that origin plus `/api/webhooks/payments` with the sending service.
+No separate webhook subdomain is required. A quick tunnel URL may change after restart. For persistent registrations,
+configure a stable tunnel with your provider and optionally record its HTTPS origin in `tunnel.publicUrl`. That property
+reports an existing address; it does not reserve a domain or configure the tunnel command.
 
-Project commands accept `--cwd`; runtime commands also accept `--config`. Use `--help` for flags. No package scripts are
-rewritten. Exit codes propagate; Ctrl+C stops owned processes and removes owned routes. The shared proxy stays
-available. After a hard crash, Portless handles stale routes on restart.
+The tunnel targets a restricted gateway that holds an OS-assigned loopback port open. It forwards only POST requests
+whose paths exactly match `tunnel.paths`. Query strings, raw request bytes, and signature headers are preserved;
+hop-by-hop headers and the inbound `Forwarded`, `X-Forwarded-For`, and `X-Forwarded-Host` headers are stripped. Request
+bodies are limited to 1 MiB, upstream requests time out after 15 seconds, and payloads are not logged or stored. Your
+application must validate provider signatures. Providers that require a GET verification challenge need a different
+ingress arrangement; this gateway is POST-only.
 
-## Contributing
+Install and authenticate the tunnel executable separately. It runs from the configuration root and inherits the shell
+environment, rather than the endpoint's server `env` overrides. Keep credentials in the provider's login store or
+environment. Closing the tunnel command stops its process tree and gateway while leaving the app and shared proxy
+running. A hosted receiver, durable delivery, and replay are not included.
 
-See [architecture and tests](docs/README.md) and the root [contributor guide](../../CONTRIBUTING.md). MIT licensed.
-Buildkit's domain is **buildkit.gg**; projects do not depend on a Buildkit hosted service.
+## Sharing a proxy across projects
+
+One machine can run many endpoints through one Portless proxy. Use distinct project names and keep participating
+projects' proxy settings aligned. A project can choose its preferred suffix from a shared list:
+
+```ts
+// Root configuration fields, alongside project and endpoints.
+domain: "example.com",
+proxy: {
+  domains: ["localhost", "example.com"],
+  port: 443,
+  https: true,
+  syncHosts: true
+}
+```
+
+Use the same ordered `proxy.domains` list in each participating project, including every project's `domain`. Portless
+registers each endpoint name under every suffix in that list, so names must be unique across the shared proxy. The
+chosen `domain` determines the origin reported for this project.
+
+An existing proxy with incompatible domain, port, or TLS settings is not forcibly restarted. Coordinate changes with
+other users and agents before changing the shared proxy. `npx @buildkitgg/dev-domains doctor` helps diagnose the current
+state.
+
+Portless probes for an available upstream port. This is not an atomic reservation: another process can bind the port
+before the app does. `dev-domains` makes at most three attempts, retrying only after an explicit `EADDRINUSE` or
+address-in-use failure. Make startup safe to repeat. A hostname collision is a different error and does not trigger a
+forced route takeover.
+
+## CI usage
+
+Commit a configuration and use explicit endpoint names in noninteractive jobs. The Playwright helper can start a
+dedicated test server, or you can keep your existing loopback-based Playwright setup.
+
+For jobs that use Portless, set a job-specific `PORTLESS_STATE_DIR` and choose an unprivileged proxy port. For example,
+a CI config can use `proxy: { https: false, port: 8080, syncHosts: false }`. Ensure generated hostnames resolve to
+loopback in the runner when hosts synchronization is disabled. HTTP avoids a certificate-trust step; HTTPS requires the
+runner to trust the local certificate authority. Select a complete CI config through the normal file-loading rules or
+`--config` for CLI commands; there is no implicit environment-specific config merge.
+
+The Playwright helper uses normal config discovery from its `cwd`; it does not accept the CLI's `--config` option. Place
+a CI config where that lookup finds it if you use the helper. Concurrent jobs sharing a machine also need compatible
+shared proxy settings or distinct proxy ports; a separate state directory alone does not free a bound port.
+
+## Command reference
+
+These are complete consumer-facing commands. They use the locally installed package; follow the installation steps above
+first.
+
+| Command                                         | Purpose                                                                       | Supported project options                              |
+| ----------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `npx @buildkitgg/dev-domains`                   | Run the default command; select an endpoint if several exist                  | `--cwd`, `--config`                                    |
+| `npx @buildkitgg/dev-domains run [endpoint]`    | Start one detected or configured endpoint                                     | `--cwd`, `--config`                                    |
+| `npx @buildkitgg/dev-domains init`              | Run the setup wizard and save `dev-domains.json`                              | `--cwd`, `--yes`, `--dry-run`, `--project`, `--domain` |
+| `npx @buildkitgg/dev-domains detect`            | Print detected candidates as JSON, ignoring saved dev-domains config          | `--cwd`                                                |
+| `npx @buildkitgg/dev-domains urls`              | Print endpoint origins, callback URLs, and configured webhook origins as JSON | `--cwd`, `--config`                                    |
+| `npx @buildkitgg/dev-domains setup`             | Start the Portless proxy with project settings                                | `--cwd`, `--config`                                    |
+| `npx @buildkitgg/dev-domains status`            | List active Portless routes                                                   | `--cwd`, `--config`                                    |
+| `npx @buildkitgg/dev-domains doctor`            | Check proxy, DNS, and certificate trust                                       | `--cwd`, `--config`                                    |
+| `npx @buildkitgg/dev-domains tunnel [endpoint]` | Expose an endpoint's configured webhook POST paths                            | `--cwd`, `--config`                                    |
+| `npx @buildkitgg/dev-domains schema`            | Print the configuration JSON Schema                                           | None                                                   |
+
+`--cwd` defaults to the current directory. `--config` is a file path relative to `--cwd`. Use `--help` on a command for
+its options. `run` and `tunnel` require an endpoint name in noninteractive sessions when more than one candidate exists.
+
+The CLI never rewrites package scripts. It propagates server exit codes and cleans up its own routes when the server
+stops. The shared proxy is left running. After a hard crash, Portless handles stale routes during subsequent operation.
+`PORTLESS_STATE_DIR` can select a separate state directory; most consumers should keep the default shared state.
+
+## Troubleshooting
+
+| Symptom                                              | What to check                                                                                                        |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| No endpoints were detected                           | Run `detect`; check the app script conventions or add an explicit `command` / `script` endpoint                      |
+| A wrapped script is rejected                         | Reference the underlying server script, such as `dev:raw`, instead of a script invoking dev-domains or Portless      |
+| An endpoint name is ambiguous                        | Use `urls` for configured names or `detect` for discovered names, then pass one to `run`                             |
+| Multiple configs or Storybook candidates were found  | Keep one dev-domains config per directory; select the intended Storybook script or config directory explicitly       |
+| The wrong package manager is used                    | In a saved config, set `packageManager`; during discovery, check the root declaration and conflicting lockfiles      |
+| A hostname is already in use                         | Check `status`, then choose a distinct name or stop the server you own; do not take over another process's route     |
+| The proxy has different settings                     | Align domains, port, and TLS settings with the existing shared proxy before restarting your endpoint                 |
+| The hostname does not resolve or HTTPS is untrusted  | Run `doctor`; check loopback DNS or hosts synchronization and complete Portless certificate setup                    |
+| The framework rejects the hostname                   | Configure its allowed hosts or development origins for your generated domains                                        |
+| App and E2E servers conflict despite different ports | Configure separate framework build/output directories; verify the app consumes `DEV_DOMAINS_OUTPUT_DIR`              |
+| A webhook returns 404                                | Confirm it is a POST request to an exact allowed path; GET verification challenges are not supported by this gateway |
+| A webhook cannot reach the app                       | Start the target endpoint first, verify the provider's current public URL, and check the tunnel process              |
+
+## Contributing and license
+
+See the
+[architecture and testing guide](https://github.com/AndrewCraswell/buildkit/blob/main/packages/dev-domains/docs/README.md)
+and [contributor guide](https://github.com/AndrewCraswell/buildkit/blob/main/CONTRIBUTING.md) for development details.
+
+[MIT licensed](https://github.com/AndrewCraswell/buildkit/blob/main/LICENSE). Part of Buildkit, whose domain is
+[buildkit.gg](https://buildkit.gg). No Buildkit hosted service is required to use this package.

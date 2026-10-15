@@ -1,54 +1,38 @@
-import { glob, readFile } from "node:fs/promises"
+import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { z } from "zod"
 import { readConfigFile } from "../config/read.js"
 import { type DevDomainsConfig } from "../config/schema.js"
+import { discoverProjects } from "./discovery.js"
 import { slug } from "./identity.js"
+import { readManifest, workspaceList } from "./manifest.js"
+import { detectPackageManager } from "./package-manager.js"
 
-const workspaceList = z.array(z.string())
-const manifestSchema = z.object({
-  name: z.string().optional(),
-  packageManager: z.string().optional(),
-  workspaces: z.union([workspaceList, z.object({ packages: workspaceList })]).optional(),
-  scripts: z.record(z.string(), z.string()).default({}),
-  dependencies: z.record(z.string(), z.string()).default({}),
-  devDependencies: z.record(z.string(), z.string()).default({})
-})
-export async function readManifest(directory: string) {
-  try {
-    return manifestSchema.parse(JSON.parse(await readFile(path.join(directory, "package.json"), "utf8")))
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return manifestSchema.parse({})
-    }
-    throw new Error(`Cannot read package.json in ${directory}`, { cause: error })
+const wrappers = /\b(dev-domains|portless|turbo|run-p|concurrently)\b/
+const storybookDev = /\bstorybook\s+dev\b/
+const playwrightTest = /\bplaywright\s+test\b/
+
+function frameworkFor(source: string): "next" | "vite" | "storybook" | "custom" {
+  if (/[;&|#]/.test(source) || /\s--(?:\s|$)/.test(source)) {
+    return "custom"
   }
+  if (/^next\s+dev(?:\s|$)/.test(source)) {
+    return "next"
+  }
+  if (/^vite(?:\s|$)/.test(source)) {
+    return "vite"
+  }
+  if (/^storybook\s+dev(?:\s|$)/.test(source)) {
+    return "storybook"
+  }
+  return "custom"
 }
 
-/** Discover candidates without executing package scripts or modifying files. */
+/** Discover runnable candidates without importing tool configs or executing scripts. */
 export async function detectConfig(root: string): Promise<DevDomainsConfig> {
   const manifest = await readManifest(root)
   const project = slug(manifest.name?.replace(/^@/, "").replace("/", "-") || path.basename(root))
-  const manager = manifest.packageManager?.split("@")[0]
-  let packageManager: "npm" | "pnpm" | "yarn" | "bun" = "npm"
-  if (manager === "npm" || manager === "pnpm" || manager === "yarn" || manager === "bun") {
-    packageManager = manager
-  } else {
-    for (const [file, candidate] of [
-      ["pnpm-lock.yaml", "pnpm"],
-      ["yarn.lock", "yarn"],
-      ["bun.lock", "bun"]
-    ] as const) {
-      try {
-        await readFile(path.join(root, file))
-        packageManager = candidate
-        break
-      } catch {
-        /* No lockfile for this manager. */
-      }
-    }
-  }
-  const endpoints: DevDomainsConfig["endpoints"] = {}
+  const packageManager = await detectPackageManager(root)
   let workspaces = Array.isArray(manifest.workspaces) ? manifest.workspaces : manifest.workspaces?.packages
   const workspaceFile = path.join(root, "pnpm-workspace.yaml")
   try {
@@ -59,75 +43,69 @@ export async function detectConfig(root: string): Promise<DevDomainsConfig> {
       throw error
     }
   }
-  const patterns = workspaces
-    ? [
-        "package.json",
-        ...workspaces
-          .filter((entry) => !entry.startsWith("!"))
-          .map((entry) => `${entry.replace(/\/$/, "")}/package.json`)
-      ]
-    : ["package.json", "apps/*/package.json", "packages/*/package.json"]
-  const excluded = [
-    "**/node_modules/**",
-    "**/.git/**",
-    "**/dist/**",
-    "**/.next/**",
-    "**/coverage/**",
-    ...(workspaces ?? [])
-      .filter((entry) => entry.startsWith("!"))
-      .map((entry) => `${entry.slice(1).replace(/\/$/, "")}/**`)
-  ]
-  const files: string[] = []
-  for await (const file of glob(patterns, { cwd: root, exclude: excluded })) {
-    files.push(file)
-    if (files.length > 1000) {
-      throw new Error("Too many packages to discover. Add an explicit dev-domains config.")
-    }
-  }
-  for (const file of files.sort()) {
-    const cwd = path.dirname(file).replaceAll("\\", "/")
+  const endpoints: DevDomainsConfig["endpoints"] = {}
+  for (const files of await discoverProjects(root, workspaces)) {
+    const { cwd } = files
     const pkg = await readManifest(path.join(root, cwd))
-    const scripts = Object.entries(pkg.scripts)
-    for (const [script, source] of scripts) {
-      if (/\b(dev-domains|portless|turbo|run-p|concurrently)\b/.test(source)) {
-        continue
-      }
-      const isStories = /\bstorybook\s+dev\b/.test(source)
-      const isDev = script === "dev" || script === "dev:app" || script === "dev:raw"
-      if (!isStories && !isDev) {
-        continue
-      }
-      const preferred = ["dev:app", "dev:raw", "dev"].find(
-        (candidate) =>
-          pkg.scripts[candidate] && !/\b(dev-domains|portless|turbo|run-p|concurrently)\b/.test(pkg.scripts[candidate]!)
-      )
-      if (isDev && script !== preferred) {
-        continue
-      }
-      const prefix = cwd === "." ? "" : `${slug(pkg.name?.split("/").at(-1) || path.basename(cwd))}-`
-      const key = `${prefix}${isStories ? "stories" : "app"}`
+    const scripts = Object.entries(pkg.scripts).filter(([, source]) => !wrappers.test(source))
+    const prefix = cwd === "." ? "" : `${slug(pkg.name?.split("/").at(-1) || path.basename(cwd))}-`
+    const add = (service: string, endpoint: DevDomainsConfig["endpoints"][string]) => {
+      const key = `${prefix}${service}`
       if (endpoints[key]) {
         throw new Error(`Detected duplicate endpoint ${key}. Use explicit configuration.`)
       }
-      // Only simple commands can safely accept appended framework flags.
-      const isSimple = !/[;&|#]/.test(source) && !/\s--(?:\s|$)/.test(source)
-      let framework: "next" | "vite" | "storybook" | "custom" = "custom"
-      if (isSimple && /^next\s+dev(?:\s|$)/.test(source)) {
-        framework = "next"
-      }
-      if (isSimple && /^vite(?:\s|$)/.test(source)) {
-        framework = "vite"
-      }
-      if (isSimple && /^storybook\s+dev(?:\s|$)/.test(source)) {
-        framework = "storybook"
-      }
       endpoints[key] = {
-        kind: isStories ? "storybook" : "app",
         cwd,
-        script,
-        framework,
-        name: `{project}-{worktree}${key === "app" ? "" : `-${key}`}`
+        primaryName: `{project}${key === "app" ? "" : `-${key}`}`,
+        name: `{project}-{worktree}${key === "app" ? "" : `-${key}`}`,
+        ...endpoint
       }
+    }
+    const dev = ["dev:app", "dev:raw", "dev"]
+      .map((name) =>
+        scripts.find(
+          ([script, source]) => script === name && !storybookDev.test(source) && !playwrightTest.test(source)
+        )
+      )
+      .find((entry) => entry !== undefined)
+    if (dev) {
+      const [script, source] = dev
+      add("app", { kind: "app", script, framework: frameworkFor(source) })
+    }
+
+    const stories = scripts.filter(([, source]) => storybookDev.test(source))
+    if (stories.length > 1) {
+      throw new Error(`Multiple Storybook dev scripts in ${cwd}. Choose a script in an explicit dev-domains config.`)
+    }
+    const story = stories[0]
+    if (story) {
+      add("stories", { kind: "storybook", script: story[0], framework: frameworkFor(story[1]) })
+    } else if (files.storybook.length) {
+      if (files.storybook.length > 1) {
+        throw new Error(
+          `Multiple Storybook configs in ${cwd}. Choose a config directory in an explicit dev-domains config.`
+        )
+      }
+      // Use the installed binary directly; discovery never downloads or runs it.
+      add("stories", {
+        kind: "storybook",
+        framework: "storybook",
+        command: ["storybook", "dev", "--config-dir", path.posix.dirname(files.storybook[0]!)]
+      })
+    }
+
+    const hasPlaywright =
+      files.playwright.length > 0 ||
+      "@playwright/test" in pkg.dependencies ||
+      "@playwright/test" in pkg.devDependencies ||
+      scripts.some(([, source]) => playwrightTest.test(source))
+    if (hasPlaywright && dev) {
+      add("app-e2e", {
+        kind: "e2e",
+        script: dev[0],
+        framework: frameworkFor(dev[1]),
+        env: { DEV_DOMAINS_OUTPUT_DIR: `.dev-domains/${prefix}app-e2e` }
+      })
     }
   }
   return { project, packageManager, endpoints }
