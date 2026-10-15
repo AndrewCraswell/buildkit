@@ -13,10 +13,12 @@ const cli = fileURLToPath(new URL("./cli.js", import.meta.resolve("portless")))
 
 export function proxyEnvironment(project: Project): NodeJS.ProcessEnv {
   const proxy = project.config.proxy
+  const caPath = path.join(stateDirectory(), "ca.pem")
   return {
     ...process.env,
     npm_command: undefined,
     PNPM_SCRIPT_SRC_DIR: undefined,
+    NODE_EXTRA_CA_CERTS: process.env.NODE_EXTRA_CA_CERTS || (proxy.https && existsSync(caPath) ? caPath : undefined),
     PORTLESS: "1",
     PORTLESS_TLD: (proxy.domains ?? [project.config.domain]).join(","),
     PORTLESS_PORT: String(proxy.port),

@@ -5,7 +5,7 @@ import path from "node:path"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { configSchema } from "../config/schema.js"
 import { runProcess } from "./process.js"
-import { ensureProxy, hasCompatibleProxy, proxyCommand } from "./proxy.js"
+import { ensureProxy, hasCompatibleProxy, proxyCommand, proxyEnvironment } from "./proxy.js"
 
 vi.mock("./process.js", () => ({ runProcess: vi.fn<typeof runProcess>() }))
 let state: string
@@ -20,6 +20,17 @@ afterEach(async () => {
 })
 const config = configSchema.parse({ project: "demo", endpoints: { app: { command: ["node"] } } })
 const project = { config, root: process.cwd(), worktree: null, file: undefined }
+it("passes the Portless CA to HTTPS children without replacing an explicit trust bundle", async () => {
+  vi.stubEnv("NODE_EXTRA_CA_CERTS", "")
+  const caPath = path.join(state, "ca.pem")
+  expect(proxyEnvironment(project).NODE_EXTRA_CA_CERTS).toBeUndefined()
+  await writeFile(caPath, "fixture")
+  expect(proxyEnvironment(project).NODE_EXTRA_CA_CERTS).toBe(caPath)
+  const http = { ...project, config: configSchema.parse({ ...config, proxy: { https: false } }) }
+  expect(proxyEnvironment(http).NODE_EXTRA_CA_CERTS).toBeUndefined()
+  vi.stubEnv("NODE_EXTRA_CA_CERTS", "/custom/trust.pem")
+  expect(proxyEnvironment(project).NODE_EXTRA_CA_CERTS).toBe("/custom/trust.pem")
+})
 it("delegates setup, status, and doctor without force or stopping the proxy", async () => {
   vi.stubEnv("npm_command", "exec")
   vi.stubEnv("PNPM_SCRIPT_SRC_DIR", "/consumer")

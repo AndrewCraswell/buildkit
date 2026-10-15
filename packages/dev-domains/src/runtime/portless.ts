@@ -47,7 +47,7 @@ export async function runEndpoint(project: Project, endpoint: ResolvedEndpoint, 
           throw error
         }
       }
-      const env = serverEnvironment(endpoint, reservation.port, proxyEnvironment(project))
+      const env = serverEnvironment(endpoint, reservation.port, proxyEnvironment(project), hostnames)
       // Most framework CLIs accept a port, not an inherited listening socket.
       // Keep the registration until the child exits; retry a competing external bind.
       await reservation.release()
