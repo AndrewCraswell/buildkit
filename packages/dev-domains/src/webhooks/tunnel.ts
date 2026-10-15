@@ -1,6 +1,6 @@
 import { interpolate, type Project, type ResolvedEndpoint } from "../domains/resolve.js"
-import { routeStore } from "../runtime/portless.js"
 import { runProcess } from "../runtime/process.js"
+import { routeStore } from "../runtime/state.js"
 import { startGateway } from "./gateway.js"
 
 export async function runTunnel(project: Project, endpoint: ResolvedEndpoint, signal?: AbortSignal) {

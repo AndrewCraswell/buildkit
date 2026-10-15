@@ -81,6 +81,8 @@ export function serverEnvironment(
     PATH: [...bins, path.dirname(process.execPath), existingPath].join(path.delimiter),
     PORT: String(port),
     HOST: "127.0.0.1",
+    PORTLESS_URL: endpoint.origin,
+    __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: endpoint.hostname,
     BUILDKIT_ACTIVE: "1",
     DEV_DOMAINS_ORIGIN: endpoint.origin,
     DEV_DOMAINS_HOSTNAME: endpoint.hostname,

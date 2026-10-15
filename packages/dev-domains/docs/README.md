@@ -24,12 +24,18 @@ For package consumers, start with:
 
 Dependencies point from presentation to operations to domain/configuration helpers. Keep provider SDKs out of the core.
 Public exports are the config helper/types/schema, Node endpoint helper, and Playwright helper; runtime modules are
-internal. Portless owns certificates, proxy state, routing, and upstream allocation. Buildkit does not maintain a
-competing proxy or port registry. Cleanup removes only routes owned by the exact Portless child PID.
+internal. Portless owns certificates, proxy state, and the locked route registry. Buildkit registers complete hostnames
+through Portless's public `RouteStore`, reserves OS-assigned ports until registration, and starts framework commands
+with argument arrays through cross-spawn. There is no competing proxy or persistent port registry.
 
-The Windows bootstrap passes user configuration through the environment because Portless 0.15.8 joins Windows child
-commands through cmd.exe. Buildkit uses argument arrays and cross-spawn. Never put user values into that bootstrap
-expression or add --force. Review this boundary when updating the pinned Portless dependency.
+The CLI process owns its exact registered hostnames. Normal exit, startup failure, and cancellation remove only those
+routes with an owner-PID check. The process runner owns and terminates its child process tree. A hard OS kill can leave
+an orphaned server; Portless prunes the dead owner's routes, but an orphan may need manual termination. Buildkit never
+stops the shared proxy or forces a route takeover. Keep Portless pinned and test its registry and proxy interfaces
+before upgrading it.
+
+The proxy adapter validates the live proxy's port, TLS mode, and response identity. HTTPS probes verify its certificate
+using Portless's local CA. Startup suffixes do not restrict exact routing or per-hostname SNI certificates.
 
 Runtime dependencies each have one job: Portless for networking, c12 for loading, Zod for contracts, Citty for command
 parsing, Clack for prompts, package-manager-detector for package-manager discovery and script commands, and cross-spawn
@@ -47,6 +53,7 @@ certificate trust or privileged port setup; those remain manual platform checks 
 
 ## Boundaries
 
-The initial public package version is `0.0.1`. Publishing is a maintainer operation; the CLI does not publish packages,
+Version `0.0.2` is a compatible patch: canonical domains and explicit alias lists are preserved, while projects no
+longer need matching proxy suffix lists. Publishing is a maintainer operation; the CLI does not publish packages,
 provision DNS, configure provider credentials, or create cloud resources. Hosted webhook receivers, durable delivery,
 and database/storage isolation are outside the package's scope.
