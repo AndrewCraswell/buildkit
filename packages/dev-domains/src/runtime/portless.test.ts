@@ -71,3 +71,14 @@ it("delegates setup, status, and doctor without force or stopping the proxy", as
   expect(all).not.toContain("--force")
   expect(all).not.toContain("stop")
 })
+it("runs the installed Portless dependency without inherited package-downloader markers", async () => {
+  vi.stubEnv("npm_command", "exec")
+  vi.stubEnv("PNPM_SCRIPT_SRC_DIR", "/consumer")
+  vi.mocked(runProcess).mockResolvedValue({ code: 0, stderr: "" })
+  await proxyCommand(project, "setup")
+  const env = vi.mocked(runProcess).mock.calls[0]![1].env
+  expect(env?.npm_command).toBeUndefined()
+  expect(env?.PNPM_SCRIPT_SRC_DIR).toBeUndefined()
+  expect(process.env.npm_command).toBe("exec")
+  expect(process.env.PNPM_SCRIPT_SRC_DIR).toBe("/consumer")
+})

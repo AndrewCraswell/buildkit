@@ -31,7 +31,7 @@ export async function detectConfig(root: string): Promise<DevDomainsConfig> {
   const project = slug(manifest.name?.replace(/^@/, "").replace("/", "-") || path.basename(root))
   const manager = manifest.packageManager?.split("@")[0]
   let packageManager: "npm" | "pnpm" | "yarn" | "bun" = "npm"
-  if (manager === "pnpm" || manager === "yarn" || manager === "bun") {
+  if (manager === "npm" || manager === "pnpm" || manager === "yarn" || manager === "bun") {
     packageManager = manager
   } else {
     for (const [file, candidate] of [

@@ -15,21 +15,21 @@ Run `dev-domains` in your project. A single detected server starts immediately; 
 Noninteractive sessions must specify an endpoint when there is more than one. Run `dev-domains detect` to see candidates
 or `dev-domains urls` to see exact URLs without starting servers or creating files.
 
-| Convention                | Default                                                                                                                  |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Project root              | Current Git checkout root; current directory outside Git                                                                 |
-| Project name              | Root package name, otherwise directory name, normalized to a DNS label                                                   |
-| Package manager           | Root `packageManager`, then pnpm/yarn/bun lockfile, otherwise npm                                                        |
-| App scripts               | `dev:app` or `dev:raw` before `dev`                                                                                      |
-| Storybook                 | Scripts containing `storybook dev`                                                                                       |
-| Workspace discovery       | Declared pnpm/npm/yarn workspaces; otherwise root plus apps/_ and packages/_; excludes dependencies and generated output |
-| Root app                  | `https://<project>-<checkout>.localhost`                                                                                 |
-| Workspace app             | `https://<project>-<checkout>-<package>-app.localhost`                                                                   |
-| Storybook                 | `https://<project>-<checkout>-<package>-stories.localhost` (no package segment at root)                                  |
-| Main checkout             | `main`                                                                                                                   |
-| Linked checkout           | Readable checkout directory plus a short hash of its canonical path                                                      |
-| Proxy                     | Shared Portless HTTPS proxy on port 443; upstream ports assigned dynamically                                             |
-| Auth, E2E, public tunnels | Opt-in; no paths, public exposure, or test isolation guessed                                                             |
+| Convention                | Default                                                                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Project root              | Current Git checkout root; current directory outside Git                                                                     |
+| Project name              | Root package name, otherwise directory name, normalized to a DNS label                                                       |
+| Package manager           | Root `packageManager`, then pnpm/yarn/bun lockfile, otherwise npm                                                            |
+| App scripts               | `dev:app` or `dev:raw` before `dev`                                                                                          |
+| Storybook                 | Scripts containing `storybook dev`                                                                                           |
+| Workspace discovery       | Declared pnpm/npm/yarn workspaces; otherwise root plus `apps/*` and `packages/*`; excludes dependencies and generated output |
+| Root app                  | `https://<project>-<checkout>.localhost`                                                                                     |
+| Workspace app             | `https://<project>-<checkout>-<package>-app.localhost`                                                                       |
+| Storybook                 | `https://<project>-<checkout>-<package>-stories.localhost` (no package segment at root)                                      |
+| Main checkout             | `main`                                                                                                                       |
+| Linked checkout           | Readable checkout directory plus a short hash of its canonical path                                                          |
+| Proxy                     | Shared Portless HTTPS proxy on port 443; upstream ports assigned dynamically                                                 |
+| Auth, E2E, public tunnels | Opt-in; no paths, public exposure, or test isolation guessed                                                                 |
 
 Branch changes do not change the checkout URL. Moving a checkout does. Windows drive paths normalize case and
 separators; POSIX paths remain case-sensitive. Two independent clones with the same project name both use `main`: rename

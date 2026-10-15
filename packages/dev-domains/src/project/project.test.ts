@@ -67,6 +67,12 @@ describe("project conventions", () => {
     await writeFile(path.join(root, "package.json"), "broken")
     await expect(readManifest(root)).rejects.toThrow("Cannot read")
   })
+  it("prefers an explicitly selected package manager over stale lockfiles", async () => {
+    const root = await directory()
+    await manifest(root, { packageManager: "npm@11.0.0", scripts: { dev: "vite" } })
+    await writeFile(path.join(root, "pnpm-lock.yaml"), "")
+    expect((await detectConfig(root)).packageManager).toBe("npm")
+  })
   it("rejects ambiguous workspace endpoint names", async () => {
     const root = await directory()
     for (const child of ["apps/a", "apps/b"]) {
