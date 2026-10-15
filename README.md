@@ -10,10 +10,11 @@ builds).
 ## Packages
 
 - [@buildkitgg/dev-domains](packages/dev-domains/README.md): Portless domain CLI with typed configuration, guided setup,
-  and webhook tunnels. Private and unpublished during incubation.
+  and webhook tunnels. Initial public release: `0.0.1`.
 - Private `@repo/*` packages share TypeScript, oxlint, and Storybook configuration.
 
 Apps and examples belong under `apps/`; independently reusable libraries belong under `packages/`.
 
 See [engineering docs](docs/README.md), [agent instructions](AGENTS.md), and [MIT license](LICENSE). Tooling, editor
-settings, and conventions are adapted from Agency. No deployment or npm publishing is configured yet.
+settings, and conventions are adapted from Agency. Releases are published by maintainers; automated publishing is not
+configured.

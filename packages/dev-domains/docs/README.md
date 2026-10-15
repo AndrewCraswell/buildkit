@@ -20,11 +20,12 @@ For package consumers, start with:
 | `src/webhooks`      | Restricted loopback gateway and independently owned tunnel                                |
 | `src/cli`           | Citty commands and Clack interactive presentation                                         |
 | `src/playwright.ts` | Structural integration without importing Playwright                                       |
+| `src/node.ts`       | Read resolved endpoint addresses from Node.js tooling without starting servers            |
 
 Dependencies point from presentation to operations to domain/configuration helpers. Keep provider SDKs out of the core.
-Public exports are the config helper/types/schema and Playwright helper; runtime modules are internal. Portless owns
-certificates, proxy state, routing, and upstream allocation. Buildkit does not maintain a competing proxy or port
-registry. Cleanup removes only routes owned by the exact Portless child PID.
+Public exports are the config helper/types/schema, Node endpoint helper, and Playwright helper; runtime modules are
+internal. Portless owns certificates, proxy state, routing, and upstream allocation. Buildkit does not maintain a
+competing proxy or port registry. Cleanup removes only routes owned by the exact Portless child PID.
 
 The Windows bootstrap passes user configuration through the environment because Portless 0.15.8 joins Windows child
 commands through cmd.exe. Buildkit uses argument arrays and cross-spawn. Never put user values into that bootstrap
