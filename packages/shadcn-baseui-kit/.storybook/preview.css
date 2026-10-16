@@ -1,0 +1,30 @@
+body {
+  margin: 0;
+}
+.catalog-surface {
+  padding: 24px;
+  min-height: 280px;
+  background: var(--background);
+  color: var(--foreground);
+  border-radius: var(--radius);
+}
+.demo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(100%, 560px);
+}
+.demo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.demo-panel {
+  padding: 24px;
+}
+@media (max-width: 480px) {
+  .catalog-surface {
+    padding: 12px;
+  }
+}

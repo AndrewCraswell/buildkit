@@ -9,6 +9,10 @@
     },
     "packages/dev-domains": {
       "entry": ["src/cli/main.ts", "src/config/schema.ts", "src/node.ts", "src/playwright.ts"]
+    },
+    "packages/shadcn-baseui-kit": {
+      "entry": ["src/index.ts", "src/styles.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
 }
