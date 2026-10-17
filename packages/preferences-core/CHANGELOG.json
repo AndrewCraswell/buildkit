@@ -2,6 +2,21 @@
   "name": "@buildkitgg/preferences-core",
   "entries": [
     {
+      "date": "Sat, 17 Oct 2026 06:51:58 GMT",
+      "version": "0.1.1",
+      "tag": "@buildkitgg/preferences-core_v0.1.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "",
+            "package": "@buildkitgg/preferences-core",
+            "commit": "076886a4bd5c323313e496f64096bc34f1bbba22",
+            "comment": "Publish through the trusted GitHub release workflow with verifiable build provenance."
+          }
+        ]
+      }
+    },
+    {
       "date": "Sat, 17 Oct 2026 02:17:27 GMT",
       "version": "0.1.0",
       "tag": "@buildkitgg/preferences-core_v0.1.0",

@@ -2,6 +2,27 @@
   "name": "@buildkitgg/react-preferences",
   "entries": [
     {
+      "date": "Sat, 17 Oct 2026 06:51:58 GMT",
+      "version": "0.1.1",
+      "tag": "@buildkitgg/react-preferences_v0.1.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "",
+            "package": "@buildkitgg/react-preferences",
+            "commit": "076886a4bd5c323313e496f64096bc34f1bbba22",
+            "comment": "Publish through the trusted GitHub release workflow with verifiable build provenance."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/react-preferences",
+            "comment": "Bump @buildkitgg/preferences-core to v0.1.1",
+            "commit": "not available"
+          }
+        ]
+      }
+    },
+    {
       "date": "Sat, 17 Oct 2026 02:17:27 GMT",
       "version": "0.1.0",
       "tag": "@buildkitgg/react-preferences_v0.1.0",
