@@ -2,7 +2,7 @@
 
 /**
  * Beachball manages versioning and changelogs for the workspace packages.
- * Contributors run `pnpm change` to add change files; publishing automation will be added before the first release.
+ * Contributors run `pnpm change`; GitHub prepares release PRs and publishes reviewed versions.
  *
  * @type {import("beachball").BeachballConfig}
  */

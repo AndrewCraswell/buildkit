@@ -1,0 +1,54 @@
+name: Publish package
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package directory under packages (for example shadcn-baseui-kit)"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Validate package selection
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const directory = process.env.PACKAGE;
+          if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(directory)) throw new Error('Invalid package directory');
+          const pkg = JSON.parse(readFileSync(`packages/${directory}/package.json`, 'utf8'));
+          if (pkg.private || !pkg.name.startsWith('@buildkitgg/')) throw new Error('Package is not public');
+          console.log(`Release: ${pkg.name}@${pkg.version}`);
+          NODE
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify
+      - name: Pack reviewed version
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          pnpm --dir "packages/$PACKAGE" pack --pack-destination "$RUNNER_TEMP/release"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: ${{ runner.temp }}/release/*.tgz
+      - name: Publish with npm trusted publishing
+        run: npm publish "$RUNNER_TEMP"/release/*.tgz --access public --provenance

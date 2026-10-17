@@ -1,0 +1,43 @@
+name: Prepare release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec beachball bump
+      - run: pnpm install --lockfile-only
+      - run: pnpm format
+      - run: pnpm verify
+      - name: Open release pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo 'No pending release changes.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          branch="codex/release-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
+          git add --all
+          git commit -m 'chore: prepare package releases'
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" --title 'chore: prepare package releases' --body 'Beachball version and changelog updates. Full verification passed in the preparation workflow. Review and merge before running Publish package. GitHub does not trigger PR workflows for changes created with GITHUB_TOKEN.'

@@ -1,0 +1,115 @@
+.bk-docs {
+  color: #172a3a;
+  background: #fff;
+  font:
+    16px/1.65 system-ui,
+    sans-serif;
+  max-width: 1000px;
+  margin: auto;
+  padding: 48px 40px;
+  border-radius: 12px;
+}
+.bk-docs header {
+  border-bottom: 1px solid #dbe3ec;
+  padding-bottom: 28px;
+  margin-bottom: 32px;
+}
+.bk-docs h1 {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  margin: 12px 0 16px;
+  overflow-wrap: anywhere;
+}
+.bk-docs h2 {
+  font-size: 23px;
+  font-weight: 650;
+  margin: 32px 0 12px;
+}
+.bk-docs p {
+  margin: 12px 0;
+}
+.bk-docs .bk-eyebrow {
+  color: #526b81;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bk-docs .bk-summary {
+  color: #506176;
+  font-size: 19px;
+  max-width: 740px;
+}
+.bk-docs a {
+  color: #1459a0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bk-docs :focus-visible {
+  outline: 3px solid #1976d2;
+  outline-offset: 4px;
+}
+.bk-docs pre {
+  background: #102435;
+  color: #e2edf7;
+  padding: 20px;
+  border-radius: 8px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 16px 0;
+}
+.bk-docs code {
+  font-family: ui-monospace, monospace;
+}
+.bk-docs ul,
+.bk-docs ol {
+  padding-left: 24px;
+  list-style: revert;
+}
+.bk-docs li {
+  margin: 8px 0;
+}
+.bk-docs .bk-table {
+  overflow: auto;
+}
+.bk-docs table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+.bk-docs th,
+.bk-docs td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid #dbe3ec;
+  vertical-align: top;
+}
+.bk-docs th {
+  font-size: 12px;
+  color: #506176;
+  background: #f4f7fa;
+}
+.bk-docs footer {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid #dbe3ec;
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .bk-docs {
+    padding: 24px 16px;
+  }
+  .bk-docs .bk-summary {
+    font-size: 17px;
+  }
+}
+
+.bk-docs pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

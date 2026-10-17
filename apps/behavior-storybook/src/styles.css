@@ -1,0 +1,64 @@
+:root {
+  --primary: #6d28d9;
+  --primary-foreground: #fff;
+  --ring: #7c3aed;
+}
+:root.dark {
+  --primary: #c4b5fd;
+  --primary-foreground: #2e1065;
+  --ring: #a78bfa;
+}
+.shadcn-demo {
+  font-family: system-ui, sans-serif;
+}
+.shadcn-demo {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 24px;
+  display: grid;
+  gap: 24px;
+}
+.shadcn-demo header {
+  padding-bottom: 12px;
+}
+.shadcn-demo h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  margin: 8px 0 12px;
+}
+.shadcn-demo header > p,
+.shadcn-demo output {
+  color: var(--muted-foreground);
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+.choices,
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.choices > button {
+  flex: 1;
+}
+.shadcn-demo output {
+  margin-top: 20px;
+  font-size: 14px;
+}
+@media (max-width: 480px) {
+  .shadcn-demo {
+    padding: 32px 16px;
+  }
+}
+
+.shadcn-demo output {
+  display: block;
+}
+.preference-fields {
+  display: grid;
+  gap: 12px;
+}

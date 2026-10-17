@@ -13,6 +13,27 @@
     "packages/shadcn-baseui-kit": {
       "entry": ["src/index.ts", "src/styles.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/theme-core": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react-theme": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/shadcn-theme": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/preferences-core": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react-preferences": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "apps/behavior-storybook": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/fluentui-theme": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
 }

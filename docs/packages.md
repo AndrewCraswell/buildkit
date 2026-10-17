@@ -7,8 +7,8 @@ components.
 
 Packages stay private during incubation. Before publishing, confirm npm scope ownership, review public APIs and MIT
 notices, verify the packed artifact in a separate consumer, and configure release credentials. Beachball records
-independent package version changes; no automatic publishing is configured. Remove `private` only when ready for
-release.
+independent package version changes; [GitHub release workflows](releases.md) prepare and publish reviewed releases.
+Remove `private` only when ready for release.
 
 Run `pnpm verify` before committing. CI runs full verification on Linux and focused dev-domains integration on Linux,
 Windows, and macOS. UI changes require browser acceptance.
