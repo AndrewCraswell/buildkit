@@ -4,31 +4,20 @@ import { packages } from "./packages.js"
 function WelcomePage() {
   return (
     <Documentation
-      title="Build better apps. Keep the building blocks."
-      summary="Reusable behavior, typed React bindings, and UI adapters. Adopt one package or compose the layers you need."
+      title="Buildkit"
+      summary="TypeScript packages for preferences, themes, modal management, and UI components."
     >
-      <h2>Find your starting point</h2>
-      <ol>
-        <li>
-          Need ready-made components? Start with{" "}
-          <StoryLink id="components-shadcn-baseui-kit--overview">shadcn-baseui-kit</StoryLink>.
-        </li>
-        <li>
-          Adding appearance settings? Choose <StoryLink id="themes-fluentui-theme--overview">Fluent UI</StoryLink> or{" "}
-          <StoryLink id="themes-shadcn-theme--overview">shadcn</StoryLink>.
-        </li>
-        <li>
-          Managing settings? Start with <StoryLink id="core-preferences-core--overview">preferences-core</StoryLink> and
-          add React bindings if needed.
-        </li>
-      </ol>
+      <p>
+        Core packages are framework agnostic. React packages add bindings. The shadcn and Fluent UI folders contain UI
+        integrations.
+      </p>
       <h2>Package directory</h2>
       <div className="bk-table">
         <table>
           <thead>
             <tr>
               <th scope="col">Package</th>
-              <th scope="col">Layer</th>
+              <th scope="col">Group</th>
               <th scope="col">Purpose</th>
             </tr>
           </thead>
@@ -36,7 +25,9 @@ function WelcomePage() {
             {packages.map((item) => (
               <tr key={item.name}>
                 <td>
-                  <StoryLink id={`${item.group.toLowerCase()}-${item.name}--overview`}>{item.name}</StoryLink>
+                  <StoryLink id={`${item.group.toLowerCase().replaceAll(" ", "-")}-${item.name}--overview`}>
+                    {item.name}
+                  </StoryLink>
                 </td>
                 <td>{item.group}</td>
                 <td>{item.summary}</td>
@@ -45,11 +36,6 @@ function WelcomePage() {
           </tbody>
         </table>
       </div>
-      <h2>Explore with confidence</h2>
-      <p>
-        Start with a package overview, then explore its focused examples. Persistent examples use dedicated demo storage
-        keys and provide reset controls. Each package overview links to its source and README.
-      </p>
     </Documentation>
   )
 }

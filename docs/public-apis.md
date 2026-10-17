@@ -41,3 +41,20 @@ Create isolated stores per server request. Server snapshots retain the initial s
 configuration during hydration. Shadcn's first-paint script uses the same selection and storage options as its store.
 
 Changes to released contracts require an appropriate Beachball change file and semantic version decision.
+
+## Modals
+
+See the [modal API and lifecycle guide](modals.md). `modal-core` owns stack state and results; `react-modals` adds typed
+content, subscriptions and the renderer. `shadcn-modals-manager` and `fluentui-modals-manager` both export
+`createModalManager`, `ModalRenderer`, `ModalManager`, `ModalRendererProps` and `ModalSurfaceOptions`. Shared operations
+and types are identical across adapters, including `ModalManagerOptions` and `ModalAdapter`. Both renderers require only
+`manager`. `createModalManager({ labels?, adapter? })` binds the adapter once, falling back to the package's native
+components when omitted. An explicit adapter always wins. `surfaceProps` contains portable `className` and `style`
+fields. Optional shadcn registry integration uses `adapter: baseUiComponents(...)` or `adapter: radixComponents(...)`;
+there is no primitive prop or renderer factory. Application styles, UI providers and custom form controls remain
+application concerns. The UI adapters do not expose their internal core store.
+
+Custom definitions use `createModal({ initialState, render, defaultResult, beforeDismiss? })`. State is inferred from
+defaults; `open(overrides?)` and object/function updates remain typed. Results default to state plus `null`, with
+separate result types supported by annotated components or generics. Core owns pending actions, errors and guarded
+dismissal; components own fields and validation. See [form examples](modal-forms.md).

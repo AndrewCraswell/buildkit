@@ -2,7 +2,7 @@ import { webLightTheme, webDarkTheme } from "@fluentui/react-components"
 import type { Meta, StoryObj } from "@storybook/react-vite"
 import { FluentDemo } from "./FluentDemo.js"
 const meta = {
-  title: "Themes/fluentui-theme",
+  title: "Fluent UI/fluentui-theme",
   component: FluentDemo,
   parameters: { controls: { disable: true } }
 } satisfies Meta<typeof FluentDemo>

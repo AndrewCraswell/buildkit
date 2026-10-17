@@ -1,7 +1,7 @@
 import * as examples from "@catalog"
 import type { Meta } from "@storybook/react-vite"
 const meta = {
-  title: "Components/shadcn-baseui-kit/Feedback",
+  title: "shadcn/shadcn-baseui-kit/Feedback",
   parameters: { controls: { disable: true }, buildkitCatalog: true }
 } satisfies Meta
 export default meta

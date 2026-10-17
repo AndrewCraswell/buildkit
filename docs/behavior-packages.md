@@ -27,8 +27,8 @@ are explicit and disposable. TypeScript declarations accompany each package's co
 
 ## Existing Fluent implementations: extraction plan
 
-Read-only review of the four local repositories in `D:/msft` informed these boundaries. This pass does not migrate or
-modify those repositories. Suggested package names below are provisional.
+Review of the four local repositories in `D:/msft` informed these boundaries. The original repositories remain
+unchanged. Modal packages are implemented in Buildkit; other suggested package names remain provisional.
 
 | Existing implementation                                                                                     | Extractable behavior                                                                                                                                              | Keep in adapters                                                                                                                                                     |
 | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,10 +39,11 @@ modify those repositories. Suggested package names below are provisional.
 
 ## Migration order and acceptance
 
-1. Extract message-bar queues first: use a generic content payload so core never imports React. Preserve region-scoped
+1. Modal lifecycles are implemented in `modal-core`, `react-modals`, `shadcn-modals-manager`, and
+   `fluentui-modals-manager`. See [architecture and lifecycle](modals.md) for extraction decisions and the adapter
+   contract.
+2. Extract message-bar queues: use a generic content payload so core never imports React. Preserve region-scoped
    subscriptions, duplicate-ID replacement, timer cancellation, and the distinction between dismiss and flush.
-2. Extract modal lifecycles next: make descriptor payload generic, preserve exactly-once promise settlement, and expose
-   an explicit removal/exit-complete action. React rendering and Fluent-specific modal behavior stay outside core.
 3. Split router integrations: derive tab and panel state from the URL, rather than retaining a second selection state.
    Preserve query-string policy, route exclusions, modified-click semantics, and direct-link dismissal destinations.
    Keep React Router's matching semantics in its adapter rather than reimplementing its route parser.

@@ -18,9 +18,14 @@
     "@buildkitgg/preferences-core": "workspace:*",
     "@buildkitgg/react-preferences": "workspace:*",
     "@buildkitgg/fluentui-theme": "workspace:*",
-    "@fluentui/react-components": "^9.74.9"
+    "@fluentui/react-components": "^9.74.9",
+    "@buildkitgg/modal-core": "workspace:*",
+    "@buildkitgg/react-modals": "workspace:*",
+    "@buildkitgg/fluentui-modals-manager": "workspace:*",
+    "@buildkitgg/shadcn-modals-manager": "workspace:*"
   },
   "devDependencies": {
+    "@radix-ui/react-dialog": "^1.3.1",
     "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "typescript": "catalog:",
