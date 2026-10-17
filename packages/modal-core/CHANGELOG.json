@@ -1,0 +1,20 @@
+{
+  "name": "@buildkitgg/modal-core",
+  "entries": [
+    {
+      "date": "Sat, 17 Oct 2026 21:18:16 GMT",
+      "version": "0.1.0",
+      "tag": "@buildkitgg/modal-core_v0.1.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/modal-core",
+            "commit": "5c98ca08da0a2b70ec2fc1b0cee84cd5cf2b7109",
+            "comment": "Introduce typed modal management with guarded dismissal, async forms, and interchangeable UI adapters."
+          }
+        ]
+      }
+    }
+  ]
+}

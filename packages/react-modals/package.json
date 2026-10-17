@@ -31,7 +31,7 @@
     "build": "tsc -p tsconfig.build.json",
     "check:types": "pnpm build && tsc --noEmit"
   },
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "devDependencies": {
     "react-dom": "19.2.7",

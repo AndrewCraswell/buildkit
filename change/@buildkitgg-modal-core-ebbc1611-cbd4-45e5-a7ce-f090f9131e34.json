@@ -1,7 +1,0 @@
-{
-  "type": "minor",
-  "comment": "Introduce typed modal management with guarded dismissal, async forms, and interchangeable UI adapters.",
-  "packageName": "@buildkitgg/modal-core",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}
