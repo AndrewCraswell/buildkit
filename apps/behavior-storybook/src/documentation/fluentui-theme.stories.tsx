@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite"
 import { PackageOverview } from "./PackageOverview.js"
 const meta = {
-  title: "Themes/fluentui-theme",
+  title: "Fluent UI/fluentui-theme",
   component: PackageOverview,
   args: { name: "fluentui-theme" },
   parameters: { layout: "fullscreen", controls: { disable: true } }

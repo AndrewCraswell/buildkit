@@ -17,9 +17,9 @@ export default definePreview({
           ["*", ["Overview", "*"]],
           "React",
           ["*", ["Overview", "*"]],
-          "Themes",
+          "shadcn",
           ["*", ["Overview", "*"]],
-          "Components",
+          "Fluent UI",
           ["*", ["Overview", "*"]]
         ],
         method: "alphabetical",

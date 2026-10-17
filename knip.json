@@ -34,6 +34,22 @@
     },
     "packages/fluentui-theme": {
       "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/modal-core": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react-modals": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/fluentui-modals-manager": {
+      "entry": ["src/index.tsx"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/shadcn-modals-manager": {
+      "entry": ["src/index.tsx", "src/styles.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
 }

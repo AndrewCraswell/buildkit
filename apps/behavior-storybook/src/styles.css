@@ -8,6 +8,72 @@
   --primary-foreground: #2e1065;
   --ring: #a78bfa;
 }
+.radix-example-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(0 0 0 / 40%);
+}
+.radix-example-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 50;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 20%);
+}
+.radix-example-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.radix-example-description {
+  color: var(--muted-foreground);
+}
+.radix-example-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.radix-example-dialog[data-state="open"],
+.radix-example-overlay[data-state="open"] {
+  animation: modal-example-enter 120ms ease-out;
+}
+.radix-example-dialog[data-state="closed"],
+.radix-example-overlay[data-state="closed"] {
+  animation: modal-example-exit 120ms ease-in;
+}
+@keyframes modal-example-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-example-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radix-example-dialog,
+  .radix-example-overlay {
+    animation: none !important;
+  }
+}
 .shadcn-demo {
   font-family: system-ui, sans-serif;
 }
@@ -61,4 +127,45 @@
 .preference-fields {
   display: grid;
   gap: 12px;
+}
+.modal-example-form {
+  display: grid;
+  gap: 16px;
+}
+.modal-example-field {
+  display: grid;
+  gap: 6px;
+}
+.modal-example-form [role="alert"] {
+  color: var(--destructive);
+}
+.shadcn-demo output {
+  overflow-wrap: anywhere;
+}
+.native-modal-example {
+  margin: auto;
+  padding: 24px;
+  max-width: min(440px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--foreground);
+}
+.native-modal-example::backdrop {
+  background: rgb(0 0 0 / 30%);
+}
+.native-modal-example h2 {
+  font-weight: 600;
+  font-size: 20px;
+}
+.native-modal-example p {
+  margin-block: 16px;
+}
+.native-modal-example button,
+.bk-docs button,
+.shadcn-demo > .actions > button:not([class]) {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
 }

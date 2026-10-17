@@ -8,6 +8,8 @@
 - [Package lifecycle](packages.md)
 - [Releases](releases.md)
 - [Public behavior APIs](public-apis.md)
+- [Modal architecture and lifecycle](modals.md)
+- [Typed modal forms and inferred state](modal-forms.md)
 - [Shared behavior packages and Fluent extraction plan](behavior-packages.md)
 
 Theme packages: [core](../packages/theme-core/README.md), [React](../packages/react-theme/README.md),
