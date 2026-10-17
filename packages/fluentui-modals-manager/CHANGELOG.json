@@ -1,0 +1,26 @@
+{
+  "name": "@buildkitgg/fluentui-modals-manager",
+  "entries": [
+    {
+      "date": "Sat, 17 Oct 2026 21:18:16 GMT",
+      "version": "0.1.0",
+      "tag": "@buildkitgg/fluentui-modals-manager_v0.1.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/fluentui-modals-manager",
+            "commit": "5c98ca08da0a2b70ec2fc1b0cee84cd5cf2b7109",
+            "comment": "Introduce typed modal management with guarded dismissal, async forms, and interchangeable UI adapters."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/fluentui-modals-manager",
+            "comment": "Bump @buildkitgg/react-modals to v0.1.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    }
+  ]
+}
