@@ -91,6 +91,30 @@ describe("modal lifecycle", () => {
     expect(() => store.subscribe(listener)).toThrow(/disposed/)
   })
 
+  it.each([false, true])(
+    "keeps later closing siblings until their own exit completes (nested: %s)",
+    async (isNested) => {
+      const store = createModalStore<string>()
+      const parent = isNested ? store.open({ defaultResult: false, createContent: () => "parent" }) : undefined
+      const first = store.open({ defaultResult: false, createContent: () => "first" })
+      const firstEntry = store.getSnapshot().at(-1)!
+      first.close(true)
+      const second = store.open({ defaultResult: false, createContent: () => "second" })
+      const secondEntry = store.getSnapshot().at(-1)!
+      expect(secondEntry.parentKey).toBe(parent?.key ?? null)
+      second.close(true)
+
+      firstEntry.finishExit()
+      expect(store.getSnapshot().map((entry) => entry.content)).toEqual(isNested ? ["parent", "second"] : ["second"])
+      expect(store.getSnapshot().at(-1)?.status).toBe("closing")
+      secondEntry.finishExit()
+      expect(store.getSnapshot().map((entry) => entry.content)).toEqual(isNested ? ["parent"] : [])
+      expect(await first).toBe(true)
+      expect(await second).toBe(true)
+      store.dispose()
+    }
+  )
+
   it("keeps settlement and notifications consistent when a subscriber throws", async () => {
     const store = createModalStore<string>()
     const handle = store.open({ defaultResult: 0, createContent: () => "a" })

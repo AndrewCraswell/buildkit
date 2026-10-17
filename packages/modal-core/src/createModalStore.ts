@@ -14,6 +14,17 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
   const records = new Map<number, RecordEntry<TContent>>()
   const listeners = new Set<() => void>()
 
+  function getBranchKeys(rootKey: number) {
+    const keys = new Set([rootKey])
+    // Parents are inserted before their descendants. Capture the branch before mutating records.
+    for (const [key, { entry }] of records) {
+      if (entry.parentKey !== null && keys.has(entry.parentKey)) {
+        keys.add(key)
+      }
+    }
+    return keys
+  }
+
   function publish() {
     snapshot = records.size ? Object.freeze(Array.from(records.values(), ({ entry }) => entry)) : empty
     const errors: unknown[] = []
@@ -58,8 +69,9 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
       if (!isActive()) {
         return
       }
+      const branchKeys = getBranchKeys(key)
       for (const [childKey, child] of Array.from(records).reverse()) {
-        if (childKey > key) {
+        if (childKey !== key && branchKeys.has(childKey)) {
           child.settleDefault()
         }
       }
@@ -135,8 +147,8 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
         return
       }
       // Descendants were settled when this entry closed. Never leave orphaned children.
-      for (const childKey of records.keys()) {
-        if (childKey >= key && records.get(childKey)?.entry.status === "closing") {
+      for (const childKey of getBranchKeys(key)) {
+        if (records.get(childKey)?.entry.status === "closing") {
           records.delete(childKey)
         }
       }
