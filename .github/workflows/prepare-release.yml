@@ -21,7 +21,7 @@ jobs:
           node-version: 24
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec beachball bump
-      - run: pnpm install --lockfile-only
+      - run: pnpm install
       - run: pnpm format
       - run: pnpm verify
       - name: Open release pull request
