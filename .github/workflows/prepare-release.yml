@@ -19,7 +19,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec beachball bump
       - run: pnpm install --lockfile-only
@@ -40,4 +39,4 @@ jobs:
           git add --all
           git commit -m 'chore: prepare package releases'
           git push origin "$branch"
-          gh pr create --base main --head "$branch" --title 'chore: prepare package releases' --body 'Beachball version and changelog updates. Full verification passed in the preparation workflow. Review and merge before running Publish package. GitHub does not trigger PR workflows for changes created with GITHUB_TOKEN.'
+          gh pr create --base main --head "$branch" --title 'chore: prepare package releases' --body 'Beachball version and changelog updates. Full verification passed in the preparation workflow. Review and merge before running Publish packages. GitHub does not trigger PR workflows for changes created with GITHUB_TOKEN.'

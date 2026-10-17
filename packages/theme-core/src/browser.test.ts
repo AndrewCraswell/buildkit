@@ -100,3 +100,12 @@ it("rejects foreign stores instead of exposing a preferences contract", () => {
   const store = createThemeStore()
   expect(() => connectBrowserTheme({ ...store, getSnapshot: () => store.getSnapshot() })).toThrow(TypeError)
 })
+
+it("rejects incomplete storage configuration before opening browser resources", () => {
+  const store = createThemeStore()
+  // @ts-expect-error Storage selection requires a key.
+  expect(() => connectBrowserTheme(store, { storage: "localStorage" })).toThrow(TypeError)
+  expect(() => connectBrowserTheme(store, { storageKey: "" })).toThrow(TypeError)
+  // @ts-expect-error Unknown storage mechanism.
+  expect(() => connectBrowserTheme(store, { storageKey: "theme", storage: "unknown" })).toThrow(TypeError)
+})

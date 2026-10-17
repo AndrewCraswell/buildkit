@@ -1,54 +1,92 @@
-name: Publish package
+name: Publish packages
 on:
   workflow_dispatch:
     inputs:
       package:
-        description: "Package directory under packages (for example shadcn-baseui-kit)"
+        description: "Package directory, or * for all public Buildkit packages (dependencies included)"
+        default: "*"
         required: true
         type: string
+      dry_run:
+        description: "Validate and preview without publishing"
+        default: true
+        type: boolean
 permissions:
   contents: read
 concurrency:
   group: npm-publish
   cancel-in-progress: false
 jobs:
-  publish:
+  preview:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate selection and prepared release
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, readdirSync, existsSync } from 'node:fs';
+          const directory = process.env.PACKAGE;
+          if (directory !== '*') {
+            if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(directory)) throw new Error('Invalid package directory');
+            const pkg = JSON.parse(readFileSync(`packages/${directory}/package.json`, 'utf8'));
+            if (pkg.private || pkg.name !== `@buildkitgg/${directory}`) throw new Error('Package is not public');
+          }
+          if (existsSync('change') && readdirSync('change').some(file => file.endsWith('.json'))) {
+            throw new Error('Pending Beachball changes: prepare and merge the release PR first');
+          }
+          NODE
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify
+      - name: Preview pending publications
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          git switch -C main "$GITHUB_SHA"
+          pnpm --filter-prod "@buildkitgg/$PACKAGE..." --sort -r publish --dry-run --access public --report-summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-preview
+          path: pnpm-publish-summary.json
+          if-no-files-found: ignore
+  publish:
+    needs: preview
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: npm
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
-      - name: Validate package selection
-        env:
-          PACKAGE: ${{ inputs.package }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync } from 'node:fs';
-          const directory = process.env.PACKAGE;
-          if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(directory)) throw new Error('Invalid package directory');
-          const pkg = JSON.parse(readFileSync(`packages/${directory}/package.json`, 'utf8'));
-          if (pkg.private || !pkg.name.startsWith('@buildkitgg/')) throw new Error('Package is not public');
-          console.log(`Release: ${pkg.name}@${pkg.version}`);
-          NODE
       - run: pnpm install --frozen-lockfile
-      - run: pnpm verify
-      - name: Pack reviewed version
+      - run: pnpm build
+      - name: Publish prepared versions in dependency order
         env:
           PACKAGE: ${{ inputs.package }}
         run: |
-          mkdir -p "$RUNNER_TEMP/release"
-          pnpm --dir "packages/$PACKAGE" pack --pack-destination "$RUNNER_TEMP/release"
+          git switch -C main "$GITHUB_SHA"
+          pnpm --filter-prod "@buildkitgg/$PACKAGE..." --sort -r publish --access public --provenance --report-summary --publish-wait-timeout 600000
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: npm-package
-          path: ${{ runner.temp }}/release/*.tgz
-      - name: Publish with npm trusted publishing
-        run: npm publish "$RUNNER_TEMP"/release/*.tgz --access public --provenance
+          name: published-packages
+          path: pnpm-publish-summary.json
+          if-no-files-found: ignore

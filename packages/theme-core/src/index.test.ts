@@ -41,6 +41,10 @@ describe("theme store", () => {
     expect(isTheme(null)).toBe(false)
   })
   it("rejects invalid calls from JavaScript", () => {
+    // @ts-expect-error Initial configuration is a runtime boundary too.
+    expect(() => createThemeStore({ defaultTheme: "invalid" })).toThrow(TypeError)
+    // @ts-expect-error A system appearance cannot itself be system.
+    expect(() => createThemeStore({ systemTheme: "system" })).toThrow(TypeError)
     const store = createThemeStore()
     // @ts-expect-error Intentional runtime boundary check.
     expect(() => store.setTheme("invalid")).toThrow(TypeError)

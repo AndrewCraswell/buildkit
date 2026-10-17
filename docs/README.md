@@ -7,6 +7,7 @@
 - [Preferred tools](tech-stack.md)
 - [Package lifecycle](packages.md)
 - [Releases](releases.md)
+- [Public behavior APIs](public-apis.md)
 - [Shared behavior packages and Fluent extraction plan](behavior-packages.md)
 
 Theme packages: [core](../packages/theme-core/README.md), [React](../packages/react-theme/README.md),

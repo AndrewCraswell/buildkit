@@ -5,14 +5,27 @@ export type Theme = "light" | "dark" | "system"
 export type ResolvedTheme = Exclude<Theme, "system">
 export type ThemeSnapshot = Readonly<{ theme: Theme; resolvedTheme: ResolvedTheme }>
 export type ThemeOptions = { defaultTheme?: Theme; systemTheme?: ResolvedTheme }
-export type ThemeStore = ReturnType<typeof createThemeStore>
+export type ThemeStore = {
+  reset(): void
+  getSnapshot(): ThemeSnapshot
+  getServerSnapshot(): ThemeSnapshot
+  subscribe(listener: () => void): () => void
+  setTheme(theme: Theme): void
+  setSystemTheme(theme: ResolvedTheme): void
+}
 
 export function isTheme(value: unknown): value is Theme {
   return value === "light" || value === "dark" || value === "system"
 }
 
 /** Creates isolated state. No browser effects or process-wide singleton. */
-export function createThemeStore({ defaultTheme = "system", systemTheme = "light" }: ThemeOptions = {}) {
+export function createThemeStore({ defaultTheme = "system", systemTheme = "light" }: ThemeOptions = {}): ThemeStore {
+  if (!isTheme(defaultTheme)) {
+    throw new TypeError("Unknown default theme")
+  }
+  if (systemTheme !== "light" && systemTheme !== "dark") {
+    throw new TypeError("Unknown system theme")
+  }
   let system = systemTheme
   const preferences = createPreferences<{ theme: Theme }>({ defaults: { theme: defaultTheme } })
   let snapshot: ThemeSnapshot = Object.freeze({

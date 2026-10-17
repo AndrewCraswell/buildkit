@@ -1,10 +1,13 @@
-import { createThemeStore, type ThemeOptions } from "@buildkitgg/theme-core"
-import { connectBrowserTheme, type BrowserThemeOptions } from "@buildkitgg/theme-core/browser"
+import { createThemeStore, type ThemeOptions, type ThemeStore } from "@buildkitgg/theme-core"
+import { connectBrowserTheme, type BrowserThemeOptions, type ThemeStorageOptions } from "@buildkitgg/theme-core/browser"
 
 export type ShadcnThemeOptions = ThemeOptions & BrowserThemeOptions
+export type ShadcnThemeStore = ThemeStore & { start(): () => void }
+export type ThemeInitScriptOptions = Pick<ThemeOptions, "defaultTheme"> & ThemeStorageOptions
+export type { Theme, ResolvedTheme, ThemeSnapshot } from "@buildkitgg/theme-core"
 
 /** Construct safely on the server; start only at the browser application boundary. */
-export function createShadcnTheme(options: ShadcnThemeOptions = {}) {
+export function createShadcnTheme(options: ShadcnThemeOptions = {}): ShadcnThemeStore {
   const store = createThemeStore(options)
   let stop: (() => void) | undefined
   let owners = 0
@@ -55,7 +58,7 @@ export function getThemeInitScript({
   defaultTheme = "system",
   storageKey,
   storage = "localStorage"
-}: Pick<ShadcnThemeOptions, "defaultTheme" | "storageKey" | "storage"> = {}) {
+}: ThemeInitScriptOptions = {}) {
   const config = JSON.stringify({ defaultTheme, storageKey, storage }).replaceAll("<", "\\u003c")
   return `(()=>{const c=${config};let t=c.defaultTheme;try{if(c.storageKey!==undefined){const s=JSON.parse(window[c.storage].getItem(c.storageKey)||'{}').theme;if(s==='light'||s==='dark'||s==='system')t=s}}catch{}const r=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.classList.toggle('dark',r==='dark');document.documentElement.style.colorScheme=r})()`
 }

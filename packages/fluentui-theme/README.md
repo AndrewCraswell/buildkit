@@ -1,6 +1,6 @@
 # @buildkitgg/fluentui-theme
 
-Fluent UI v9 themes backed by Buildkit's framework-independent theme and preferences stores. Private, unpublished.
+Fluent UI v9 themes backed by Buildkit's framework-independent theme and preferences stores.
 
 ```tsx
 import { createFluentTheme, FluentThemeProvider, useTheme } from "@buildkitgg/fluentui-theme"

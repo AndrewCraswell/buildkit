@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite"
-import { Documentation, Code, StoryLink } from "./Documentation.js"
+import { Documentation, StoryLink } from "./Documentation.js"
 import { packages } from "./packages.js"
 function WelcomePage() {
   return (
@@ -23,17 +23,13 @@ function WelcomePage() {
         </li>
       </ol>
       <h2>Package directory</h2>
-      <p>
-        The component kit is published. The behavior packages are implemented locally and remain unpublished while their
-        APIs are reviewed.
-      </p>
       <div className="bk-table">
         <table>
           <thead>
             <tr>
               <th scope="col">Package</th>
               <th scope="col">Layer</th>
-              <th scope="col">Availability</th>
+              <th scope="col">Purpose</th>
             </tr>
           </thead>
           <tbody>
@@ -43,7 +39,7 @@ function WelcomePage() {
                   <StoryLink id={`${item.group.toLowerCase()}-${item.name}--overview`}>{item.name}</StoryLink>
                 </td>
                 <td>{item.group}</td>
-                <td>{item.name === "shadcn-baseui-kit" ? "Published 0.1.0" : "Unpublished"}</td>
+                <td>{item.summary}</td>
               </tr>
             ))}
           </tbody>
@@ -52,8 +48,7 @@ function WelcomePage() {
       <h2>Explore with confidence</h2>
       <p>
         Start with a package overview, then explore its focused examples. Persistent examples use dedicated demo storage
-        keys and provide reset controls. Source links lead to the repository; unreleased work may not be on its default
-        branch yet.
+        keys and provide reset controls. Each package overview links to its source and README.
       </p>
     </Documentation>
   )
@@ -61,40 +56,50 @@ function WelcomePage() {
 function ArchitecturePage() {
   return (
     <Documentation
-      title="Small packages. Clear boundaries."
-      summary="Core behavior stays independent of React and the UI library you choose."
+      title="Shared behavior. Flexible integrations."
+      summary="Buildkit extracts common application patterns into independent cores, then adapts them to the framework and UI library your app uses."
     >
-      <h2>Three layers</h2>
-      <ol>
-        <li>
-          <strong>Core:</strong> state, defaults, subscriptions, and persistence.
-        </li>
-        <li>
-          <strong>React:</strong> typed hooks using useSyncExternalStore. Your app owns its stores.
-        </li>
-        <li>
-          <strong>UI adapters:</strong> shadcn document styling or Fluent native provider integration.
-        </li>
-      </ol>
-      <Code>
-        {
-          "preferences-core → theme-core → shadcn-theme\n                    ↓\n                react-theme → fluentui-theme\npreferences-core → react-preferences"
-        }
-      </Code>
-      <h2>Defaults and user choices</h2>
+      <h2>How the layers fit together</h2>
+      <figure className="bk-architecture">
+        <div className="bk-architecture-layer">
+          <span className="bk-eyebrow">UI integration</span>
+          <h3>Match the library</h3>
+          <p>Connect shared behavior to components, styling, and library conventions.</p>
+        </div>
+        <div className="bk-architecture-arrow" aria-hidden="true">
+          ↓
+        </div>
+        <div className="bk-architecture-layer">
+          <span className="bk-eyebrow">Framework bindings</span>
+          <h3>Fit the framework</h3>
+          <p>Adapt subscriptions and lifecycle to the framework’s rendering model.</p>
+        </div>
+        <div className="bk-architecture-arrow" aria-hidden="true">
+          ↓
+        </div>
+        <div className="bk-architecture-layer bk-architecture-core">
+          <span className="bk-eyebrow">Core</span>
+          <h3>Own the behavior</h3>
+          <p>Define state, operations, and rules independently of frameworks and UI libraries.</p>
+        </div>
+        <figcaption>
+          Arrows mean “builds on.” An integration can use the core directly when framework bindings aren’t needed.
+        </figcaption>
+      </figure>
+      <h2>Extract once, adapt where needed</h2>
       <p>
-        Themes default to system. Set defaultTheme to light or dark for another starting point. A saved choice takes
-        precedence. reset() removes the override and restores the app default.
+        Common behavior belongs in the core. Integrations add only what their framework or library requires, keeping the
+        underlying rules consistent across applications.
       </p>
-      <h2>Storage and server rendering</h2>
+      <h2>Keep dependencies pointing inward</h2>
       <p>
-        localStorage synchronizes same-origin tabs. sessionStorage is tab-specific. Create stores per server request,
-        keep initial server/client defaults consistent, and connect browser effects at the app boundary.
+        Integrations depend on core behavior. Core packages never depend on the frameworks or UI libraries that use
+        them. This keeps the behavior reusable as application technology changes.
       </p>
-      <h2>Use your existing components</h2>
+      <h2>Adopt only what your app needs</h2>
       <p>
-        The shadcn adapter supports registry components using .dark. Fluent UI is supplied by the consuming app as a
-        peer. Neither adapter requires the Buildkit component kit.
+        Use a core directly or choose an integration that fits your app. Public APIs describe the behavior consumers
+        need; internal composition stays behind that API.
       </p>
     </Documentation>
   )

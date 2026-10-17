@@ -7,9 +7,6 @@ export function PackageOverview({ name }: { name: (typeof packages)[number]["nam
   }
   return (
     <Documentation title={`@buildkitgg/${entry.name}`} summary={entry.summary}>
-      <p>
-        <strong>{entry.name === "shadcn-baseui-kit" ? "Published: 0.1.0" : "Unpublished: API under review"}</strong>
-      </p>
       <h2>Usage</h2>
       <Code>{entry.code}</Code>
       <h2>API at a glance</h2>

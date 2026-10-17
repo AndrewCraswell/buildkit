@@ -2,10 +2,22 @@ import { connectPreferencesStorage } from "@buildkitgg/preferences-core/browser"
 import type { ThemeStore } from "./index.js"
 import { themePreferences } from "./internal.js"
 
-export type BrowserThemeOptions = { window?: Window; storageKey?: string; storage?: "localStorage" | "sessionStorage" }
+export type ThemeStorageOptions =
+  | { storageKey?: undefined; storage?: never }
+  | { storageKey: string; storage?: "localStorage" | "sessionStorage" }
+export type BrowserThemeOptions = { window?: Window } & ThemeStorageOptions
 
 /** Connect once per store. Omit storageKey for memory-only preferences. */
 export function connectBrowserTheme(store: ThemeStore, options: BrowserThemeOptions = {}) {
+  if (options.storageKey !== undefined && (typeof options.storageKey !== "string" || !options.storageKey.length)) {
+    throw new TypeError("Storage requires a nonempty key")
+  }
+  if (options.storage !== undefined && options.storageKey === undefined) {
+    throw new TypeError("Storage requires a key")
+  }
+  if (options.storage !== undefined && options.storage !== "localStorage" && options.storage !== "sessionStorage") {
+    throw new TypeError("Unknown storage mechanism")
+  }
   const browser = options.window ?? (typeof window === "undefined" ? undefined : window)
   if (!browser) {
     return () => {

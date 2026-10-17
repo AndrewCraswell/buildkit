@@ -113,3 +113,48 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.bk-architecture {
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid #dbe3ec;
+  border-radius: 12px;
+  background: #f4f7fa;
+}
+.bk-architecture-layer {
+  padding: 18px 24px;
+  border: 1px solid #c7d5e3;
+  border-radius: 8px;
+  background: #fff;
+}
+.bk-architecture-layer h3 {
+  margin: 4px 0;
+  font-size: 20px;
+  font-weight: 650;
+}
+.bk-architecture-layer p {
+  margin: 4px 0 0;
+}
+.bk-architecture-core {
+  border-color: #6491b8;
+  background: #eaf3fb;
+}
+.bk-architecture-arrow {
+  color: #526b81;
+  text-align: center;
+  font-size: 28px;
+  line-height: 1.5;
+}
+.bk-architecture figcaption {
+  margin-top: 20px;
+  color: #506176;
+  font-size: 14px;
+}
+@media (max-width: 600px) {
+  .bk-architecture {
+    padding: 16px;
+  }
+  .bk-architecture-layer {
+    padding: 16px;
+  }
+}

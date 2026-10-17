@@ -13,9 +13,8 @@ instance. Core contracts must not import ReactNode, Fluent props, browser global
 - `@buildkitgg/theme-core`: uses preferences-core for overrides, then adds system resolution and theme validation.
   Optional `/browser` connects device settings and local storage without applying a UI theme.
 
-Theme storage now uses the same JSON override object (`{"theme":"dark"}`) as preferences. These packages are unreleased;
-the earlier plain-string prototype format is replaced, not maintained as a second format. Invalid theme strings fall
-back to the app default when resolving appearance. No general preferences API can infer enum constraints from types.
+Theme storage uses the same JSON override object (`{"theme":"dark"}`) as preferences. Invalid theme strings fall back to
+the app default when resolving appearance. No general preferences API can infer enum constraints from types.
 
 - `@buildkitgg/react-theme`: `useTheme(store)` via `useSyncExternalStore`, with no context provider.
 - `@buildkitgg/shadcn-theme`: document classes, color-scheme, connection lifecycle and first-paint script.

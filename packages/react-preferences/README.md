@@ -1,6 +1,6 @@
 # @buildkitgg/react-preferences
 
-Provider-free React hooks for `@buildkitgg/preferences-core`. Private during incubation.
+Provider-free React hooks for `@buildkitgg/preferences-core`.
 
 ```tsx
 import { usePreference, usePreferences } from "@buildkitgg/react-preferences"

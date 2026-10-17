@@ -1,7 +1,7 @@
 # @buildkitgg/preferences-core
 
 Typed preferences with defaults, user overrides, subscriptions, persistence and JSON backup. No React or validation
-library dependency. Private during incubation.
+library dependency.
 
 ```ts
 import { createPreferences } from "@buildkitgg/preferences-core"

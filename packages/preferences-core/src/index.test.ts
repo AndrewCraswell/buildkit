@@ -1,5 +1,20 @@
-import { expect, it, vi } from "vitest"
+import { expect, expectTypeOf, it, vi } from "vitest"
 import { createPreferences } from "./index.js"
+
+it("infers preference types and preserves explicit generic keys", () => {
+  const inferred = createPreferences({ defaults: { pageSize: 25, compact: false } })
+  inferred.set("pageSize", 50)
+  expectTypeOf(inferred.get("pageSize")).toEqualTypeOf<number | undefined>()
+  expectTypeOf(inferred.get("compact")).toEqualTypeOf<boolean | undefined>()
+  // @ts-expect-error Only declared names can be read.
+  inferred.get("unknown")
+  // @ts-expect-error A boolean preference cannot receive a number.
+  expect(() => inferred.set("compact", 1)).toThrow(TypeError)
+  const explicit = createPreferences<{ mode: "light" | "dark"; name: string }>({ defaults: { mode: "light" } })
+  explicit.set("name", "Ada")
+  expectTypeOf(explicit.get("mode")).toEqualTypeOf<"light" | "dark" | undefined>()
+  expectTypeOf(explicit.get("name")).toEqualTypeOf<string | undefined>()
+})
 
 it("uses defaults, optional keys, resets, and stable snapshots", () => {
   const store = createPreferences<{ theme: "system" | "dark"; pageSize: number }>({ defaults: { theme: "system" } })

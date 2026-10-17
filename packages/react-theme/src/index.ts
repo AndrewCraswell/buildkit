@@ -1,3 +1,4 @@
 "use client"
 
-export { useTheme } from "./useTheme.js"
+export { useTheme, type UseThemeResult } from "./useTheme.js"
+export type { Theme, ResolvedTheme, ThemeSnapshot, ThemeStore } from "@buildkitgg/theme-core"
