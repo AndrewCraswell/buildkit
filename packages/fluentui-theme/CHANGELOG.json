@@ -1,0 +1,32 @@
+{
+  "name": "@buildkitgg/fluentui-theme",
+  "entries": [
+    {
+      "date": "Sat, 17 Oct 2026 02:17:27 GMT",
+      "version": "0.1.0",
+      "tag": "@buildkitgg/fluentui-theme_v0.1.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "",
+            "package": "@buildkitgg/fluentui-theme",
+            "commit": "392b92f134fcaab5812d7baef8a954a9675b5f55",
+            "comment": "Introduce the typed preferences and theme APIs, with framework-independent stores and framework and UI integrations."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/fluentui-theme",
+            "comment": "Bump @buildkitgg/theme-core to v0.1.0",
+            "commit": "not available"
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/fluentui-theme",
+            "comment": "Bump @buildkitgg/react-theme to v0.1.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    }
+  ]
+}
