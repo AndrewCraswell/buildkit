@@ -21,7 +21,7 @@
     "oxlint": "^1.72.0",
     "typescript": "catalog:",
     "vitest": "4.1.11",
-    "@vitest/coverage-v8": "4.1.11"
+    "@vitest/coverage-v8": "5.0.4"
   },
   "scripts": {
     "lint": "oxlint --max-warnings=0",

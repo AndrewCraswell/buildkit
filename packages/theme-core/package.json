@@ -36,7 +36,7 @@
     "@repo/typescript-config": "workspace:*",
     "@repo/oxlint-config": "workspace:*",
     "vitest": "4.1.11",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "5.0.4",
     "typescript": "catalog:"
   },
   "dependencies": {

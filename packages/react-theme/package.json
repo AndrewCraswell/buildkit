@@ -37,7 +37,7 @@
     "@testing-library/react": "^16.3.3",
     "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "5.0.4",
     "typescript": "catalog:",
     "vitest": "4.1.11",
     "@types/react": "^19.3.0",
