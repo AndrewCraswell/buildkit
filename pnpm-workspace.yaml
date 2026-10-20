@@ -1,6 +1,6 @@
 packages:
   - apps/*
-  - packages/*
+  - packages/*/*
 nodeLinker: hoisted
 verifyDepsBeforeRun: error
 catalog:

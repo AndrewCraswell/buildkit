@@ -25,7 +25,8 @@ jobs:
         env:
           BASE_BRANCH: ${{ github.base_ref }}
         run: pnpm check:change --branch "origin/$BASE_BRANCH"
-      - run: pnpm verify
+      - name: Verify code, public API baselines, and builds
+        run: pnpm verify
   integration:
     strategy:
       fail-fast: false

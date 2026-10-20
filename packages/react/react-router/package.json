@@ -1,0 +1,75 @@
+{
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "name": "@buildkitgg/react-router",
+  "description": "URL-driven tabs and panels with router-owned navigation.",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-router": "^8.4.0"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@buildkitgg/router-core": "workspace:*",
+    "@buildkitgg/react-routing": "workspace:*"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "docs/*.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint --max-warnings=0",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "check:types": "pnpm build && tsc --noEmit"
+  },
+  "version": "0.0.0",
+  "type": "module",
+  "devDependencies": {
+    "react-dom": "19.2.7",
+    "@testing-library/react": "^16.3.3",
+    "@repo/oxlint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@vitest/coverage-v8": "4.1.11",
+    "typescript": "catalog:",
+    "vitest": "4.1.11",
+    "@types/react": "^19.3.0",
+    "@types/node": "^24.13.2",
+    "react": "19.2.7",
+    "happy-dom": "^21.0.1",
+    "@types/react-dom": "^19.3.0",
+    "react-router": "^8.4.0"
+  },
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndrewCraswell/buildkit.git",
+    "directory": "packages/react/react-router"
+  },
+  "homepage": "https://github.com/AndrewCraswell/buildkit/tree/main/packages/react/react-router#readme",
+  "bugs": {
+    "url": "https://github.com/AndrewCraswell/buildkit/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "router",
+    "tabs",
+    "panels",
+    "typescript",
+    "buildkit"
+  ],
+  "private": true
+}

@@ -1,0 +1,44 @@
+export type AlertIntent = "info" | "success" | "warning" | "error"
+export type AlertAction<T> = Readonly<{ label: T; onClick(): void }>
+export type AlertOptions<T = string> = {
+  id?: string
+  title?: T
+  body?: T
+  intent?: AlertIntent
+  action?: AlertAction<T>
+  dismissible?: boolean
+  onDismiss?(): void
+}
+export type AlertPatch<T = string> = Partial<Omit<AlertOptions<T>, "id">>
+export type AlertEntry<T = string> = Readonly<
+  Omit<AlertOptions<T>, "id" | "intent" | "dismissible"> & {
+    id: string
+    region: string
+    key: number
+    intent: AlertIntent
+    dismissible: boolean
+  }
+>
+export type AlertHandle<T = string> = {
+  readonly id: string
+  readonly region: string
+  readonly isActive: boolean
+  update(patch: AlertPatch<T>): void
+  dismiss(): void
+}
+export type AlertStore<T = string> = {
+  add(options: AlertOptions<T>, region?: string): AlertHandle<T>
+  info(options: Omit<AlertOptions<T>, "intent">, region?: string): AlertHandle<T>
+  success(options: Omit<AlertOptions<T>, "intent">, region?: string): AlertHandle<T>
+  warning(options: Omit<AlertOptions<T>, "intent">, region?: string): AlertHandle<T>
+  error(options: Omit<AlertOptions<T>, "intent">, region?: string): AlertHandle<T>
+  getSnapshot(region?: string): readonly AlertEntry<T>[]
+  getServerSnapshot(): readonly AlertEntry<T>[]
+  subscribe(listener: () => void, region?: string): () => void
+  isActive(id: string, region?: string): boolean
+  update(id: string, patch: AlertPatch<T>, region?: string): void
+  dismiss(id: string, region?: string): void
+  dismissAll(region?: string): void
+  flush(): void
+  dispose(): void
+}

@@ -1,41 +1,33 @@
 import type { Meta, StoryObj } from "@storybook/react-vite"
 import { Documentation, StoryLink } from "./Documentation.js"
-import { packages } from "./packages.js"
+import { packages, packageOverviewId } from "./packages.js"
 function WelcomePage() {
   return (
     <Documentation
       title="Buildkit"
-      summary="TypeScript packages for preferences, themes, modal management, and UI components."
+      summary="TypeScript packages for preferences, themes, modals, alerts, routing, and UI components."
     >
       <p>
         Core packages are framework agnostic. React packages add bindings. The shadcn and Fluent UI folders contain UI
         integrations.
       </p>
-      <h2>Package directory</h2>
-      <div className="bk-table">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Package</th>
-              <th scope="col">Group</th>
-              <th scope="col">Purpose</th>
-            </tr>
-          </thead>
-          <tbody>
-            {packages.map((item) => (
-              <tr key={item.name}>
-                <td>
-                  <StoryLink id={`${item.group.toLowerCase().replaceAll(" ", "-")}-${item.name}--overview`}>
-                    {item.name}
+      {(["Core", "React", "shadcn", "Fluent UI", "Tooling"] as const).map((group) => (
+        <section className="bk-package-group" key={group}>
+          <h2>{group}</h2>
+          <div className="bk-package-grid">
+            {packages
+              .filter((item) => item.group === group)
+              .map((item) => (
+                <div className="bk-package-link" key={item.name}>
+                  <StoryLink id={packageOverviewId(item)}>
+                    {item.name} <span aria-hidden="true">↗</span>
                   </StoryLink>
-                </td>
-                <td>{item.group}</td>
-                <td>{item.summary}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  <p>{item.summary}</p>
+                </div>
+              ))}
+          </div>
+        </section>
+      ))}
     </Documentation>
   )
 }

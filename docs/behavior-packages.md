@@ -28,12 +28,12 @@ are explicit and disposable. TypeScript declarations accompany each package's co
 ## Existing Fluent implementations: extraction plan
 
 Review of the four local repositories in `D:/msft` informed these boundaries. The original repositories remain
-unchanged. Modal packages are implemented in Buildkit; other suggested package names remain provisional.
+unchanged. Modal, alert, and routing packages are implemented in Buildkit; form package names remain provisional.
 
 | Existing implementation                                                                                     | Extractable behavior                                                                                                                                              | Keep in adapters                                                                                                                                                     |
 | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fluentui-modal-manager/src/ModalManager.tsx` and `ModalManager.types.ts`                                   | `modal-core`: stack snapshots, handles, duplicate-ID policy, updates, settlement, and open/closing lifecycle                                                      | React render callbacks and ReactNode content; Fluent DialogModalType and surface props; built-in confirm/alert bodies and animation completion                       |
-| `fluentui-message-bar-manager/src/MessageBarManager.ts`                                                     | `alert-core`: region queues, IDs, replacement, handles, timers, update/dismiss/flush semantics and notifications                                                  | ReactNode title/body/action labels and Fluent surfaces; shadcn Alert composition and dismissal controls                                                              |
+| `fluentui-message-bar-manager/src/MessageBarManager.ts`                                                     | `alert-core`: region queues, IDs, replacement, handles, update/dismiss/flush semantics and notifications                                                          | ReactNode title/body/action labels and Fluent surfaces; shadcn Alert composition and dismissal controls                                                              |
 | `fluentui-rhf-inputs/src/utils/getControlledComponentProps.ts` and controlled inputs                        | Form-library adapters for typed values, field state, validation, blur/ref/handler composition; extract only genuinely independent value transformations into core | RHF Controller, FieldPath and rules stay RHF-specific; Fluent FieldProps and `(event, data)` mapping stay Fluent-specific; shadcn controls get their own UI mappings |
 | `fluentui-react-router/src/hooks/useRoutePanel.ts`, `useTabRoutes.ts`, and `prefetch/routePrefetchStore.ts` | Route destination/default policy and reusable prefetch caching where independent of router APIs                                                                   | React Router matching/navigation and route objects; Fluent event types and link shims; shadcn rendering and event signatures                                         |
 
@@ -42,9 +42,10 @@ unchanged. Modal packages are implemented in Buildkit; other suggested package n
 1. Modal lifecycles are implemented in `modal-core`, `react-modals`, `shadcn-modals-manager`, and
    `fluentui-modals-manager`. See [architecture and lifecycle](modals.md) for extraction decisions and the adapter
    contract.
-2. Extract message-bar queues: use a generic content payload so core never imports React. Preserve region-scoped
-   subscriptions, duplicate-ID replacement, timer cancellation, and the distinction between dismiss and flush.
-3. Split router integrations: derive tab and panel state from the URL, rather than retaining a second selection state.
+2. Alert packages use generic content, region-scoped subscriptions, immutable snapshots, replacement, and distinct
+   dismiss/flush semantics. See [alert architecture](alerts.md); timed feedback uses native toast APIs.
+3. Router tabs and panels are implemented in router-core, react-routing, react-router, and tanstack-router. See
+   [routing](routing.md). They derive tab and panel state from the URL, rather than retaining a second selection state.
    Preserve query-string policy, route exclusions, modified-click semantics, and direct-link dismissal destinations.
    Keep React Router's matching semantics in its adapter rather than reimplementing its route parser.
 4. Split form bindings by field family. Preserve generics, refs, validation precedence, handler composition, and value
@@ -54,8 +55,8 @@ unchanged. Modal packages are implemented in Buildkit; other suggested package n
    contracts after compatibility and publishing decisions are made. Reuse their existing behavioral tests to protect
    extraction semantics; do not duplicate upstream UI-library suites.
 
-Toast queues remain in scope, but no standalone toast-manager implementation was supplied among these four repos.
-Evaluate shared queue mechanics after the alert extraction; keep toast timing and dismissal policies distinct.
+Native Fluent, Base UI, and Sonner toast managers already provide queues. No shared toast core is needed; see
+[the research and package decision](alerts.md).
 
 Avoid a universal behavior package or mandatory singleton. Split by domain and do not publish empty abstractions merely
 to fill a package matrix. The Fluent theme adapter renders FluentProvider while selection remains in the core store.

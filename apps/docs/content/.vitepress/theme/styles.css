@@ -1,0 +1,30 @@
+:root {
+  --vp-c-brand-1: #2563eb;
+  --vp-c-brand-2: #1d4ed8;
+  --vp-c-brand-3: #2563eb;
+  --vp-c-brand-soft: #2563eb12;
+  --vp-font-family-base: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --vp-font-family-mono: "Cascadia Code", Consolas, monospace;
+}
+.dark {
+  --vp-c-brand-1: #8ab4ff;
+  --vp-c-brand-2: #a8c7ff;
+  --vp-c-brand-3: #3b82f6;
+  --vp-c-brand-soft: #3b82f61f;
+}
+.VPDoc h1 {
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+.vp-doc table {
+  width: 100%;
+}
+.vp-doc td,
+.vp-doc th {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .vp-doc pre code {
+    font-size: 11px;
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "name": "@buildkitgg/fluentui-modals-manager",
+  "description": "Typed Fluent UI modal management with confirmations, async forms, and nested dialogs.",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "@fluentui/react-components": "^9.74.9",
+    "react-dom": "^19.2.0"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@buildkitgg/react-modals": "workspace:*"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "docs/*.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint --max-warnings=0",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "check:types": "pnpm build && tsc --noEmit"
+  },
+  "version": "0.1.0",
+  "type": "module",
+  "devDependencies": {
+    "react-dom": "19.2.7",
+    "@testing-library/react": "^16.3.3",
+    "@repo/oxlint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@vitest/coverage-v8": "4.1.11",
+    "typescript": "catalog:",
+    "vitest": "4.1.11",
+    "@types/react": "^19.3.0",
+    "@types/node": "^24.13.2",
+    "react": "19.2.7",
+    "happy-dom": "^21.0.1",
+    "@types/react-dom": "^19.3.0",
+    "@fluentui/react-components": "^9.74.9"
+  },
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndrewCraswell/buildkit.git",
+    "directory": "packages/fluentui/fluentui-modals-manager"
+  },
+  "homepage": "https://github.com/AndrewCraswell/buildkit/tree/main/packages/fluentui/fluentui-modals-manager#readme",
+  "bugs": {
+    "url": "https://github.com/AndrewCraswell/buildkit/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "react",
+    "fluentui",
+    "modal",
+    "dialog",
+    "typescript",
+    "buildkit"
+  ]
+}

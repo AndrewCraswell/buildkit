@@ -1,99 +1,108 @@
 import { createPreferences } from "@buildkitgg/preferences-core"
+import { connectPreferencesStorage } from "@buildkitgg/preferences-core/browser"
 import { usePreference } from "@buildkitgg/react-preferences"
-import {
-  Button,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  Input,
-  Label,
-  Textarea
-} from "@buildkitgg/shadcn-baseui-kit"
-import { useState } from "react"
-
+import { Button, Input, Label, Textarea, NativeSelect, NativeSelectOption } from "@buildkitgg/shadcn-baseui-kit"
+import { ExampleResult } from "@repo/storybook-config/examples"
+import { useEffect, useState } from "react"
+export type PreferenceScenario = "defaults" | "optional" | "local" | "session" | "json"
 type AppPreferences = { pageSize: number; displayName: string }
-const preferences = createPreferences<AppPreferences>({
-  defaults: { pageSize: 25 },
-  storage: "localStorage",
-  key: "buildkit-preferences-preview"
-})
-const session = createPreferences({
-  defaults: { compact: false },
-  storage: "sessionStorage",
-  key: "buildkit-session-preview"
-})
-
-export function PreferencesDemo() {
+export function PreferencesDemo({ scenario = "defaults" }: { scenario?: PreferenceScenario }) {
+  const [preferences] = useState(() => createPreferences<AppPreferences>({ defaults: { pageSize: 25 } }))
+  useEffect(() => {
+    if (scenario === "local" || scenario === "session") {
+      return connectPreferencesStorage(preferences, {
+        storage: scenario === "local" ? "localStorage" : "sessionStorage",
+        key: "buildkit-example-" + scenario
+      })
+    }
+  }, [preferences, scenario])
   const [pageSize, setPageSize] = usePreference(preferences, "pageSize")
   const [displayName, setDisplayName] = usePreference(preferences, "displayName")
-  const [compact, setCompact] = usePreference(session, "compact")
-  const [json, setJson] = useState("{}")
-  const [message, setMessage] = useState("")
-  function importJson(mode: "merge" | "replace") {
+  const [json, setJson] = useState('{"pageSize":50}')
+  const [message, setMessage] = useState("No import applied")
+  let resultLabel = "Rows per page"
+  let result: string | number | undefined = pageSize
+  if (scenario === "json") {
+    resultLabel = "Import / export"
+    result = message
+  } else if (scenario === "optional") {
+    resultLabel = "Current value"
+    result = displayName === undefined ? "undefined" : JSON.stringify(displayName)
+  }
+  function onImport() {
     try {
-      preferences.importJson(json, { mode })
-      setMessage(mode === "merge" ? "Preferences merged." : "Preferences replaced.")
+      preferences.importJson(json)
+      setMessage("Preferences imported")
     } catch {
-      setMessage("Could not import preferences. Use a JSON object with valid value types.")
+      setMessage("Invalid JSON. Enter an object with valid preference values.")
     }
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Preferences</CardTitle>
-        <CardDescription>App defaults and your choices, with JSON backup and restore.</CardDescription>
-      </CardHeader>
-      <CardContent className="preference-fields">
-        <Label htmlFor="display-name">Display name (no default)</Label>
-        <Input id="display-name" value={displayName ?? ""} onChange={(event) => setDisplayName(event.target.value)} />
-        <p>Display name: {displayName === undefined ? "Not set" : displayName}</p>
-        <div className="actions">
-          <Button variant="outline" onClick={() => setPageSize(pageSize === 50 ? 25 : 50)}>
-            Rows per page: {pageSize}
-          </Button>
-          <Button variant="outline" aria-pressed={compact ?? false} onClick={() => setCompact(!compact)}>
-            Compact view (this tab)
-          </Button>
-        </div>
-        <Label htmlFor="preferences-json">Preferences JSON</Label>
-        <Textarea id="preferences-json" value={json} onChange={(event) => setJson(event.target.value)} rows={4} />
-        <div className="actions">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setJson(preferences.exportJson())
-              setMessage("User overrides exported.")
-            }}
-          >
-            Export JSON
-          </Button>
-          <Button variant="outline" onClick={() => importJson("merge")}>
-            Merge JSON
-          </Button>
-          <Button variant="outline" onClick={() => importJson("replace")}>
-            Replace from JSON
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              preferences.resetAll()
-              setMessage("Preferences reset to defaults.")
-            }}
-          >
-            Reset preferences
-          </Button>
-        </div>
-        <output aria-live="polite">{message}</output>
-      </CardContent>
-    </Card>
+    <section>
+      <div className="bk-settings">
+        {scenario === "optional" ? (
+          <>
+            <div className="bk-field">
+              <Label htmlFor="display-name">Display name</Label>
+              <Input
+                id="display-name"
+                placeholder="Enter your name"
+                value={displayName ?? ""}
+                onChange={(event) => setDisplayName(event.target.value)}
+              />
+            </div>
+            <div className="actions">
+              <Button variant="outline" onClick={() => preferences.reset("displayName")}>
+                Reset name
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="bk-setting-row">
+            <div>
+              <p className="bk-item-title">Rows per page</p>
+              <p className="bk-item-description">Choose how many projects appear in a list.</p>
+            </div>
+            <NativeSelect
+              aria-label="Rows per page"
+              value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+            >
+              <NativeSelectOption value={10}>10 rows</NativeSelectOption>
+              <NativeSelectOption value={25}>25 rows</NativeSelectOption>
+              <NativeSelectOption value={50}>50 rows</NativeSelectOption>
+            </NativeSelect>
+          </div>
+        )}
+        {scenario === "json" && (
+          <>
+            <div className="bk-field">
+              <Label htmlFor="preferences-json">Preference overrides</Label>
+              <Textarea id="preferences-json" value={json} onChange={(event) => setJson(event.target.value)} rows={3} />
+            </div>
+            <div className="actions">
+              <Button onClick={onImport}>Import JSON</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setJson(preferences.exportJson())
+                  setMessage("Current overrides exported")
+                }}
+              >
+                Export JSON
+              </Button>
+            </div>
+          </>
+        )}
+        {scenario !== "optional" && scenario !== "json" && (
+          <div className="actions">
+            <Button variant="outline" onClick={() => preferences.reset("pageSize")}>
+              Restore default
+            </Button>
+          </div>
+        )}
+      </div>
+      <ExampleResult label={resultLabel}>{result}</ExampleResult>
+    </section>
   )
-}
-
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    preferences.dispose()
-    session.dispose()
-  })
 }

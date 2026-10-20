@@ -1,5 +1,5 @@
-import { useModals } from "@buildkitgg/react-modals"
 import type { ModalManager } from "@buildkitgg/react-modals"
+import { ExampleResult } from "@repo/storybook-config/examples"
 import { useState } from "react"
 import type { ComponentType, ReactNode } from "react"
 import { createProfileModal } from "./createProfileModal.js"
@@ -9,6 +9,7 @@ export type ExampleButtonProps = {
   onClick?: () => void
   type?: "button" | "submit"
   disabled?: boolean
+  variant?: "default" | "outline"
 }
 export type ExampleInputProps = {
   id: string
@@ -18,8 +19,46 @@ export type ExampleInputProps = {
   disabled?: boolean
   required?: boolean
 }
-export type ModalExampleScenario = { scenario?: "all" | "form" | "state" }
-const scenarioTitles = { all: "Modal management", form: "Typed form", state: "Inferred state" }
+export type ModalScenario =
+  | "confirmation"
+  | "alert"
+  | "nested"
+  | "required"
+  | "form"
+  | "state"
+  | "async"
+  | "guard"
+  | "external"
+export type ModalExampleScenario = { scenario?: ModalScenario }
+const modalDescriptions = {
+  confirmation: "Await a boolean result from a confirmation dialog. Cancel keeps the draft.",
+  alert: "Wait for an acknowledgment before continuing an application workflow.",
+  nested: "Open a confirmation from another dialog without losing the parent.",
+  required: "Keep a dialog open until its explicit close action is used.",
+  form: "Edit a profile and return the saved object to the caller.",
+  state: "Pass initial values into a modal and return its updated state.",
+  async: "Keep the form open after a failed save, then retry without losing edits.",
+  guard: "Confirm before discarding unsaved profile changes.",
+  external: "Update an open form from application code through its handle."
+}
+export function modalStory(scenario: ModalScenario) {
+  const sources: Partial<Record<ModalScenario, string>> = {
+    confirmation:
+      'const confirmed = await modals.confirm({\n  title: "Delete draft?",\n  confirmLabel: "Delete",\n  cancelLabel: "Keep draft"\n})',
+    form: "const profile = await editProfile.open()\nif (profile !== null) {\n  saveProfile(profile)\n}"
+  }
+  return {
+    args: { scenario },
+    parameters: {
+      docs: {
+        description: { story: modalDescriptions[scenario] },
+        source: {
+          code: sources[scenario]
+        }
+      }
+    }
+  }
+}
 
 export type ModalExamplesProps<TSurface> = ModalExampleScenario & {
   manager: ModalManager<TSurface>
@@ -33,10 +72,19 @@ export function ModalExamples<TSurface>({
   Button,
   Input,
   children,
-  scenario = "all"
+  scenario = "confirmation"
 }: ModalExamplesProps<TSurface>) {
-  const [result, setResult] = useState("No modal has completed.")
-  const entries = useModals(manager)
+  const [result, setResult] = useState("Awaiting an action")
+  const isProfile = ["form", "async", "guard", "external"].includes(scenario)
+  let itemTitle = "Website launch"
+  let itemDescription = "Draft proposal"
+  if (isProfile) {
+    itemTitle = "Ada Lovelace"
+    itemDescription = "ada@example.com"
+  } else if (scenario === "state") {
+    itemTitle = "Project licenses"
+    itemDescription = "3 seats selected"
+  }
   async function onConfirm() {
     const confirmed = await manager.confirm({
       title: "Delete draft?",
@@ -44,12 +92,13 @@ export function ModalExamples<TSurface>({
       confirmLabel: "Delete",
       cancelLabel: "Keep draft"
     })
-    setResult(confirmed ? "Confirmed deletion." : "Kept the draft.")
+    setResult(String(confirmed))
   }
   async function onEdit() {
     const edit = createProfileModal(manager, {
       Button,
       Input,
+      mode: scenario,
       // The callback uses the public handle, just as a service or external event can.
       onLoadSample: () => handle.update({ name: "Grace", email: "grace@example.com" })
     })
@@ -59,7 +108,7 @@ export function ModalExamples<TSurface>({
   }
   async function onInferredState() {
     const counter = manager.createModal({
-      title: "Inferred state",
+      title: "Adjust quantity",
       initialState: { count: 0 },
       defaultResult: null,
       render: function Counter({ data, controls }) {
@@ -67,9 +116,12 @@ export function ModalExamples<TSurface>({
           <div className="modal-example-form">
             <output aria-live="polite">Count: {data.count}</output>
             <div className="actions">
-              <Button onClick={() => controls.update((current) => ({ count: current.count + 1 }))}>Increase</Button>
+              <Button variant="outline" onClick={() => controls.update((current) => ({ count: current.count + 1 }))}>
+                Increase
+              </Button>
               <Button onClick={() => controls.close(data)}>Return count</Button>
               <Button
+                variant="outline"
                 onClick={() => {
                   void controls.dismiss()
                 }}
@@ -92,46 +144,47 @@ export function ModalExamples<TSurface>({
     })
   }
   return (
-    <section className="shadcn-demo" aria-label="Modal examples">
-      <header>
-        <h1>{scenarioTitles[scenario]}</h1>
-        <p>
-          {scenario === "form"
-            ? "Edit fields, load sample values, simulate a failed save, or cancel unsaved changes. The saved object appears below."
-            : "Open dialogs from application code. Await typed results and update state while a dialog is open."}
-        </p>
-      </header>
-      <div className="actions">
-        {scenario === "all" && (
-          <>
-            <Button onClick={onConfirm}>Confirmation</Button>
-            <Button
-              onClick={async () => {
-                await manager.alert({ title: "Changes saved", description: "Your profile has been saved." })
-                setResult("Alert acknowledged.")
-              }}
-            >
-              Alert
-            </Button>
-            <Button onClick={onNested}>Nested dialogs</Button>
-            <Button
-              onClick={() =>
-                manager.open({
-                  title: "Explicit dismissal",
-                  description: "Escape and backdrop clicks are disabled. Use Close to finish.",
-                  dismissible: false
-                })
-              }
-            >
-              Required action
-            </Button>
-          </>
+    <section>
+      <div className="bk-row">
+        <div className="bk-person">
+          <div className="bk-avatar" aria-hidden="true">
+            {isProfile ? "AL" : "↗"}
+          </div>
+          <div>
+            <p className="bk-item-title">{itemTitle}</p>
+            <p className="bk-item-description">{itemDescription}</p>
+          </div>
+        </div>
+        {scenario === "confirmation" && <Button onClick={onConfirm}>Delete draft</Button>}
+        {scenario === "alert" && (
+          <Button
+            onClick={async () => {
+              await manager.alert({ title: "Export ready", description: "Your project export is ready to download." })
+              setResult("Acknowledged")
+            }}
+          >
+            Show acknowledgment
+          </Button>
         )}
-        {scenario !== "state" && <Button onClick={onEdit}>Typed form</Button>}
-        {scenario !== "form" && <Button onClick={onInferredState}>Inferred state</Button>}
+        {scenario === "nested" && <Button onClick={onNested}>View draft</Button>}
+        {scenario === "required" && (
+          <Button
+            onClick={async () => {
+              await manager.open({
+                title: "Review required",
+                description: "Use Close to finish. Escape and backdrop dismissal are disabled.",
+                dismissible: false
+              })
+              setResult("Review completed")
+            }}
+          >
+            Review draft
+          </Button>
+        )}
+        {isProfile && <Button onClick={onEdit}>Edit profile</Button>}
+        {scenario === "state" && <Button onClick={onInferredState}>Adjust seats</Button>}
       </div>
-      <output aria-live="polite">{result}</output>
-      <p>Stack entries: {entries.length}. Closing entries remain until their exit animation completes.</p>
+      <ExampleResult label="Returned value">{result}</ExampleResult>
       {children}
     </section>
   )

@@ -1,0 +1,6 @@
+content/.vitepress/cache/
+content/.vitepress/dist/
+content/reference/
+content/packages/
+content/catalog.json
+content/public/mark.svg

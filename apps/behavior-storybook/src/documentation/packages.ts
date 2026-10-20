@@ -1,5 +1,20 @@
 export const packages = [
   {
+    name: "dev-domains",
+    group: "Tooling",
+    summary: "Stable local HTTPS domains for applications, Storybook, and Git worktrees, built on Portless.",
+    code: "npm install --save-dev @buildkitgg/dev-domains\n\nnpx @buildkitgg/dev-domains detect\nnpx @buildkitgg/dev-domains urls\nnpx @buildkitgg/dev-domains setup\nnpx @buildkitgg/dev-domains run",
+    api: [
+      "defineConfig(config): author validated, typed endpoint configuration.",
+      "getEndpoint(service, cwd?): resolve an endpoint from Node tooling without starting a server.",
+      "playwrightServer(service, cwd?): connect Playwright to a dedicated E2E endpoint.",
+      "CLI: detect, urls, init, setup, run, status, doctor, tunnel, and schema."
+    ],
+    notes:
+      "This is a Node.js development tool. The examples explain terminal workflows; they do not start proxies, trust certificates, or run commands in the browser. Portless handles local routing and HTTPS. Application data and cloud resources remain under your control.",
+    example: "tooling-dev-domains--setup"
+  },
+  {
     name: "preferences-core",
     group: "Core",
     summary: "Typed defaults, overrides, persistence, and JSON backup without a framework dependency.",
@@ -13,7 +28,7 @@ export const packages = [
     ],
     notes:
       "localStorage synchronizes same-origin tabs. sessionStorage is tab-specific. A key is required when storage is enabled. JSON receives basic checks against defaults; TypeScript unions and unknown keys are not runtime schemas.",
-    example: "react-react-preferences--playground"
+    example: "react-react-preferences--defaults-and-reset"
   },
   {
     name: "theme-core",
@@ -38,7 +53,7 @@ export const packages = [
     api: ["usePreference(store, key): typed value and setter.", "usePreferences(store): the whole effective snapshot."],
     notes:
       "React 19 is a peer dependency. No provider is required. Hooks use useSyncExternalStore; per-key hooks currently subscribe to the whole store.",
-    example: "react-react-preferences--playground"
+    example: "react-react-preferences--defaults-and-reset"
   },
   {
     name: "react-theme",
@@ -139,7 +154,7 @@ export const packages = [
     ],
     notes:
       "The default adapter includes the Base UI component kit. Import styles.css once, or use your existing kit stylesheet. For registry components, pass an adapter to createModalManager using the matching helper. The standard ModalRenderer stays the same. Each manager retains its own adapter, which overrides the package default. React and React DOM are peers. Styles, UI providers and custom form controls remain application setup.",
-    example: "shadcn-shadcn-modals-manager--playground"
+    example: "shadcn-shadcn-modals-manager--confirmation"
   },
   {
     name: "fluentui-modals-manager",
@@ -153,6 +168,137 @@ export const packages = [
     ],
     notes:
       "React, React DOM and Fluent UI v9 are peer dependencies. Mount the renderer inside your FluentProvider for theme and portal support. Modal state, results, updates and confirmation semantics are shared with the shadcn adapter.",
-    example: "fluent-ui-fluentui-modals-manager--playground"
+    example: "fluent-ui-fluentui-modals-manager--confirmation"
+  },
+  {
+    name: "alert-core",
+    group: "Core",
+    summary: "Framework-independent, persistent inline alert regions.",
+    code: 'import { createAlertStore } from "@buildkitgg/alert-core"\n\nconst alerts = createAlertStore<{ message: string }>()\nconst notice = alerts.add({ body: { message: "Sync paused" } }, "account")\nnotice.update({ body: { message: "Sync complete" }, intent: "success" })\nnotice.dismiss()',
+    api: [
+      "add / info / success / warning / error: return a region-bound handle.",
+      "handle.update / handle.dismiss / handle.isActive: control that exact alert instance.",
+      "getSnapshot / subscribe: stable snapshots and region-scoped notifications.",
+      "dismissAll(region): remove alerts and invoke callbacks; flush(): clear all regions silently.",
+      "dispose(): clear silently, notify subscribers, and reject future additions."
+    ],
+    notes:
+      "Alerts are persistent. Use the native toast manager for timed feedback. Reusing an ID replaces in place without invoking dismissal; old handles become inactive. Mount once per region. Payload objects remain caller-owned; replace them through updates instead of mutating them.",
+    example: "core-alert-core--typed-payload"
+  },
+  {
+    name: "react-alerts",
+    group: "React",
+    summary: "Persistent inline alerts with external commands and shared lifecycle behavior.",
+    code: 'import { createAlertManager, AlertRegion } from "@buildkitgg/react-alerts"\n\nexport const alerts = createAlertManager({ adapter: { Alert: YourAlert } })\n<AlertRegion manager={alerts} />\n\nalerts.warning({ id: "billing", title: "Update your payment method" })',
+    api: [
+      "add / info / success / warning / error: return a region-bound handle.",
+      "handle.update / handle.dismiss / handle.isActive: control that exact alert instance.",
+      "getSnapshot / subscribe: stable snapshots and region-scoped notifications.",
+      "dismissAll(region): remove alerts and invoke callbacks; flush(): clear all regions silently.",
+      "dispose(): clear silently, notify subscribers, and reject future additions."
+    ],
+    notes:
+      "Alerts are persistent. Use the native toast manager for timed feedback. Reusing an ID replaces in place without invoking dismissal; old handles become inactive. Mount once per region. ReactNode content and optional adapters are React-specific; the store has no browser effects.",
+    example: "react-react-alerts--custom-renderer"
+  },
+  {
+    name: "shadcn-alerts-manager",
+    group: "shadcn",
+    summary: "Persistent inline alerts with external commands and shared lifecycle behavior.",
+    code: 'import { createAlertManager, AlertRegion } from "@buildkitgg/shadcn-alerts-manager"\n\nexport const alerts = createAlertManager()\n<AlertRegion manager={alerts} />\n\nalerts.warning({ id: "billing", title: "Update your payment method" })',
+    api: [
+      "add / info / success / warning / error: return a region-bound handle.",
+      "handle.update / handle.dismiss / handle.isActive: control that exact alert instance.",
+      "getSnapshot / subscribe: stable snapshots and region-scoped notifications.",
+      "dismissAll(region): remove alerts and invoke callbacks; flush(): clear all regions silently.",
+      "dispose(): clear silently, notify subscribers, and reject future additions."
+    ],
+    notes:
+      "Alerts are persistent. Use the native toast manager for timed feedback. Reusing an ID replaces in place without invoking dismissal; old handles become inactive. Mount once per region. Import styles.css once for the default kit. For registry components, pass adapter: alertComponents({ Alert, AlertTitle, AlertDescription, Button }); no Base UI/Radix switch is needed.",
+    example: "shadcn-shadcn-alerts-manager--dismissal"
+  },
+  {
+    name: "fluentui-alerts-manager",
+    group: "Fluent UI",
+    summary: "Persistent inline alerts with external commands and shared lifecycle behavior.",
+    code: 'import { createAlertManager, AlertRegion } from "@buildkitgg/fluentui-alerts-manager"\n\nexport const alerts = createAlertManager()\n<AlertRegion manager={alerts} />\n\nalerts.warning({ id: "billing", title: "Update your payment method" })',
+    api: [
+      "add / info / success / warning / error: return a region-bound handle.",
+      "handle.update / handle.dismiss / handle.isActive: control that exact alert instance.",
+      "getSnapshot / subscribe: stable snapshots and region-scoped notifications.",
+      "dismissAll(region): remove alerts and invoke callbacks; flush(): clear all regions silently.",
+      "dispose(): clear silently, notify subscribers, and reject future additions."
+    ],
+    notes:
+      "Alerts are persistent. Use the native toast manager for timed feedback. Reusing an ID replaces in place without invoking dismissal; old handles become inactive. Mount once per region. Supply FluentProvider and the React/Fluent peer dependencies.",
+    example: "fluent-ui-fluentui-alerts-manager--dismissal"
+  },
+  {
+    name: "router-core",
+    group: "Core",
+    summary: "Framework-independent tab selection and panel navigation policies.",
+    code: 'const tabs = createRouteTabs({ tabs: [{ id: "people", route: peopleRoute }] })\ntabs.activeTab\nawait tabs.select("people")\n\nconst panel = createRoutePanel({ route: personRoute, closeTo: peopleRoute })\nawait panel.close()',
+    api: [
+      "createRouteTabs({ tabs, defaultTab? }): infer tab IDs; first match wins.",
+      "createRoutePanel({ route, closeTo, exclude? }): derive isOpen; open, close, setOpen.",
+      "RouteTarget: href, isActive(), navigate()."
+    ],
+    notes:
+      "Core has no React or router dependency. Route targets delegate matching and navigation. defaultTab is a display fallback, not a redirect. closeTo makes direct-link dismissal safe.",
+    example: "routing-react-router--route-tabs"
+  },
+  {
+    name: "react-routing",
+    group: "React",
+    summary: "Provider-free React bindings for route tabs and panels.",
+    code: 'const tabs = useRouteTabs(adapter, {\n  tabs: [{ id: "people", route: peopleRoute }]\n})\nconst panel = useRoutePanel(adapter, { route: personRoute, closeTo: peopleRoute })\n// Bind tabs.activeTab / tabs.select to your tabs.\n// Bind panel.isOpen / panel.setOpen to your drawer.',
+    api: [
+      "useRouteTabs(adapter, options): subscribe and derive activeTab/select.",
+      "useRoutePanel(adapter, options): subscribe and derive isOpen/open/close/setOpen.",
+      "RouterAdapter: subscribe, getSnapshot, getServerSnapshot."
+    ],
+    notes:
+      "Uses useSyncExternalStore and cleans up subscriptions. No local copy of URL state. Applications provide their own tabs and panel components. Create adapters per router and per SSR request.",
+    example: "routing-react-router--route-tabs"
+  },
+  {
+    name: "react-router",
+    group: "React",
+    summary: "Route tabs and panels for React Router data routers.",
+    code: 'import { createRouterAdapter, useRoutePanel } from "@buildkitgg/react-router"\n\nconst adapter = createRouterAdapter(router)\nconst person = adapter.route({ to: "/people/42", match: "/people/:id" })\nconst people = adapter.route({ to: "/people", preserveSearch: true })\n\nfunction PersonPanel() {\n  const panel = useRoutePanel(adapter, { route: person, closeTo: people })\n  return <YourPanel open={panel.isOpen} onOpenChange={panel.setOpen} />\n}',
+    api: [
+      "createRouterAdapter(router): connect a data router without another provider.",
+      "adapter.route({ to, match?, navigate?, preserveSearch? }): create a route target.",
+      "useRouteTabs / useRoutePanel: shared React behavior."
+    ],
+    notes:
+      "Use createBrowserRouter or createMemoryRouter. Rooted destinations and concrete params are required for navigation. Native matchPath handles route patterns. Query preservation is opt-in. Use native Link for normal link behavior.",
+    example: "routing-react-router--route-tabs"
+  },
+  {
+    name: "tanstack-router",
+    group: "React",
+    summary: "Typed route tabs and panels for TanStack Router.",
+    code: 'import { createRouterAdapter, useRoutePanel } from "@buildkitgg/tanstack-router"\n\nconst adapter = createRouterAdapter(router)\nconst person = adapter.route({\n  to: "/people/$id", params: { id: "42" }, search: true\n})\nconst people = adapter.route({ to: "/people", search: true })\n\nfunction PersonPanel() {\n  const panel = useRoutePanel(adapter, { route: person, closeTo: people })\n  return <YourPanel open={panel.isOpen} onOpenChange={panel.setOpen} />\n}',
+    api: [
+      "createRouterAdapter(router): infer the supplied route tree.",
+      "adapter.route(navigation, match?): validate destinations and required params.",
+      "useRouteTabs / useRoutePanel: shared React behavior."
+    ],
+    notes:
+      "Native navigation options preserve search, hashes, replace behavior and typed params. Use fuzzy: true in match options for parent tabs. Native Link owns link behavior. State follows completed navigation.",
+    example: "routing-tanstack-router--route-tabs"
   }
 ] as const
+
+/** Shared navigation for package directories and the public site. */
+export function packageOverviewId(entry: { name: string; group: string }) {
+  const routing: Record<string, string> = {
+    "router-core": "routing-core",
+    "react-routing": "routing-react-bindings",
+    "react-router": "routing-react-router",
+    "tanstack-router": "routing-tanstack-router"
+  }
+  return `${routing[entry.name] ?? `${entry.group.toLowerCase().replaceAll(" ", "-")}-${entry.name}`}--overview`
+}

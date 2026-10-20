@@ -1,54 +1,98 @@
 {
   "ignoreExportsUsedInFile": true,
   "workspaces": {
+    "apps/docs": {
+      "entry": ["scripts/generate.ts", "content/.vitepress/config.ts", "content/.vitepress/theme/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "apps/site": {
+      "entry": ["src/main.tsx", "src/prerender.tsx", "vite.config.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/tooling/api-tools": {
+      "entry": ["src/reports.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
     ".": {
       "entry": ["beachball.config.js"]
     },
-    "packages/storybook-config": {
+    "packages/tooling/storybook-config": {
       "ignoreDependencies": ["@chromatic-com/storybook", "@storybook/addon-a11y", "@storybook/addon-vitest"]
     },
-    "packages/dev-domains": {
+    "packages/tooling/dev-domains": {
       "entry": ["src/cli/main.ts", "src/config/schema.ts", "src/node.ts", "src/playwright.ts"]
     },
-    "packages/shadcn-baseui-kit": {
+    "packages/shadcn/shadcn-baseui-kit": {
       "entry": ["src/index.ts", "src/styles.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/theme-core": {
+    "packages/core/theme-core": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/react-theme": {
+    "packages/react/react-theme": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/shadcn-theme": {
+    "packages/shadcn/shadcn-theme": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/preferences-core": {
+    "packages/core/preferences-core": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/react-preferences": {
+    "packages/react/react-preferences": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
     "apps/behavior-storybook": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/fluentui-theme": {
+    "packages/fluentui/fluentui-theme": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/modal-core": {
+    "packages/core/modal-core": {
       "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/react-modals": {
+    "packages/react/react-modals": {
       "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/fluentui-modals-manager": {
+    "packages/fluentui/fluentui-modals-manager": {
       "entry": ["src/index.tsx"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
-    "packages/shadcn-modals-manager": {
+    "packages/shadcn/shadcn-modals-manager": {
       "entry": ["src/index.tsx", "src/styles.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/core/alert-core": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react/react-alerts": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/shadcn/shadcn-alerts-manager": {
+      "entry": ["src/index.tsx", "src/styles.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/fluentui/fluentui-alerts-manager": {
+      "entry": ["src/index.tsx"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/core/router-core": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react/react-routing": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react/react-router": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react/tanstack-router": {
+      "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }

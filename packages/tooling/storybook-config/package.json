@@ -1,0 +1,37 @@
+{
+  "name": "@repo/storybook-config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./main": "./main.ts",
+    "./preview": "./preview.ts",
+    "./examples": "./ExampleFrame.tsx"
+  },
+  "dependencies": {
+    "@chromatic-com/storybook": "^5.2.1",
+    "@storybook/addon-a11y": "10.4.6",
+    "@storybook/addon-vitest": "10.4.6",
+    "@storybook/react-vite": "10.4.6",
+    "storybook": "10.4.6"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@repo/oxlint-config": "workspace:*",
+    "oxlint": "^1.72.0",
+    "typescript": "catalog:",
+    "vitest": "4.1.11",
+    "@vitest/coverage-v8": "4.1.11",
+    "@types/react": "^19.3.0"
+  },
+  "scripts": {
+    "lint": "oxlint --max-warnings=0",
+    "check:types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0"
+  }
+}

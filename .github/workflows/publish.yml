@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: "Package directory, or * for all public Buildkit packages (dependencies included)"
+        description: "Package name without scope, or * for all public Buildkit packages (dependencies included)"
         default: "*"
         required: true
         type: string
@@ -34,11 +34,13 @@ jobs:
           PACKAGE: ${{ inputs.package }}
         run: |
           node --input-type=module <<'NODE'
-          import { readFileSync, readdirSync, existsSync } from 'node:fs';
+          import { readFileSync, readdirSync, existsSync, globSync } from 'node:fs';
           const directory = process.env.PACKAGE;
           if (directory !== '*') {
             if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(directory)) throw new Error('Invalid package directory');
-            const pkg = JSON.parse(readFileSync(`packages/${directory}/package.json`, 'utf8'));
+            const matches = globSync('packages/*/*/package.json').map(file => JSON.parse(readFileSync(file, 'utf8'))).filter(pkg => pkg.name === `@buildkitgg/${directory}`);
+            if (matches.length !== 1) throw new Error('Unknown or ambiguous package');
+            const [pkg] = matches;
             if (pkg.private || pkg.name !== `@buildkitgg/${directory}`) throw new Error('Package is not public');
           }
           if (existsSync('change') && readdirSync('change').some(file => file.endsWith('.json'))) {

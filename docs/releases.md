@@ -10,7 +10,7 @@ the generated change file. Pull request CI checks release notes and runs `pnpm v
    suppresses PR workflow triggers for the built-in workflow token, so preparation runs verification itself; CI runs
    again on the merge to `main`.
 2. Wait for main CI to pass. Run **Publish packages** on `main`. Keep **dry_run** enabled to preview. Select `*` for all
-   public Buildkit packages, or a package directory such as `fluentui-theme` to include that package and its
+   public Buildkit packages, or an unscoped package name such as `fluentui-theme` to include that package and its
    dependencies. Pending Beachball change files must be consumed by a merged release PR before publication.
 3. Run again with **dry_run** disabled. The workflow verifies and previews before requesting approval of the `npm`
    environment deployment. Approve the exact commit and selection you reviewed.
