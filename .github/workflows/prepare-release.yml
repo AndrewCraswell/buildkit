@@ -14,6 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           fetch-depth: 0
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
@@ -38,5 +39,6 @@ jobs:
           git switch -c "$branch"
           git add --all
           git commit -m 'chore: prepare package releases'
+          gh auth setup-git
           git push origin "$branch"
           gh pr create --base main --head "$branch" --title 'chore: prepare package releases' --body 'Beachball version and changelog updates. Full verification passed in the preparation workflow. Review and merge before running Publish packages. GitHub does not trigger PR workflows for changes created with GITHUB_TOKEN.'
