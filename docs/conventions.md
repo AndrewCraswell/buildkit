@@ -2,7 +2,7 @@
 
 The agent-facing project summary lives in [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) and
 links here. These conventions apply to all TypeScript/React code in the monorepo. Many are enforced by `oxlint` (see
-[`packages/oxlint-config/base.json`](../packages/oxlint-config/base.json)).
+[`packages/tooling/oxlint-config/base.json`](../packages/tooling/oxlint-config/base.json)).
 
 ## Quality gates
 

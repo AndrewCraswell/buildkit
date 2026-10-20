@@ -5,7 +5,7 @@ export function Documentation({ title, summary, children }: { title: string; sum
   return (
     <article className="bk-docs">
       <header>
-        <p className="bk-eyebrow">BUILDKIT / DOCUMENTATION</p>
+        <p className="bk-eyebrow">Buildkit / Documentation</p>
         <h1>{title}</h1>
         <p className="bk-summary">{summary}</p>
       </header>

@@ -1,8 +1,8 @@
 import { createModalStore } from "@buildkitgg/modal-core"
 import { useModals } from "@buildkitgg/react-modals"
+import { ExampleResult } from "@repo/storybook-config/examples"
 import type { Meta, StoryObj } from "@storybook/react-vite"
 import { useEffect, useState } from "react"
-import { Documentation } from "../documentation/Documentation.js"
 
 function CoreLifecycle() {
   const [store] = useState(() => createModalStore<string>())
@@ -10,10 +10,7 @@ function CoreLifecycle() {
   const entries = useModals(store)
   useEffect(() => () => store.clear(), [store])
   return (
-    <Documentation
-      title="Modal lifecycle"
-      summary="Core stores content and lifecycle state. A renderer decides how to display it and when exit is complete."
-    >
+    <section className="bk-stack">
       <div className="actions">
         <button
           onClick={async () => {
@@ -26,20 +23,33 @@ function CoreLifecycle() {
         <button onClick={store.closeAll}>Close all</button>
         <button onClick={store.clear}>Clear immediately</button>
       </div>
-      <output aria-live="polite">Result: {result}</output>
-      <ul>
+      <ExampleResult label="Settled value">{result}</ExampleResult>
+      <ul className="bk-core-entries">
         {entries.map((entry) => (
-          <li key={entry.key}>
-            {entry.id}: {entry.content}, {entry.status} <button onClick={entry.dismiss}>Dismiss {entry.id}</button>{" "}
+          <li className="bk-core-entry" key={entry.key}>
+            <div className="bk-row">
+              <strong>{entry.content}</strong>
+              <code>{entry.status}</code>
+            </div>{" "}
+            <button onClick={entry.dismiss}>Dismiss entry</button>{" "}
             <button onClick={entry.finishExit} disabled={entry.status !== "closing"}>
-              Finish exit {entry.id}
+              Finish exit
             </button>
           </li>
         ))}
       </ul>
-    </Documentation>
+    </section>
   )
 }
 const meta = { title: "Core/modal-core", component: CoreLifecycle } satisfies Meta<typeof CoreLifecycle>
 export default meta
-export const Lifecycle: StoryObj<typeof meta> = {}
+export const Lifecycle: StoryObj<typeof meta> = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Follow an entry from open to closing, then complete its exit. The core owns lifecycle; a renderer controls presentation."
+      }
+    }
+  }
+}

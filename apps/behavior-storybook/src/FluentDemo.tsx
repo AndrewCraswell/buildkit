@@ -10,20 +10,23 @@ import {
   DialogActions,
   Text
 } from "@fluentui/react-components"
+import { ExampleResult } from "@repo/storybook-config/examples"
 import { useState } from "react"
 import { useFluentDemoStyles } from "./FluentDemo.styles.js"
 
-export function FluentDemo(options: FluentThemeOptions) {
+export function FluentDemo({ showPortal = false, ...options }: FluentThemeOptions & { showPortal?: boolean }) {
   const [store] = useState(() => createFluentTheme(options))
   const { theme, resolvedTheme, setTheme } = useTheme(store)
   const classes = useFluentDemoStyles()
   return (
     <FluentThemeProvider store={store} className={classes.surface}>
       <section className={classes.content} aria-label="Fluent theme example">
-        <Text as="h1" size={600} weight="semibold">
-          Fluent UI appearance
-        </Text>
-        <p>Follow your device or choose a theme.</p>
+        <div>
+          <Text as="h2" size={400} weight="semibold">
+            Appearance
+          </Text>
+          <p className="bk-item-description">Choose a theme for your workspace.</p>
+        </div>
         <fieldset className={classes.actions} aria-label="Appearance">
           {(["system", "light", "dark"] as const).map((value) => (
             <Button
@@ -32,30 +35,30 @@ export function FluentDemo(options: FluentThemeOptions) {
               appearance={theme === value ? "primary" : "secondary"}
               onClick={() => setTheme(value)}
             >
-              {value}
+              {{ system: "System", light: "Light", dark: "Dark" }[value]}
             </Button>
           ))}
           <Button onClick={() => store.reset()}>Reset theme</Button>
         </fieldset>
-        <output>
-          Preference: {theme}. Displaying: {resolvedTheme}.
-        </output>
-        <Dialog>
-          <DialogTrigger disableButtonEnhancement>
-            <Button>Open Fluent dialog</Button>
-          </DialogTrigger>
-          <DialogSurface>
-            <DialogBody>
-              <DialogTitle>Themed dialog</DialogTitle>
-              <DialogContent>This portaled dialog uses the {resolvedTheme} theme.</DialogContent>
-              <DialogActions>
-                <DialogTrigger disableButtonEnhancement>
-                  <Button>Close</Button>
-                </DialogTrigger>
-              </DialogActions>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
+        <ExampleResult label="Resolved theme">{resolvedTheme}</ExampleResult>
+        {showPortal && (
+          <Dialog>
+            <DialogTrigger disableButtonEnhancement>
+              <Button>Preview dialog</Button>
+            </DialogTrigger>
+            <DialogSurface>
+              <DialogBody>
+                <DialogTitle>Themed dialog</DialogTitle>
+                <DialogContent>This portaled dialog uses the {resolvedTheme} theme.</DialogContent>
+                <DialogActions>
+                  <DialogTrigger disableButtonEnhancement>
+                    <Button>Close</Button>
+                  </DialogTrigger>
+                </DialogActions>
+              </DialogBody>
+            </DialogSurface>
+          </Dialog>
+        )}
       </section>
     </FluentThemeProvider>
   )

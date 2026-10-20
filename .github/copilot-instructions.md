@@ -91,3 +91,7 @@ needs a human discussion**, not a silent add.
 - After the deliverable is complete, run the smallest relevant focused checks, repair related failures in one batch, and
   then run the required final repository verification.
 - Do not run verification after each incremental edit or partial implementation.
+
+Reusable packages are grouped under `packages/core`, `packages/react`, `packages/shadcn`, and `packages/fluentui`.
+Shared configuration and developer tools live under `packages/tooling`. Package names and imports do not depend on their
+directory.

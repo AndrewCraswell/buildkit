@@ -92,7 +92,7 @@ For registry-installed shadcn components, use `createModalManager({ adapter: bas
 importing the standard `ModalRenderer`. An explicit adapter overrides the package default and remains attached to the
 manager regardless of which renderer export mounts it. When switching design systems, update or remove an explicit
 custom adapter as part of the app's UI setup. Wrappers must forward lifecycle props and allow native unmounting after
-close. See the [shadcn integration guide](../packages/shadcn-modals-manager/README.md).
+close. See the [shadcn integration guide](../packages/shadcn/shadcn-modals-manager/README.md).
 
 Default labels are set with `createModalManager({ labels })` in either adapter. Per-call labels override them. Titles
 are required; custom bodies must supply a keyboard-accessible completion or cancellation action.

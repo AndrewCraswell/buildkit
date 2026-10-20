@@ -44,8 +44,8 @@ function NativeSurface({ entry, body, children }: ModalSurfaceProps<object>) {
     </dialog>
   )
 }
-function NativeButton(props: ExampleButtonProps) {
-  return <button {...props} />
+function NativeButton({ variant, ...props }: ExampleButtonProps) {
+  return <button {...props} data-variant={variant} />
 }
 function NativeInput({ onChange, ...props }: ExampleInputProps) {
   return <input {...props} onChange={(event) => onChange(event.target.value)} />
@@ -60,4 +60,9 @@ function ReactModalsExample() {
 }
 const meta = { title: "React/react-modals", component: ReactModalsExample } satisfies Meta<typeof ReactModalsExample>
 export default meta
-export const NativeDialog: StoryObj<typeof meta> = {}
+export const NativeDialog: StoryObj<typeof meta> = {
+  name: "Native dialog",
+  parameters: {
+    docs: { description: { story: "Render a confirmation with a native dialog element and your own adapter." } }
+  }
+}

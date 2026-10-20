@@ -10,7 +10,9 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "verify": "run-s check:format check:lint check:types check:unused test:coverage build",
+    "verify": "run-s check:format check:lint check:types check:unused check:api test:coverage build",
+    "check:api": "turbo run build --filter='./packages/**' && pnpm --filter @repo/api-tools api:check",
+    "api:update": "turbo run build --filter='./packages/**' && pnpm --filter @repo/api-tools api:update",
     "format": "oxfmt",
     "check:format": "oxfmt --check",
     "check:lint": "turbo run lint",

@@ -10,7 +10,7 @@ export default defineMain({
       ...config.resolve,
       alias: {
         "@catalog": fileURLToPath(
-          new URL("../../../packages/shadcn-baseui-kit/stories/catalog.stories.tsx", import.meta.url)
+          new URL("../../../packages/shadcn/shadcn-baseui-kit/stories/catalog.stories.tsx", import.meta.url)
         )
       }
     },

@@ -5,7 +5,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "noEmit": true,
     "paths": {
-      "@catalog": ["../../packages/shadcn-baseui-kit/stories/catalog.stories.tsx"]
+      "@catalog": ["../../packages/shadcn/shadcn-baseui-kit/stories/catalog.stories.tsx"]
     }
   },
   "include": ["src", ".storybook"]

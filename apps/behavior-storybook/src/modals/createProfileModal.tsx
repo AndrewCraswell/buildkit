@@ -1,11 +1,12 @@
 import type { ModalBodyProps, ModalDefinition, ModalManager } from "@buildkitgg/react-modals"
 import { useState } from "react"
 import type { ComponentType } from "react"
-import type { ExampleButtonProps, ExampleInputProps } from "./ModalExamples.js"
+import type { ExampleButtonProps, ExampleInputProps, ModalScenario } from "./ModalExamples.js"
 
 type ProfileState = { name: string; email: string }
 type SavedProfile = ProfileState & { id: number }
 type ProfileComponents = {
+  mode?: ModalScenario
   Button: ComponentType<ExampleButtonProps>
   Input: ComponentType<ExampleInputProps>
   onLoadSample(): void
@@ -14,12 +15,12 @@ type ProfileComponents = {
 /** The form owns fields and validation; the manager owns submission and dismissal. */
 export function createProfileModal<TSurface>(
   manager: ModalManager<TSurface>,
-  { Button, Input, onLoadSample }: ProfileComponents
+  { Button, Input, onLoadSample, mode }: ProfileComponents
 ): ModalDefinition<ProfileState, SavedProfile | null> {
   const initialState = { name: "Ada", email: "ada@example.com" }
 
   function ProfileForm({ data, controls, isPending, error }: ModalBodyProps<ProfileState, SavedProfile | null>) {
-    const [shouldFail, setShouldFail] = useState(false)
+    const [shouldFail, setShouldFail] = useState(mode === "async")
     return (
       <form
         className="modal-example-form"
@@ -60,19 +61,19 @@ export function createProfileModal<TSurface>(
             onChange={(email) => controls.update({ email })}
           />
         </div>
-        <div className="actions">
-          <Button type="button" disabled={isPending} onClick={onLoadSample}>
-            Load sample profile
-          </Button>
-          <Button type="button" disabled={isPending || shouldFail} onClick={() => setShouldFail(true)}>
-            {shouldFail ? "Next save will fail" : "Simulate save failure"}
-          </Button>
-        </div>
+        {mode === "external" && (
+          <div className="actions">
+            <Button variant="outline" type="button" disabled={isPending} onClick={onLoadSample}>
+              Load saved profile
+            </Button>
+          </div>
+        )}
         {error !== null && (
           <p role="alert">{error instanceof Error ? error.message : "Your changes could not be saved."}</p>
         )}
         <div className="actions">
           <Button
+            variant="outline"
             type="button"
             disabled={isPending}
             onClick={() => {
@@ -96,6 +97,9 @@ export function createProfileModal<TSurface>(
     defaultResult: null,
     render: ProfileForm,
     beforeDismiss(data) {
+      if (mode !== "guard") {
+        return true
+      }
       if (data.name === initialState.name && data.email === initialState.email) {
         return true
       }

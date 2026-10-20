@@ -1,0 +1,54 @@
+/* shadcn Vega: neutral surfaces, blue semantic colors, classic radius and spacing. */
+:root,
+.appearance-preview:not(.dark) {
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #111b2e;
+  --card: #ffffff;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #edf2fc;
+  --secondary-foreground: #1f3d7c;
+  --muted: #f1f3f7;
+  --muted-foreground: #626e83;
+  --accent: #edf3ff;
+  --accent-foreground: #1d4ed8;
+  --destructive: #dc2626;
+  --border: #e2e7ef;
+  --input: #d9e0ea;
+  --ring: #3b82f6;
+  --selection: #b7d2ff;
+  --subtle-surface: #f8fafd;
+  --muted-title: #7b879a;
+  --blue-surface: #f1f6ff;
+  --blue-chip: #e3edff;
+  --blue-border: #cfddfb;
+  --blue-border-strong: #a3bff5;
+  --hero-background: #0b1020;
+  --hero-blue: #76a3ff;
+  --hero-text: #c8d3e6;
+  --hero-subtle: #8f9db8;
+  --hero-border: #232f49;
+  --hero-action: #326df0;
+  --hero-action-hover: #4a7ef5;
+  --blue-grid: #4262a415;
+  --blue-glow: #3275f51a;
+  --code-background: #0b1326;
+}
+.dark {
+  --background: #101a30;
+  --foreground: #f0f4fc;
+  --card: #121e34;
+  --primary: #8ab4ff;
+  --primary-foreground: #0c1830;
+  --secondary: #1d2d49;
+  --secondary-foreground: #e4edff;
+  --muted: #0e192d;
+  --muted-foreground: #9cabc4;
+  --accent: #203458;
+  --accent-foreground: #c1d7ff;
+  --border: #26344e;
+  --input: #334765;
+  --ring: #76a3ff;
+  --selection: #21418b;
+}

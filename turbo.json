@@ -4,6 +4,18 @@
     "signature": true
   },
   "tasks": {
+    "@buildkitgg/docs#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/api-reports/**",
+        "$TURBO_ROOT$/packages/*/*/README.md",
+        "$TURBO_ROOT$/packages/*/*/package.json",
+        "$TURBO_ROOT$/packages/*/*/src/**",
+        "$TURBO_ROOT$/apps/site/public/mark.svg"
+      ],
+      "outputs": ["dist/site/**"]
+    },
     "transit": {
       "dependsOn": ["^transit"]
     },

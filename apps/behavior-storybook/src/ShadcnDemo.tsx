@@ -1,11 +1,6 @@
 import { useTheme } from "@buildkitgg/react-theme"
 import {
   Button,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
   Dialog,
   DialogTrigger,
   DialogContent,
@@ -13,65 +8,57 @@ import {
   DialogTitle,
   DialogDescription
 } from "@buildkitgg/shadcn-baseui-kit"
-import { useEffect } from "react"
-import { theme, resetTheme } from "./theme.js"
-import "@buildkitgg/shadcn-baseui-kit/styles.css"
-import "./styles.css"
-
-export function ShadcnDemo() {
-  useEffect(() => theme.start(), [])
-  const { theme: selection, resolvedTheme, setTheme } = useTheme(theme)
+import { createShadcnTheme, type ShadcnThemeOptions } from "@buildkitgg/shadcn-theme"
+import { ExampleResult } from "@repo/storybook-config/examples"
+import { useEffect, useState } from "react"
+export type ShadcnDemoProps = ShadcnThemeOptions & { showPortal?: boolean }
+export function ShadcnDemo({ showPortal = false, ...options }: ShadcnDemoProps) {
+  const [store] = useState(() => createShadcnTheme(options))
+  useEffect(() => store.start(), [store])
+  const { theme: selection, resolvedTheme, setTheme } = useTheme(store)
   return (
-    <main className="shadcn-demo">
-      <header>
-        <p className="eyebrow">BUILDKIT</p>
-        <h1>Your app. Your theme.</h1>
-        <p>One preference, shared across your application.</p>
-      </header>
-      <Card>
-        <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-          <CardDescription>Follow your device or choose a theme. Your choice is saved on this device.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <fieldset className="choices" aria-label="Theme preference">
-            {(["system", "light", "dark"] as const).map((value) => (
-              <Button
-                key={value}
-                aria-pressed={selection === value}
-                variant={selection === value ? "default" : "outline"}
-                onClick={() => setTheme(value)}
-              >
-                {{ system: "System", light: "Light", dark: "Dark" }[value]}
-              </Button>
-            ))}
-          </fieldset>
-          <output>
-            Preference: {selection}. Displaying: {resolvedTheme}.
-          </output>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Works across your app</CardTitle>
-          <CardDescription>Dialogs inherit the same theme, without a theme provider.</CardDescription>
-        </CardHeader>
-        <CardContent className="actions">
-          <Dialog>
-            <DialogTrigger render={<Button variant="outline" />}>Open dialog</DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>A consistent appearance</DialogTitle>
-                <DialogDescription>This dialog inherits the theme applied to the document.</DialogDescription>
-              </DialogHeader>
-              <p>Current theme: {resolvedTheme}</p>
-            </DialogContent>
-          </Dialog>
-          <Button variant="ghost" onClick={resetTheme}>
-            Reset to system
+    <section>
+      <div className="bk-settings">
+        <div>
+          <p className="bk-item-title">Appearance</p>
+          <p className="bk-item-description">Choose a theme for your workspace.</p>
+        </div>
+        <fieldset className="bk-theme-options" aria-label="Theme preference">
+          {(["light", "dark", "system"] as const).map((value) => (
+            <button
+              className="bk-theme-choice"
+              key={value}
+              aria-pressed={selection === value}
+              onClick={() => setTheme(value)}
+            >
+              <span className="bk-theme-swatch" data-mode={value} aria-hidden="true">
+                <i />
+                <span />
+              </span>
+              <span>{{ light: "Light", dark: "Dark", system: "System" }[value]}</span>
+            </button>
+          ))}
+        </fieldset>
+        <div className="actions">
+          <Button variant="outline" onClick={() => store.reset()}>
+            Reset theme
           </Button>
-        </CardContent>
-      </Card>
-    </main>
+          {showPortal && (
+            <Dialog>
+              <DialogTrigger render={<Button />}>Preview dialog</DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Workspace appearance</DialogTitle>
+                  <DialogDescription>
+                    This dialog inherits the {resolvedTheme} theme, including when rendered in a portal.
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </div>
+      <ExampleResult label="Resolved theme">{resolvedTheme}</ExampleResult>
+    </section>
   )
 }

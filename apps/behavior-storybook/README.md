@@ -5,8 +5,9 @@ http://127.0.0.1:6009/.
 
 Getting started introduces the package directory and architecture. Core and React contain shared behavior and bindings.
 The shadcn and Fluent UI folders group each UI library's packages, overviews, and focused examples. Preferences have
-their own playground. Component examples reuse the existing shadcn-baseui-kit catalog, grouped by function. The
-package-local workshop remains available on port 6008.
+focused stories. Routing groups the shared core, React bindings, React Router, and TanStack Router. Tooling includes
+dev-domains setup, worktree URLs, and Playwright configuration. Component examples reuse the existing shadcn-baseui-kit
+catalog, grouped by function. The package-local workshop remains available on port 6008.
 
 Maintain package guides in src/documentation and example wrappers in src/components. Focus on stable package purposes,
 APIs, and integration guidance. Keep versions, publication status, and component counts out of the documentation; use

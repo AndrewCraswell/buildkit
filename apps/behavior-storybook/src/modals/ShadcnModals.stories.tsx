@@ -11,7 +11,7 @@ import { baseUiComponents, createModalManager, ModalRenderer } from "@buildkitgg
 import type { ModalAdapter } from "@buildkitgg/shadcn-modals-manager"
 import type { Meta, StoryObj } from "@storybook/react-vite"
 import { useState } from "react"
-import { ModalExamples } from "./ModalExamples.js"
+import { ModalExamples, modalStory } from "./ModalExamples.js"
 import type { ExampleInputProps, ModalExampleScenario } from "./ModalExamples.js"
 
 function NameInput({ onChange, ...props }: ExampleInputProps) {
@@ -31,9 +31,15 @@ const meta = { title: "shadcn/shadcn-modals-manager", component: ShadcnModalsExa
   typeof ShadcnModalsExample
 >
 export default meta
-export const Playground: StoryObj<typeof meta> = {}
-export const TypedForm: StoryObj<typeof meta> = { args: { scenario: "form" } }
-export const InferredState: StoryObj<typeof meta> = { args: { scenario: "state" } }
+export const Confirmation: StoryObj<typeof meta> = modalStory("confirmation")
+export const Acknowledgment: StoryObj<typeof meta> = modalStory("alert")
+export const TypedForm: StoryObj<typeof meta> = { ...modalStory("form"), name: "Typed form" }
+export const InitialState: StoryObj<typeof meta> = { ...modalStory("state"), name: "Initial state" }
+export const NestedDialogs: StoryObj<typeof meta> = { ...modalStory("nested"), name: "Nested dialogs" }
+export const ExplicitDismissal: StoryObj<typeof meta> = { ...modalStory("required"), name: "Explicit dismissal" }
+export const SaveAndRetry: StoryObj<typeof meta> = { ...modalStory("async"), name: "Save and retry" }
+export const UnsavedChanges: StoryObj<typeof meta> = { ...modalStory("guard"), name: "Unsaved changes" }
+export const ExternalUpdate: StoryObj<typeof meta> = { ...modalStory("external"), name: "External update" }
 
 // The kit provides Base UI-backed shadcn components. App-owned registry components use the same binding.
 const registryAdapter = baseUiComponents({
@@ -45,9 +51,11 @@ const registryAdapter = baseUiComponents({
   DialogFooter
 })
 export const RegistryComponents: StoryObj<typeof meta> = {
+  name: "Registry components",
   render: () => <ShadcnModalsExample adapter={registryAdapter} />,
   parameters: {
     docs: {
+      description: { story: "Use application-owned dialog components with the same modal manager API." },
       source: {
         code: 'import { createModalManager, ModalRenderer, baseUiComponents } from "@buildkitgg/shadcn-modals-manager"\nimport * as dialog from "@/components/ui/dialog"\nimport { Button } from "@/components/ui/button"\n\nconst modals = createModalManager({\n  adapter: baseUiComponents({ ...dialog, Button })\n})\n\n<ModalRenderer manager={modals} />'
       }
