@@ -96,7 +96,11 @@ export const commands = {
       }
       const name = await chooseEndpoint(endpoints, args.endpoint)
       process.exitCode = await withSignals((signal) =>
-        runTunnel(project, endpoints.find((entry) => entry.service === name)!, signal)
+        runTunnel(
+          project,
+          endpoints.find((entry) => entry.service === name)!,
+          signal
+        )
       )
     }
   }),

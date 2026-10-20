@@ -524,8 +524,8 @@ separate server, configure a dedicated endpoint:
 Then use the helper in `playwright.config.ts`:
 
 ```ts
-import { defineConfig } from "@playwright/test"
 import { playwrightServer } from "@buildkitgg/dev-domains/playwright"
+import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
   ...(await playwrightServer("app-e2e")),

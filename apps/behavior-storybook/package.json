@@ -40,7 +40,7 @@
     "typescript": "catalog:",
     "vite": "^8.3.4",
     "@vitejs/plugin-react": "^6.1.2",
-    "oxc-transform-react": "0.154.0",
+    "oxc-transform-react": "0.152.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/node": "^24.13.2",
