@@ -1,4 +1,10 @@
 import { defineConfig } from "vitest/config"
 export default defineConfig({
-  test: { include: ["src/**/*.integration.test.ts"], testTimeout: 60000, hookTimeout: 30000, fileParallelism: false }
+  test: {
+    fsModuleCachePath: "node_modules/.vitest-integration-cache",
+    include: ["src/**/*.integration.test.ts"],
+    testTimeout: 60000,
+    hookTimeout: 30000,
+    fileParallelism: false
+  }
 })
