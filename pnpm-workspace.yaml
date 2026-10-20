@@ -4,7 +4,7 @@ packages:
 nodeLinker: hoisted
 verifyDepsBeforeRun: error
 catalog:
-  typescript: 7.0.1-rc
+  typescript: 7.0.2
 overrides:
   react: 19.2.7
   react-dom: 19.2.7

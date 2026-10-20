@@ -30,12 +30,12 @@
   "version": "0.1.1",
   "type": "module",
   "devDependencies": {
-    "happy-dom": "^21.0.1",
+    "happy-dom": "^21.0.3",
     "@types/node": "^24.13.2",
     "@repo/typescript-config": "workspace:*",
     "@repo/oxlint-config": "workspace:*",
-    "vitest": "4.1.11",
-    "@vitest/coverage-v8": "4.1.11",
+    "vitest": "5.0.5",
+    "@vitest/coverage-v8": "5.0.5",
     "typescript": "catalog:"
   },
   "types": "./dist/index.d.ts",

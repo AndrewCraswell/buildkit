@@ -2,6 +2,7 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   test: {
+    fsModuleCachePath: "node_modules/.vitest-cache",
     environment: "happy-dom",
     include: ["src/**/*.test.{ts,tsx}"],
     coverage: {

@@ -1,0 +1,7 @@
+{
+  "type": "patch",
+  "comment": "Refresh dependencies and verify compatibility with React 19.3 and Vitest 5.",
+  "packageName": "@buildkitgg/dev-domains",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

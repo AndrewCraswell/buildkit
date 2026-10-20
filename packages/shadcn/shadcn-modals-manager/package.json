@@ -53,12 +53,12 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitest/coverage-v8": "4.1.11",
-    "happy-dom": "^21.0.1",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "@vitest/coverage-v8": "5.0.5",
+    "happy-dom": "^21.0.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "typescript": "catalog:",
-    "vitest": "4.1.11"
+    "vitest": "5.0.5"
   },
   "types": "./dist/index.d.ts",
   "repository": {
