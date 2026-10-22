@@ -2,6 +2,7 @@
 
 import { useModalExit } from "@buildkitgg/react-modals"
 import type { ModalSurfaceOptions, ModalSurfaceProps } from "@buildkitgg/react-modals"
+import { createDefaultFooter } from "./createDefaultFooter.js"
 import { ModalContent } from "./ModalContent.js"
 import type { ModalAdapter, RadixModalComponents } from "./types.js"
 
@@ -24,6 +25,8 @@ export function radixComponents(components: RadixModalComponents): ModalAdapter 
           {...view.surfaceProps}
           showCloseButton={false}
           aria-busy={entry.isPending || undefined}
+          aria-label={view.ariaLabel}
+          {...(view.ariaLabel ? { "aria-labelledby": undefined } : {})}
           {...(view.description ? {} : { "aria-describedby": undefined })}
           onCloseAutoFocus={(event) => {
             // Radix runs this after Presence unmounts, including CSS exit animations.
@@ -43,5 +46,5 @@ export function radixComponents(components: RadixModalComponents): ModalAdapter 
       </Dialog>
     )
   }
-  return { Surface }
+  return { Surface, DefaultFooter: createDefaultFooter(components.Button) }
 }

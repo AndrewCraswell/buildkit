@@ -14,6 +14,16 @@ export type ModalActivity = Readonly<{
 }>;
 
 // @public (undocumented)
+export type ModalCloseEvent<TResult> = Readonly<{
+    id: string;
+    result: TResult;
+    reason: ModalCloseReason;
+}>;
+
+// @public (undocumented)
+export type ModalCloseReason = "completed" | "dismissed" | "parent-closed" | "close-all" | "cleared" | "disposed";
+
+// @public (undocumented)
 export type ModalControls<TResult, TContent> = {
     readonly id: string;
     readonly key: number;
@@ -43,6 +53,7 @@ export type ModalOpenOptions<TResult, TContent> = {
     id?: string;
     defaultResult: TResult;
     beforeDismiss?(): boolean | Promise<boolean>;
+    onClose?(event: ModalCloseEvent<TResult>): void;
     createContent(controls: ModalControls<TResult, TContent>): TContent;
 };
 

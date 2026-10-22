@@ -2,6 +2,7 @@ import type { ModalManager } from "@buildkitgg/react-modals"
 import { ExampleResult } from "@repo/storybook-config/examples"
 import { useState } from "react"
 import type { ComponentType, ReactNode } from "react"
+import { createPreviewModal, createQuantityModal } from "./createExampleModals.js"
 import { createProfileModal } from "./createProfileModal.js"
 
 export type ExampleButtonProps = {
@@ -29,6 +30,7 @@ export type ModalScenario =
   | "async"
   | "guard"
   | "external"
+  | "slots"
 export type ModalExampleScenario = { scenario?: ModalScenario }
 const modalDescriptions = {
   confirmation: "Await a boolean result from a confirmation dialog. Cancel keeps the draft.",
@@ -39,7 +41,8 @@ const modalDescriptions = {
   state: "Pass initial values into a modal and return its updated state.",
   async: "Keep the form open after a failed save, then retry without losing edits.",
   guard: "Confirm before discarding unsaved profile changes.",
-  external: "Update an open form from application code through its handle."
+  external: "Update an open form from application code through its handle.",
+  slots: "Replace the title, body and footer while keeping control of your own buttons."
 }
 export function modalStory(scenario: ModalScenario) {
   const sources: Partial<Record<ModalScenario, string>> = {
@@ -100,47 +103,36 @@ export function ModalExamples<TSurface>({
       Input,
       mode: scenario,
       // The callback uses the public handle, just as a service or external event can.
-      onLoadSample: () => handle.update({ name: "Grace", email: "grace@example.com" })
+      onLoadSample: () => {
+        handle.update({
+          title: "Edit Grace's profile",
+          description: "Review the sample profile before saving.",
+          data: { name: "Grace", email: "grace@example.com" }
+        })
+      }
     })
     const handle = edit.open()
     const profile = await handle
     setResult(profile === null ? "Editing cancelled." : `Returned profile: ${JSON.stringify(profile)}`)
   }
   async function onInferredState() {
-    const counter = manager.createModal({
-      title: "Adjust quantity",
-      initialState: { count: 0 },
-      defaultResult: null,
-      render: function Counter({ data, controls }) {
-        return (
-          <div className="modal-example-form">
-            <output aria-live="polite">Count: {data.count}</output>
-            <div className="actions">
-              <Button variant="outline" onClick={() => controls.update((current) => ({ count: current.count + 1 }))}>
-                Increase
-              </Button>
-              <Button onClick={() => controls.close(data)}>Return count</Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  void controls.dismiss()
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )
-      }
-    })
+    const counter = createQuantityModal(manager, Button)
     const value = await counter.open({ count: 3 })
     setResult(value === null ? "Counter cancelled." : `Returned count: ${value.count}`)
+  }
+  async function onSlots() {
+    const preview = createPreviewModal(manager, {
+      Button,
+      Input,
+      onClose: ({ reason, result: value }) => setResult(`Closed: ${reason}; revisions: ${value?.count ?? "cancelled"}`)
+    })
+    await preview.open()
   }
   function onNested() {
     manager.open({
       title: "Draft details",
       description: "The parent stays mounted while a child dialog is open.",
-      children: <Button onClick={onConfirm}>Open nested confirmation</Button>
+      body: <Button onClick={onConfirm}>Open nested confirmation</Button>
     })
   }
   return (
@@ -183,6 +175,7 @@ export function ModalExamples<TSurface>({
         )}
         {isProfile && <Button onClick={onEdit}>Edit profile</Button>}
         {scenario === "state" && <Button onClick={onInferredState}>Adjust seats</Button>}
+        {scenario === "slots" && <Button onClick={onSlots}>Preview draft</Button>}
       </div>
       <ExampleResult label="Returned value">{result}</ExampleResult>
       {children}

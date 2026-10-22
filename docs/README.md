@@ -14,6 +14,7 @@
 - [Inline alerts and native toast architecture](alerts.md)
 - [Modal architecture and lifecycle](modals.md)
 - [Typed modal forms and inferred state](modal-forms.md)
+- [Updating modal content, state and presentation](modal-updates.md)
 - [Shared behavior packages and Fluent extraction plan](behavior-packages.md)
 
 Theme packages: [core](../packages/core/theme-core/README.md), [React](../packages/react/react-theme/README.md),

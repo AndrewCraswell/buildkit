@@ -1,4 +1,4 @@
-import type { ModalBodyProps, ModalDefinition, ModalManager } from "@buildkitgg/react-modals"
+import type { ModalSlotProps, ModalDefinition, ModalManager } from "@buildkitgg/react-modals"
 import { useState } from "react"
 import type { ComponentType } from "react"
 import type { ExampleButtonProps, ExampleInputProps, ModalScenario } from "./ModalExamples.js"
@@ -16,10 +16,15 @@ type ProfileComponents = {
 export function createProfileModal<TSurface>(
   manager: ModalManager<TSurface>,
   { Button, Input, onLoadSample, mode }: ProfileComponents
-): ModalDefinition<ProfileState, SavedProfile | null> {
+): ModalDefinition<ProfileState, SavedProfile | null, TSurface> {
   const initialState = { name: "Ada", email: "ada@example.com" }
 
-  function ProfileForm({ data, controls, isPending, error }: ModalBodyProps<ProfileState, SavedProfile | null>) {
+  function ProfileForm({
+    data,
+    controls,
+    isPending,
+    error
+  }: ModalSlotProps<ProfileState, SavedProfile | null, TSurface>) {
     const [shouldFail, setShouldFail] = useState(mode === "async")
     return (
       <form
@@ -47,7 +52,7 @@ export function createProfileModal<TSurface>(
             required
             disabled={isPending}
             value={data.name}
-            onChange={(name) => controls.update({ name })}
+            onChange={(name) => controls.update({ data: { name } })}
           />
         </div>
         <div className="modal-example-field">
@@ -58,7 +63,7 @@ export function createProfileModal<TSurface>(
             required
             disabled={isPending}
             value={data.email}
-            onChange={(email) => controls.update({ email })}
+            onChange={(email) => controls.update({ data: { email } })}
           />
         </div>
         {mode === "external" && (
@@ -95,7 +100,7 @@ export function createProfileModal<TSurface>(
     description: "Save to return a typed profile. Cancel to discard changes.",
     initialState,
     defaultResult: null,
-    render: ProfileForm,
+    body: { component: ProfileForm },
     beforeDismiss(data) {
       if (mode !== "guard") {
         return true

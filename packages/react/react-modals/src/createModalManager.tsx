@@ -2,17 +2,44 @@
 
 import { createModalStore } from "@buildkitgg/modal-core"
 import { createElement } from "react"
+import { DefaultFooter, renderSlot, validateName } from "./slots.js"
 import type {
+  CreateModalOptions,
   ModalControls,
-  ModalHandle,
   ModalManager,
   ModalManagerOptions,
+  ModalState,
+  ModalStateUpdate,
   ModalSurfaceOptions,
-  ModalView
+  ModalUpdate,
+  ModalView,
+  StandardModalOptions,
+  ModalCloseEvent,
+  StandardModalHandle
 } from "./types.js"
+
+type InstanceControls<TResult, TData extends object, TState extends object, TPatch> = Omit<
+  ModalControls<TResult, TData>,
+  "update"
+> & {
+  update(patch: ModalStateUpdate<TState, TPatch>): void
+}
+
+function mergeState<T extends object>(current: T, patch: Partial<T>): T {
+  if (Reflect.ownKeys(patch).every((key) => Object.is(Reflect.get(current, key), Reflect.get(patch, key)))) {
+    return current
+  }
+  return Object.freeze({ ...current, ...patch })
+}
 
 function isStateFactory<TData extends object>(value: TData | (() => TData)): value is () => TData {
   return typeof value === "function"
+}
+
+function isUpdateFunction<TState extends object, TPatch>(
+  patch: ModalStateUpdate<TState, TPatch>
+): patch is (current: Readonly<TState>) => TPatch {
+  return typeof patch === "function"
 }
 
 /** Shared React orchestration. UI adapters supply surfaces, never a second manager implementation. */
@@ -20,54 +47,118 @@ export function createModalManager<TSurface = ModalSurfaceOptions>(
   options: ModalManagerOptions<TSurface> = {}
 ): ModalManager<TSurface> {
   const store = createModalStore<ModalView<TSurface>>()
+  const adapter = options.adapter ? Object.freeze({ ...options.adapter }) : undefined
   const labels = { confirm: "Confirm", cancel: "Cancel", close: "Close", ...options.labels }
 
-  function openData<TData extends object, TResult>(
-    initialData: TData,
+  function openState<
+    TState extends { title: unknown; ariaLabel?: string; onClose?: ((event: ModalCloseEvent<TResult>) => void) | null },
+    TPatch,
+    TData extends object,
+    TResult
+  >(
+    initial: TState,
     modalOptions: {
       id?: string
       defaultResult: TResult
       beforeDismiss?(data: Readonly<TData>): boolean | Promise<boolean>
     },
-    createView: (data: Readonly<TData>, controls: ModalControls<TResult, TData>) => ModalView<TSurface>
-  ): ModalHandle<TResult, TData> {
-    let data: Readonly<TData> = Object.freeze({ ...initialData })
+    getData: (state: Readonly<TState>) => Readonly<TData>,
+    merge: (state: Readonly<TState>, patch: TPatch) => TState,
+    createView: (
+      state: Readonly<TState>,
+      controls: InstanceControls<TResult, TData, TState, TPatch>
+    ) => ModalView<TSurface>
+  ) {
+    validateName(initial)
+    let state: Readonly<TState> = Object.freeze(initial)
     const returnFocus =
       typeof document !== "undefined" && document.activeElement instanceof HTMLElement
         ? document.activeElement
         : undefined
-    let controls: ModalControls<TResult, TData> | undefined
+    let controls: InstanceControls<TResult, TData, TState, TPatch> | undefined
     const { beforeDismiss } = modalOptions
     const handle = store.open({
       ...modalOptions,
-      beforeDismiss: beforeDismiss ? () => beforeDismiss(data) : undefined,
+      beforeDismiss: beforeDismiss ? () => beforeDismiss(getData(state)) : undefined,
+      onClose: (event) => state.onClose?.(event),
       createContent(coreControls) {
         controls = {
           id: coreControls.id,
           close: coreControls.close,
           dismiss: coreControls.dismiss,
-          submit: (action) => coreControls.submit(() => action(data)),
+          submit: (action) => coreControls.submit(() => action(getData(state))),
           isActive: coreControls.isActive,
           update(patch) {
-            coreControls.update(() => {
-              const changes = typeof patch === "function" ? patch(data) : patch
-              data = Object.freeze({ ...data, ...changes })
-              return { ...createView(data, controls!), returnFocus }
+            coreControls.update((content) => {
+              const changes = isUpdateFunction(patch) ? patch(state) : patch
+              if (!coreControls.isActive()) {
+                return content
+              }
+              const next = merge(state, changes)
+              validateName(next)
+              if (Object.is(next, state)) {
+                return content
+              }
+              state = Object.freeze(next)
+              return { ...createView(state, controls!), returnFocus }
             })
           }
         }
-        return { ...createView(data, controls), returnFocus }
+        return { ...createView(state, controls), returnFocus }
       }
     })
-    // Keep the core handle's updater private. The public updater patches this modal's typed data.
+    // Expose the typed updater rather than the core content replacement function.
     return Object.assign(
       handle.then((value) => value),
       controls!
     )
   }
 
+  function openStandard<TResult>(
+    initial: StandardModalOptions<TSurface, TResult>,
+    defaultResult: TResult,
+    kind: "close" | "confirm",
+    completionResult: TResult
+  ): StandardModalHandle<TResult, StandardModalOptions<TSurface, TResult>> {
+    type Options = StandardModalOptions<TSurface, TResult>
+    return openState<Options, Partial<Omit<Options, "id">>, Options, TResult>(
+      { ...initial },
+      { id: initial.id, defaultResult },
+      (state) => state,
+      (state, patch) => mergeState(state, { ...patch, id: state.id }),
+      (state, controls) => ({
+        id: controls.id,
+        description: state.description,
+        ariaLabel: state.ariaLabel,
+        surfaceProps: state.surfaceProps,
+        dismissible: state.dismissible,
+        renderSlots(activity) {
+          const props = { data: state, controls, ...activity }
+          return {
+            title: renderSlot(state.title, props),
+            body: renderSlot(state.body, props),
+            footer:
+              state.footer === undefined
+                ? createElement(adapter?.DefaultFooter ?? DefaultFooter, {
+                    kind,
+                    labels: {
+                      close: state.closeLabel ?? labels.close,
+                      cancel: state.cancelLabel ?? labels.cancel,
+                      confirm: state.confirmLabel ?? labels.confirm
+                    },
+                    isPending: activity.isPending,
+                    dismiss: controls.dismiss,
+                    confirm: () => controls.close(completionResult)
+                  })
+                : renderSlot(state.footer, props)
+          }
+        }
+      })
+    )
+  }
+
   const manager: ModalManager<TSurface> = {
-    adapter: options.adapter ? Object.freeze({ ...options.adapter }) : undefined,
+    adapter,
     subscribe: store.subscribe,
     getSnapshot: store.getSnapshot,
     getServerSnapshot: store.getServerSnapshot,
@@ -75,38 +166,45 @@ export function createModalManager<TSurface = ModalSurfaceOptions>(
     clear: store.clear,
     dispose: store.dispose,
     open(initial) {
-      return openData(initial, { id: initial.id, defaultResult: undefined }, (data, controls) => ({
-        ...data,
-        renderBody: () => data.children,
-        actions: [{ label: data.closeLabel ?? labels.close, appearance: "secondary", onClick: controls.dismiss }]
-      }))
+      return openStandard(initial, undefined, "close", undefined)
     },
     alert(initial) {
       return manager.open(initial)
     },
     confirm(initial) {
-      return openData(initial, { id: initial.id, defaultResult: false }, (data, controls) => ({
-        ...data,
-        renderBody: () => data.children,
-        actions: [
-          { label: data.cancelLabel ?? labels.cancel, appearance: "secondary", onClick: controls.dismiss },
-          { label: data.confirmLabel ?? labels.confirm, appearance: "primary", onClick: () => controls.close(true) }
-        ]
-      }))
+      return openStandard(initial, false, "confirm", true)
     },
-    createModal({ render: Component, initialState, beforeDismiss, defaultResult, ...viewOptions }) {
-      // Capture the top-level defaults; callers must treat nested values as immutable.
+    createModal<TData extends object, TResult = TData | null>({
+      initialState,
+      beforeDismiss,
+      defaultResult,
+      id,
+      ...presentation
+    }: CreateModalOptions<TData, TResult, TSurface>) {
       const defaults = isStateFactory(initialState) ? initialState : Object.freeze({ ...initialState })
       return {
         open(overrides, instanceOptions) {
           const initial = isStateFactory(defaults) ? defaults() : defaults
-          return openData(
-            { ...initial, ...overrides },
-            { id: instanceOptions?.id ?? viewOptions.id, defaultResult, beforeDismiss },
-            (currentData, controls) => ({
+          return openState<ModalState<TData, TSurface, TResult>, ModalUpdate<TData, TSurface, TResult>, TData, TResult>(
+            { ...presentation, data: Object.freeze({ ...initial, ...overrides }) },
+            { id: instanceOptions?.id ?? id, defaultResult, beforeDismiss },
+            (state) => state.data,
+            (state, patch) =>
+              mergeState(state, {
+                ...patch,
+                data: patch.data === undefined ? state.data : mergeState(state.data, patch.data)
+              }),
+            ({ data, title, body, footer, onClose: _onClose, ...viewOptions }, controls) => ({
               ...viewOptions,
-              renderBody: (activity) => createElement(Component, { data: currentData, controls, ...activity }),
-              actions: []
+              id: controls.id,
+              renderSlots(activity) {
+                const props = { data, controls, ...activity }
+                return {
+                  title: renderSlot(title, props),
+                  body: renderSlot(body, props),
+                  footer: renderSlot(footer, props)
+                }
+              }
             })
           )
         }

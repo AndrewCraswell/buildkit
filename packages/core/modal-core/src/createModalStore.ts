@@ -1,8 +1,16 @@
-import type { ModalActivity, ModalControls, ModalEntry, ModalHandle, ModalOpenOptions, ModalStore } from "./types.js"
+import type {
+  ModalActivity,
+  ModalCloseReason,
+  ModalControls,
+  ModalEntry,
+  ModalHandle,
+  ModalOpenOptions,
+  ModalStore
+} from "./types.js"
 
 type RecordEntry<TContent> = {
   entry: ModalEntry<TContent>
-  settleDefault(): void
+  settleDefault(reason: ModalCloseReason): void
 }
 
 /** An isolated stack. Content is opaque; core has no rendering, DOM, or timer dependencies. */
@@ -13,6 +21,7 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
   let isDisposed = false
   const records = new Map<number, RecordEntry<TContent>>()
   const listeners = new Set<() => void>()
+  const closingCallbacks: Array<() => void> = []
 
   function getBranchKeys(rootKey: number) {
     const keys = new Set([rootKey])
@@ -28,7 +37,9 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
   function publish() {
     snapshot = records.size ? Object.freeze(Array.from(records.values(), ({ entry }) => entry)) : empty
     const errors: unknown[] = []
-    for (const listener of Array.from(listeners)) {
+    // Capture before invoking subscribers: reentrant operations own their notifications.
+    const callbacks = closingCallbacks.splice(0)
+    for (const listener of [...listeners, ...callbacks]) {
       try {
         listener()
       } catch (error) {
@@ -36,7 +47,7 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
       }
     }
     if (errors.length) {
-      throw new AggregateError(errors, "Modal subscriber failed")
+      throw new AggregateError(errors, "Modal observer failed")
     }
   }
 
@@ -57,26 +68,33 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
     function isActive() {
       return records.get(key)?.entry.status === "open"
     }
-    function settle(value: TResult) {
+    function settle(value: TResult, reason: ModalCloseReason) {
       const record = records.get(key)
       if (!record || !isActive()) {
         return
       }
       record.entry = Object.freeze({ ...record.entry, status: "closing", isPending: false })
       resolveResult(value)
+      if (options.onClose) {
+        const event = Object.freeze({ id, result: value, reason })
+        closingCallbacks.push(() => options.onClose?.(event))
+      }
     }
-    function close(value: TResult) {
+    function complete(value: TResult, reason: ModalCloseReason) {
       if (!isActive()) {
         return
       }
       const branchKeys = getBranchKeys(key)
       for (const [childKey, child] of Array.from(records).reverse()) {
         if (childKey !== key && branchKeys.has(childKey)) {
-          child.settleDefault()
+          child.settleDefault("parent-closed")
         }
       }
-      settle(value)
+      settle(value, reason)
       publish()
+    }
+    function close(value: TResult) {
+      complete(value, "completed")
     }
     function setActivity(activity: ModalActivity) {
       const record = records.get(key)
@@ -129,7 +147,7 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
         return Promise.resolve(false)
       }
       if (!beforeDismiss) {
-        close(defaultResult)
+        complete(defaultResult, "dismissed")
         return Promise.resolve(true)
       }
       const content = record.entry.content
@@ -138,7 +156,7 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
         if (!isAllowed || !Object.is(content, record.entry.content)) {
           return false
         }
-        close(defaultResult)
+        complete(defaultResult, "dismissed")
         return true
       })
     }
@@ -184,7 +202,7 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
         isPending: false,
         error: null
       }),
-      settleDefault: () => settle(defaultResult)
+      settleDefault: (reason) => settle(defaultResult, reason)
     }
     records.set(key, record)
     const handle = Object.assign(result, controls)
@@ -196,16 +214,16 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
       return
     }
     for (const record of Array.from(records.values()).reverse()) {
-      record.settleDefault()
+      record.settleDefault("close-all")
     }
     publish()
   }
-  function clear() {
+  function clearEntries(reason: ModalCloseReason) {
     if (!records.size) {
       return
     }
     for (const record of records.values()) {
-      record.settleDefault()
+      record.settleDefault(reason)
     }
     records.clear()
     publish()
@@ -213,7 +231,7 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
   return {
     open,
     closeAll,
-    clear,
+    clear: () => clearEntries("cleared"),
     getSnapshot: () => snapshot,
     getServerSnapshot: () => empty,
     subscribe(listener) {
@@ -231,7 +249,7 @@ export function createModalStore<TContent>(): ModalStore<TContent> {
       }
       isDisposed = true
       try {
-        clear()
+        clearEntries("disposed")
       } finally {
         listeners.clear()
       }

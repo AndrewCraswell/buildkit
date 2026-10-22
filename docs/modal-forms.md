@@ -10,42 +10,48 @@ const counter = modals.createModal({
   title: "Counter",
   initialState: { count: 0 },
   defaultResult: null,
-  render: function Counter({ data, controls }) {
-    return (
-      <>
-        <button onClick={() => controls.update((current) => ({ count: current.count + 1 }))}>
-          Count: {data.count}
-        </button>
-        <button onClick={() => controls.close(data)}>Done</button>
-        <button
-          onClick={() => {
-            void controls.dismiss()
-          }}
-        >
-          Cancel
-        </button>
-      </>
-    )
+  body: {
+    component: function Counter({ data, controls }) {
+      return (
+        <>
+          <button onClick={() => controls.update((current) => ({ data: { count: current.data.count + 1 } }))}>
+            Count: {data.count}
+          </button>
+          <button onClick={() => controls.close(data)}>Done</button>
+          <button
+            onClick={() => {
+              void controls.dismiss()
+            }}
+          >
+            Cancel
+          </button>
+        </>
+      )
+    }
   }
 })
 
 const handle = counter.open({ count: 3 })
-handle.update((current) => ({ count: current.count + 1 }))
+handle.update((current) => ({ data: { count: current.data.count + 1 } }))
+handle.update({ title: "Review count" })
 const result = await handle // { count: number } | null
 ```
 
 There is no duplicated state interface. `open()` uses all defaults, partial overrides remain typed, and each opening
 starts fresh. Use explicit generics when defaults cannot express a union, nullable field or empty array's element type.
+Use `update()` on the handle or component controls for both presentation and data. Put custom state patches under
+`data`, alongside top-level title, description, dismissibility or surface styling. See
+[updating open modals](modal-updates.md).
 
 ## Separate form values from the returned result
 
 ```tsx
-import type { ModalBodyProps } from "@buildkitgg/react-modals"
+import type { ModalSlotProps } from "@buildkitgg/react-modals"
 
 type Profile = { name: string; email: string }
 type SavedProfile = Profile & { id: number }
 
-function ProfileForm({ data, controls, isPending, error }: ModalBodyProps<Profile, SavedProfile | null>) {
+function ProfileForm({ data, controls, isPending, error }: ModalSlotProps<Profile, SavedProfile | null>) {
   return (
     <form
       onSubmit={(event) => {
@@ -59,7 +65,7 @@ function ProfileForm({ data, controls, isPending, error }: ModalBodyProps<Profil
           required
           disabled={isPending}
           value={data.name}
-          onChange={(event) => controls.update({ name: event.target.value })}
+          onChange={(event) => controls.update({ data: { name: event.target.value } })}
         />
       </label>
       <label>
@@ -69,7 +75,7 @@ function ProfileForm({ data, controls, isPending, error }: ModalBodyProps<Profil
           required
           disabled={isPending}
           value={data.email}
-          onChange={(event) => controls.update({ email: event.target.value })}
+          onChange={(event) => controls.update({ data: { email: event.target.value } })}
         />
       </label>
       {error !== null && <p role="alert">Your changes could not be saved. Try again.</p>}
@@ -94,7 +100,7 @@ const editProfile = modals.createModal({
   title: "Edit profile",
   initialState: original,
   defaultResult: null,
-  render: ProfileForm,
+  body: { component: ProfileForm },
   beforeDismiss: (current) =>
     (current.name === original.name && current.email === original.email) ||
     modals.confirm({ title: "Discard changes?", confirmLabel: "Discard changes", cancelLabel: "Keep editing" })

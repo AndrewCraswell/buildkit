@@ -54,7 +54,12 @@ fields. Optional shadcn registry integration uses `adapter: baseUiComponents(...
 there is no primitive prop or renderer factory. Application styles, UI providers and custom form controls remain
 application concerns. The UI adapters do not expose their internal core store.
 
-Custom definitions use `createModal({ initialState, render, defaultResult, beforeDismiss? })`. State is inferred from
-defaults; `open(overrides?)` and object/function updates remain typed. Results default to state plus `null`, with
-separate result types supported by annotated components or generics. Core owns pending actions, errors and guarded
-dismissal; components own fields and validation. See [form examples](modal-forms.md).
+Custom definitions use `createModal({ initialState, body, defaultResult, beforeDismiss? })`. State is inferred from
+defaults; `open(overrides?)` and object/function updates remain typed. Custom updates use
+`{ data: partialState, title?, description?, dismissible?, surfaceProps? }`; functional updaters receive presentation
+and `current.data`. Results default to state plus `null`, with separate result types supported by annotated components
+or generics. Core owns pending actions, errors and guarded dismissal; components own fields and validation. See
+[form examples](modal-forms.md).
+
+`title`, `body` and `footer` accept React nodes or live component slots. `onClose` observes typed results and close
+reasons. See [slots and updates](modal-updates.md) for clearing, naming and adapter contracts.

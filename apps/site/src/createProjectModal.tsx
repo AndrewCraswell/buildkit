@@ -1,4 +1,4 @@
-import type { ModalBodyProps, ModalManager } from "@buildkitgg/shadcn-modals-manager"
+import type { ModalSlotProps, ModalManager } from "@buildkitgg/shadcn-modals-manager"
 import { useState } from "react"
 import { Button } from "./components/ui/Button"
 import { Input } from "./components/ui/Input"
@@ -7,7 +7,7 @@ type Project = { name: string }
 
 /** The application owns the fields and save operation; the manager owns the modal lifecycle. */
 export function createProjectModal(manager: ModalManager, original: Project, mode: "form" | "retry" | "guard") {
-  function ProjectForm({ data, controls, isPending, error }: ModalBodyProps<Project, Project | null>) {
+  function ProjectForm({ data, controls, isPending, error }: ModalSlotProps<Project, Project | null>) {
     const [shouldFail, setShouldFail] = useState(mode === "retry")
 
     return (
@@ -39,7 +39,7 @@ export function createProjectModal(manager: ModalManager, original: Project, mod
           required
           maxLength={80}
           disabled={isPending}
-          onChange={(event) => controls.update({ name: event.target.value })}
+          onChange={(event) => controls.update({ data: { name: event.target.value } })}
         />
         {error !== null && (
           <p className="project-modal-error" role="alert">
@@ -73,7 +73,7 @@ export function createProjectModal(manager: ModalManager, original: Project, mod
         : "Save to return the updated project. Cancel to leave it unchanged.",
     initialState: { ...original },
     defaultResult: null,
-    render: ProjectForm,
+    body: { component: ProjectForm },
     beforeDismiss(project) {
       if (mode !== "guard" || project.name === original.name) {
         return true

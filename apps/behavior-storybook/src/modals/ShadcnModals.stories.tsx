@@ -62,3 +62,5 @@ export const RegistryComponents: StoryObj<typeof meta> = {
     }
   }
 }
+
+export const ReplaceableSlots: StoryObj<typeof meta> = { ...modalStory("slots"), name: "Replaceable slots" }

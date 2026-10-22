@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { ModalExamples } from "./ModalExamples.js"
 import type { ExampleButtonProps, ExampleInputProps } from "./ModalExamples.js"
 
-function NativeSurface({ entry, body, children }: ModalSurfaceProps<object>) {
+function NativeSurface({ entry, title, body, footer, children }: ModalSurfaceProps<object>) {
   const ref = useRef<HTMLDialogElement>(null)
   useModalExit(entry)
   useEffect(() => {
@@ -19,7 +19,8 @@ function NativeSurface({ entry, body, children }: ModalSurfaceProps<object>) {
   return (
     <dialog
       ref={ref}
-      aria-labelledby={`native-title-${entry.key}`}
+      aria-label={entry.content.ariaLabel}
+      aria-labelledby={entry.content.ariaLabel ? undefined : `native-title-${entry.key}`}
       aria-busy={entry.isPending || undefined}
       className="native-modal-example"
       onCancel={(event) => {
@@ -30,16 +31,10 @@ function NativeSurface({ entry, body, children }: ModalSurfaceProps<object>) {
         }
       }}
     >
-      <h2 id={`native-title-${entry.key}`}>{entry.content.title}</h2>
+      <h2 id={`native-title-${entry.key}`}>{title}</h2>
       <p>{entry.content.description}</p>
       {body}
-      <div className="actions">
-        {entry.content.actions.map((action, index) => (
-          <button key={index} onClick={action.onClick} disabled={entry.isPending}>
-            {action.label}
-          </button>
-        ))}
-      </div>
+      <div className="actions">{footer}</div>
       {children}
     </dialog>
   )

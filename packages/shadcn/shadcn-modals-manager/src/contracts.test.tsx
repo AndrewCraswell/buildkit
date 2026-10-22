@@ -9,9 +9,9 @@ import type {
   ModalRendererProps as FluentRendererProps,
   ModalSurfaceOptions as FluentSurfaceOptions
 } from "@buildkitgg/fluentui-modals-manager"
-import { useModalExit } from "@buildkitgg/react-modals"
 import { cleanup, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { useEffect } from "react"
 import { afterEach, expect, expectTypeOf, it } from "vitest"
 import { createModalManager, ModalRenderer } from "./index.js"
 import type {
@@ -36,23 +36,17 @@ it("keeps the manager, adapter options and renderer contracts interchangeable wi
 
 function testAdapter(name: string): ModalAdapter {
   return {
-    Surface: function Surface({ entry, body, children }) {
-      useModalExit(entry)
+    Surface: function Surface({ entry, title, body, footer, children }) {
+      useEffect(() => {
+        if (entry.status === "closing") {
+          entry.finishExit()
+        }
+      }, [entry])
       return (
         <section aria-label={name}>
-          <h2>{entry.content.title}</h2>
+          <h2>{title}</h2>
           {body}
-          {entry.content.actions.map((action, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                action.onClick()
-                entry.finishExit()
-              }}
-            >
-              {action.label}
-            </button>
-          ))}
+          {footer}
           {children}
         </section>
       )
@@ -94,12 +88,14 @@ function checkTypes() {
     title: "Profile",
     initialState: { name: "Ada", count: 0 },
     defaultResult: null,
-    render({ data, controls }) {
-      controls.update({ name: "Grace" })
-      // @ts-expect-error Form updates keep their inferred types through the adapter.
-      controls.update({ count: "one" })
-      controls.close(data)
-      return null
+    body: {
+      component: function Body({ data, controls }) {
+        controls.update({ data: { name: "Grace" } })
+        // @ts-expect-error Form updates keep their inferred types through the adapter.
+        controls.update({ data: { count: "one" } })
+        controls.close(data)
+        return null
+      }
     }
   })
   expectTypeOf(definition.open()).resolves.toEqualTypeOf<{ name: string; count: number } | null>()

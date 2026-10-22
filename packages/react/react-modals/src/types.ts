@@ -1,67 +1,114 @@
-import type { ModalActivity, ModalEntry, ModalStore } from "@buildkitgg/modal-core"
+import type { ModalActivity, ModalCloseEvent, ModalEntry, ModalStore } from "@buildkitgg/modal-core"
 import type { ComponentType, CSSProperties, ReactNode } from "react"
 
+export type { ModalCloseEvent, ModalCloseReason } from "@buildkitgg/modal-core"
 export type ModalLabels = { confirm: ReactNode; cancel: ReactNode; close: ReactNode }
 export type ModalManagerOptions<TSurface = ModalSurfaceOptions> = {
   labels?: Partial<ModalLabels>
   adapter?: ModalAdapter<TSurface>
 }
-/** A renderer binding selected once when creating a manager. */
+/** UI bindings captured once per manager. DefaultFooter styles only the built-in helper buttons. */
 export type ModalAdapter<TSurface = ModalSurfaceOptions> = Readonly<{
   Surface: ComponentType<ModalSurfaceProps<TSurface>>
+  DefaultFooter?: ComponentType<ModalDefaultFooterProps>
 }>
-/** Styling shared by every UI adapter. Native dialog behavior belongs to the renderer. */
+export type ModalDefaultFooterProps = {
+  kind: "close" | "confirm"
+  labels: ModalLabels
+  isPending: boolean
+  dismiss(): Promise<boolean>
+  confirm(): void
+}
 export type ModalSurfaceOptions = { className?: string; style?: CSSProperties }
+/** Nodes are rendered directly. Component slots receive live props with normal React hook semantics. */
+export type ModalSlot<TProps> = ReactNode | { component: ComponentType<TProps> }
+export type ModalSlots<TProps> = {
+  title: ModalSlot<TProps>
+  body?: ModalSlot<TProps>
+  footer?: ModalSlot<TProps>
+}
 export type ModalOptions<TSurface> = {
   id?: string
   title: ReactNode
+  body?: ReactNode
+  footer?: ReactNode
   description?: ReactNode
+  /** Required when the title is absent or has no accessible text. Overrides title-based naming. */
+  ariaLabel?: string
   surfaceProps?: TSurface
   dismissible?: boolean
 }
-export type OpenModalOptions<TSurface> = ModalOptions<TSurface> & { children?: ReactNode; closeLabel?: ReactNode }
-export type ConfirmModalOptions<TSurface> = OpenModalOptions<TSurface> & {
-  confirmLabel?: ReactNode
-  cancelLabel?: ReactNode
-}
-export type ModalStateUpdate<TData extends object> = Partial<TData> | ((current: Readonly<TData>) => Partial<TData>)
-export type ModalControls<TResult, TData extends object> = {
+export type StandardModalOptions<TSurface, TResult> = Omit<ModalOptions<TSurface>, keyof ModalSlots<never>> &
+  ModalSlots<StandardModalSlotProps<TSurface, TResult>> & {
+    closeLabel?: ReactNode
+    confirmLabel?: ReactNode
+    cancelLabel?: ReactNode
+    onClose?: ((event: ModalCloseEvent<TResult>) => void) | null
+  }
+export type OpenModalOptions<TSurface> = StandardModalOptions<TSurface, void>
+export type ConfirmModalOptions<TSurface> = StandardModalOptions<TSurface, boolean>
+export type ModalStateUpdate<TState extends object, TPatch = Partial<TState>> =
+  | TPatch
+  | ((current: Readonly<TState>) => TPatch)
+/** Current per-instance slots, presentation, callback and custom data. */
+export type ModalState<TData extends object, TSurface = ModalSurfaceOptions, TResult = TData | null> = Readonly<
+  Omit<ModalOptions<TSurface>, "id" | keyof ModalSlots<never>> &
+    ModalSlots<ModalSlotProps<TData, TResult, TSurface>> & {
+      data: Readonly<TData>
+      onClose?: ((event: ModalCloseEvent<TResult>) => void) | null
+    }
+>
+export type ModalUpdate<TData extends object, TSurface = ModalSurfaceOptions, TResult = TData | null> = Partial<
+  Omit<ModalState<TData, TSurface, TResult>, "data">
+> & { data?: Partial<TData> }
+export type ModalControls<TResult, TData extends object, TSurface = ModalSurfaceOptions> = {
   readonly id: string
   close(result: TResult): void
   dismiss(): Promise<boolean>
   submit(action: (data: Readonly<TData>) => TResult | Promise<TResult>): Promise<boolean>
-  update(patch: ModalStateUpdate<TData>): void
+  update(patch: ModalStateUpdate<ModalState<TData, TSurface, TResult>, ModalUpdate<TData, TSurface, TResult>>): void
   isActive(): boolean
 }
-export type ModalHandle<TResult, TData extends object> = Promise<TResult> & ModalControls<TResult, TData>
-export type ModalBodyProps<TData extends object, TResult = TData | null> = ModalActivity & {
+export type ModalHandle<TResult, TData extends object, TSurface = ModalSurfaceOptions> = Promise<TResult> &
+  ModalControls<TResult, TData, TSurface>
+export type StandardModalHandle<TResult, TOptions extends object> = Promise<TResult> &
+  Omit<ModalControls<TResult, TOptions>, "update"> & {
+    update(patch: ModalStateUpdate<Omit<TOptions, "id">>): void
+  }
+export type StandardModalSlotProps<TSurface, TResult> = ModalActivity & {
+  data: Readonly<StandardModalOptions<TSurface, TResult>>
+  controls: Omit<StandardModalHandle<TResult, StandardModalOptions<TSurface, TResult>>, keyof Promise<TResult>>
+}
+export type ModalSlotProps<
+  TData extends object,
+  TResult = TData | null,
+  TSurface = ModalSurfaceOptions
+> = ModalActivity & {
   data: Readonly<TData>
-  controls: ModalControls<TResult, TData>
+  controls: ModalControls<TResult, TData, TSurface>
 }
-export type ModalDefinition<TData extends object, TResult> = {
-  open(overrides?: Partial<TData>, options?: { id?: string }): ModalHandle<TResult, TData>
+export type ModalDefinition<TData extends object, TResult, TSurface = ModalSurfaceOptions> = {
+  open(overrides?: Partial<TData>, options?: { id?: string }): ModalHandle<TResult, TData, TSurface>
 }
-export type CreateModalOptions<TData extends object, TResult, TSurface> = ModalOptions<TSurface> & {
-  /** Use a factory for independently allocated nested values on each opening. */
+export type CreateModalOptions<TData extends object, TResult, TSurface> = Omit<
+  ModalState<NoInfer<TData>, TSurface, TResult>,
+  "data"
+> & {
+  id?: string
   initialState: TData | (() => TData)
-  /** A React component, rendered with normal hook and reconciliation semantics. */
-  render: ComponentType<ModalBodyProps<NoInfer<TData>, TResult>>
-  /** Does not narrow the successful result type. */
   defaultResult: NoInfer<TResult>
   beforeDismiss?(data: Readonly<NoInfer<TData>>): boolean | Promise<boolean>
 }
-export type ModalAction = Readonly<{ label: ReactNode; appearance: "primary" | "secondary"; onClick(): void }>
+export type ModalRenderedSlots = { title: ReactNode; body: ReactNode; footer: ReactNode }
 export type ModalView<TSurface> = Readonly<
-  ModalOptions<TSurface> & {
-    renderBody(activity: ModalActivity): ReactNode
-    actions: readonly ModalAction[]
+  Omit<ModalOptions<TSurface>, keyof ModalSlots<never>> & {
+    renderSlots(activity: ModalActivity): ModalRenderedSlots
     returnFocus?: HTMLElement
   }
 >
-export type ModalSurfaceProps<TSurface> = {
+export type ModalSurfaceProps<TSurface> = ModalRenderedSlots & {
   entry: ModalEntry<ModalView<TSurface>>
-  body: ReactNode
-  /** Render descendants within the native dialog context so focus and Escape follow the stack. */
+  /** Nested modals belong inside the native dialog context. */
   children?: ReactNode
 }
 export type ModalManager<TSurface> = Pick<
@@ -69,10 +116,10 @@ export type ModalManager<TSurface> = Pick<
   "subscribe" | "getSnapshot" | "getServerSnapshot" | "closeAll" | "clear" | "dispose"
 > & {
   readonly adapter?: ModalAdapter<TSurface>
-  open(options: OpenModalOptions<TSurface>): ModalHandle<void, OpenModalOptions<TSurface>>
-  alert(options: OpenModalOptions<TSurface>): ModalHandle<void, OpenModalOptions<TSurface>>
-  confirm(options: ConfirmModalOptions<TSurface>): ModalHandle<boolean, ConfirmModalOptions<TSurface>>
+  open(options: OpenModalOptions<TSurface>): StandardModalHandle<void, OpenModalOptions<TSurface>>
+  alert(options: OpenModalOptions<TSurface>): StandardModalHandle<void, OpenModalOptions<TSurface>>
+  confirm(options: ConfirmModalOptions<TSurface>): StandardModalHandle<boolean, ConfirmModalOptions<TSurface>>
   createModal<TData extends object, TResult = TData | null>(
     options: CreateModalOptions<TData, TResult, TSurface>
-  ): ModalDefinition<TData, TResult>
+  ): ModalDefinition<TData, TResult, TSurface>
 }

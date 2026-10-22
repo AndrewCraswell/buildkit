@@ -34,3 +34,5 @@ export const ExplicitDismissal: StoryObj<typeof meta> = { ...modalStory("require
 export const SaveAndRetry: StoryObj<typeof meta> = { ...modalStory("async"), name: "Save and retry" }
 export const UnsavedChanges: StoryObj<typeof meta> = { ...modalStory("guard"), name: "Unsaved changes" }
 export const ExternalUpdate: StoryObj<typeof meta> = { ...modalStory("external"), name: "External update" }
+
+export const ReplaceableSlots: StoryObj<typeof meta> = { ...modalStory("slots"), name: "Replaceable slots" }

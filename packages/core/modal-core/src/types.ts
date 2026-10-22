@@ -1,5 +1,7 @@
 export type ModalStatus = "open" | "closing"
 export type ModalActivity = Readonly<{ isPending: boolean; error: unknown }>
+export type ModalCloseReason = "completed" | "dismissed" | "parent-closed" | "close-all" | "cleared" | "disposed"
+export type ModalCloseEvent<TResult> = Readonly<{ id: string; result: TResult; reason: ModalCloseReason }>
 
 export type ModalControls<TResult, TContent> = {
   readonly id: string
@@ -32,6 +34,8 @@ export type ModalOpenOptions<TResult, TContent> = {
   id?: string
   defaultResult: TResult
   beforeDismiss?(): boolean | Promise<boolean>
+  /** Observes settlement after the closing snapshot is published. Cannot veto closure. */
+  onClose?(event: ModalCloseEvent<TResult>): void
   createContent(controls: ModalControls<TResult, TContent>): TContent
 }
 

@@ -38,7 +38,7 @@ export type {
 } from "./types.js"
 export { useModals } from "@buildkitgg/react-modals"
 export type {
-  ModalBodyProps,
+  ModalSlotProps,
   ModalControls,
   ModalHandle,
   ModalDefinition,
@@ -46,5 +46,16 @@ export type {
   ModalManagerOptions,
   ModalSurfaceOptions,
   ModalStateUpdate,
+  ModalSlot,
+  ModalSlots,
+  ModalRenderedSlots,
+  ModalDefaultFooterProps,
+  StandardModalSlotProps,
+  StandardModalOptions,
+  ModalCloseEvent,
+  ModalCloseReason,
+  ModalState,
+  ModalUpdate,
+  StandardModalHandle,
   CreateModalOptions
 } from "@buildkitgg/react-modals"

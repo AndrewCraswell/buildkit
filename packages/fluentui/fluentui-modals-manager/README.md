@@ -42,5 +42,13 @@ import change. Its default renderer also takes only manager, with no primitive o
 styles, providers and UI-specific custom form controls when changing design systems. If you configured a custom adapter,
 update or remove it to use the new design system's components.
 
-See [lifecycle and architecture](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modals.md) and
+Keep the returned modal handle to update an open instance. Standard modals use `handle.update()` for opening options;
+custom definitions use the same method with `{ data: partialState, title?, description?, dismissible?, surfaceProps? }`.
+Functional updaters receive the current presentation and `current.data`. Every component slot's `controls.update()`
+works identically. `title`, `body` and `footer` accept React nodes or `{ component: Component }`. A custom footer
+replaces the helper buttons, leaving variants and styling to your components. Use `ariaLabel` when the title has no
+accessible text. The updateable `onClose({ id, result, reason })` callback observes settlement once.
+
+See [update examples](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modal-updates.md),
+[lifecycle and architecture](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modals.md) and
 [package guide](docs/README.md).

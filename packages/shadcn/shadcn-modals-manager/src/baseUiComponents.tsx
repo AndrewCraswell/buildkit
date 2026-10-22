@@ -2,6 +2,7 @@
 
 import { useModalExit } from "@buildkitgg/react-modals"
 import type { ModalSurfaceOptions, ModalSurfaceProps } from "@buildkitgg/react-modals"
+import { createDefaultFooter } from "./createDefaultFooter.js"
 import { ModalContent } from "./ModalContent.js"
 import type { BaseUiModalComponents, ModalAdapter } from "./types.js"
 
@@ -29,6 +30,8 @@ export function baseUiComponents(components: BaseUiModalComponents): ModalAdapte
           {...view.surfaceProps}
           showCloseButton={false}
           aria-busy={entry.isPending || undefined}
+          aria-label={view.ariaLabel}
+          {...(view.ariaLabel ? { "aria-labelledby": undefined } : {})}
           finalFocus={() => view.returnFocus}
         >
           <ModalContent {...props} components={components} />
@@ -36,5 +39,5 @@ export function baseUiComponents(components: BaseUiModalComponents): ModalAdapte
       </Dialog>
     )
   }
-  return { Surface }
+  return { Surface, DefaultFooter: createDefaultFooter(components.Button) }
 }

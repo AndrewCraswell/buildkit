@@ -17,21 +17,24 @@ portals, focus trapping and accessibility. Form libraries are optional consumer 
 
 - `confirm(options)` resolves to `true` on confirmation and `false` on cancellation.
 - `open(options)` and `alert(options)` resolve to `undefined`.
-- `createModal({ initialState, render, defaultResult, ...options })` defines a reusable typed modal.
+- `createModal({ initialState, body, defaultResult, ...options })` defines a reusable typed modal.
 - Its `open(overrides?, { id }?)` merges shallow overrides onto fresh top-level defaults.
-- `handle.update(patch)` and `handle.update(current => patch)` merge typed state changes.
+- `handle.update(patch)` and `handle.update(current => patch)` update presentation and custom state together.
+- Put custom state patches under `data`, with presentation fields such as `title` at the top level. Functional updates
+  receive the current presentation and `current.data`. Standard modals patch content and labels at the top level.
 - `handle.close(result)` completes immediately with the declared result. `await handle` receives that result.
 
 State is inferred from `initialState`. The result defaults to the state type plus `null`; an annotated React component
 or explicit `<State, Result>` can choose a different result. `defaultResult` must fit that result and does not narrow
-it. Named components and inline `render` components receive the same `data`, `controls`, `isPending` and `error` props.
-They are rendered as React components, so hooks and local state survive data and activity updates.
+it. Named components and inline slot components receive the same `data`, `controls`, `isPending` and `error` props. They
+are rendered as React components, so hooks and local state survive data and activity updates.
 
 Defaults and updates are shallow. Treat nested values as immutable and replace them through updates. Use an
 `initialState: () => ({ ... })` factory for independent nested objects on every opening. This supports values such as
 callbacks and UI objects without imposing JSON serialization or cloning semantics.
 
-See [typed forms and inferred state](modal-forms.md) for examples.
+See [typed forms and inferred state](modal-forms.md) for examples. See [updating open modals](modal-updates.md) for core
+content, standard modal options and custom presentation updates.
 
 ## Submission and dismissal
 
@@ -52,10 +55,12 @@ submission/guard results are ignored. Application requests themselves are not ab
 
 ## Lifecycle and identity
 
-An entry transitions from `open` to `closing` to removed. Results settle once, before notifying subscribers.
-`entry.finishExit()` removes closed entries after exit completion. Adapters use Base UI's `onOpenChangeComplete`,
-Radix's `onCloseAutoFocus` after native content unmount, and Fluent's `surfaceMotion.onMotionFinish`. They do not guess
-animation durations. React also removes entries closed before an animation mounted.
+An entry transitions from `open` to `closing` to removed. Results settle once, before notifying subscribers. The latest
+`onClose({ id, result, reason })` observes settlement after subscribers, independently of dismissal guards. See
+[slots and close reasons](modal-updates.md) for callback timing and failure handling. `entry.finishExit()` removes
+closed entries after exit completion. Adapters use Base UI's `onOpenChangeComplete`, Radix's `onCloseAutoFocus` after
+native content unmount, and Fluent's `surfaceMotion.onMotionFinish`. They do not guess animation durations. React also
+removes entries closed before an animation mounted.
 
 Closing a parent settles its descendants. Closing a child leaves the parent open. A new root may open while a previous
 root exits. Instance keys are independent of user IDs, so stale handles cannot affect reused IDs. Blank or duplicate IDs
@@ -74,10 +79,10 @@ Both UI adapters export `createModalManager`, `ModalRenderer`, `ModalManager`, `
 definitions, state updates and result handling need only a package import change. `surfaceProps` supports `className`
 and `style` in both packages. Native dialog props stay inside custom renderers, outside the portable API.
 
-A custom React surface receives `entry`, `body` and nested `children`. It renders the body, respects `dismissible`,
-routes cancellation to `entry.dismiss()`, and calls `entry.finishExit()` after exit. Keep children inside native dialog
-context for nested focus handling. Both supplied adapters mark pending surfaces with `aria-busy`. Pass it as
-`adapter: { Surface: YourSurface }` when creating a manager. The shared React manager captures the binding once; the
+A custom React surface receives `entry`, `title`, `body`, `footer` and nested `children`. It renders the slots, respects
+`dismissible`, routes cancellation to `entry.dismiss()`, and calls `entry.finishExit()` after exit. Keep children inside
+native dialog context for nested focus handling. Both supplied adapters mark pending surfaces with `aria-busy`. Pass it
+as `adapter: { Surface: YourSurface }` when creating a manager. The shared React manager captures the binding once; the
 shared renderer uses it for every entry and descendant. No global adapter registry is used. The headless React manager
 can omit an adapter, but its renderer requires one.
 
@@ -95,8 +100,5 @@ custom adapter as part of the app's UI setup. Wrappers must forward lifecycle pr
 close. See the [shadcn integration guide](../packages/shadcn/shadcn-modals-manager/README.md).
 
 Default labels are set with `createModalManager({ labels })` in either adapter. Per-call labels override them. Titles
-are required; custom bodies must supply a keyboard-accessible completion or cancellation action.
-
-The original Fluent implementation remains untouched in `D:/msft/fluentui-modal-manager`. Buildkit replaces its
-singleton, per-instance subscription pattern and fixed exit delays with isolated stores, one host subscription and
-native exit events.
+accept React nodes and live components. Supply `ariaLabel` when there is no accessible title text. Custom footers
+replace the default buttons; ensure there is a keyboard-accessible completion or cancellation action.

@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "Close observers receive a typed result and lifecycle reason once per settlement, including completion, dismissal and teardown.",
+  "packageName": "@buildkitgg/modal-core",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

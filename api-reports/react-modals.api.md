@@ -7,64 +7,64 @@
 import type { ComponentType } from 'react';
 import type { CSSProperties } from 'react';
 import type { ModalActivity } from '@buildkitgg/modal-core';
+import { ModalCloseEvent } from '@buildkitgg/modal-core';
+import { ModalCloseReason } from '@buildkitgg/modal-core';
 import type { ModalEntry } from '@buildkitgg/modal-core';
 import type { ModalStore } from '@buildkitgg/modal-core';
 import { ReactNode } from 'react';
 
 // @public (undocumented)
-export type ConfirmModalOptions<TSurface> = OpenModalOptions<TSurface> & {
-    confirmLabel?: ReactNode;
-    cancelLabel?: ReactNode;
-};
+export type ConfirmModalOptions<TSurface> = StandardModalOptions<TSurface, boolean>;
 
 // @public
 export function createModalManager<TSurface = ModalSurfaceOptions>(options?: ModalManagerOptions<TSurface>): ModalManager<TSurface>;
 
 // @public (undocumented)
-export type CreateModalOptions<TData extends object, TResult, TSurface> = ModalOptions<TSurface> & {
+export type CreateModalOptions<TData extends object, TResult, TSurface> = Omit<ModalState<NoInfer<TData>, TSurface, TResult>, "data"> & {
+    id?: string;
     initialState: TData | (() => TData);
-    render: ComponentType<ModalBodyProps<NoInfer<TData>, TResult>>;
     defaultResult: NoInfer<TResult>;
     beforeDismiss?(data: Readonly<NoInfer<TData>>): boolean | Promise<boolean>;
 };
 
-// @public (undocumented)
-export type ModalAction = Readonly<{
-    label: ReactNode;
-    appearance: "primary" | "secondary";
-    onClick(): void;
-}>;
-
 // @public
 export type ModalAdapter<TSurface = ModalSurfaceOptions> = Readonly<{
     Surface: ComponentType<ModalSurfaceProps<TSurface>>;
+    DefaultFooter?: ComponentType<ModalDefaultFooterProps>;
 }>;
 
-// @public (undocumented)
-export type ModalBodyProps<TData extends object, TResult = TData | null> = ModalActivity & {
-    data: Readonly<TData>;
-    controls: ModalControls<TResult, TData>;
-};
+export { ModalCloseEvent }
+
+export { ModalCloseReason }
 
 // @public (undocumented)
-export type ModalControls<TResult, TData extends object> = {
+export type ModalControls<TResult, TData extends object, TSurface = ModalSurfaceOptions> = {
     readonly id: string;
     close(result: TResult): void;
     dismiss(): Promise<boolean>;
     submit(action: (data: Readonly<TData>) => TResult | Promise<TResult>): Promise<boolean>;
-    update(patch: ModalStateUpdate<TData>): void;
+    update(patch: ModalStateUpdate<ModalState<TData, TSurface, TResult>, ModalUpdate<TData, TSurface, TResult>>): void;
     isActive(): boolean;
 };
 
 // @public (undocumented)
-export type ModalDefinition<TData extends object, TResult> = {
-    open(overrides?: Partial<TData>, options?: {
-        id?: string;
-    }): ModalHandle<TResult, TData>;
+export type ModalDefaultFooterProps = {
+    kind: "close" | "confirm";
+    labels: ModalLabels;
+    isPending: boolean;
+    dismiss(): Promise<boolean>;
+    confirm(): void;
 };
 
 // @public (undocumented)
-export type ModalHandle<TResult, TData extends object> = Promise<TResult> & ModalControls<TResult, TData>;
+export type ModalDefinition<TData extends object, TResult, TSurface = ModalSurfaceOptions> = {
+    open(overrides?: Partial<TData>, options?: {
+        id?: string;
+    }): ModalHandle<TResult, TData, TSurface>;
+};
+
+// @public (undocumented)
+export type ModalHandle<TResult, TData extends object, TSurface = ModalSurfaceOptions> = Promise<TResult> & ModalControls<TResult, TData, TSurface>;
 
 // @public (undocumented)
 export type ModalLabels = {
@@ -76,10 +76,10 @@ export type ModalLabels = {
 // @public (undocumented)
 export type ModalManager<TSurface> = Pick<ModalStore<ModalView<TSurface>>, "subscribe" | "getSnapshot" | "getServerSnapshot" | "closeAll" | "clear" | "dispose"> & {
     readonly adapter?: ModalAdapter<TSurface>;
-    open(options: OpenModalOptions<TSurface>): ModalHandle<void, OpenModalOptions<TSurface>>;
-    alert(options: OpenModalOptions<TSurface>): ModalHandle<void, OpenModalOptions<TSurface>>;
-    confirm(options: ConfirmModalOptions<TSurface>): ModalHandle<boolean, ConfirmModalOptions<TSurface>>;
-    createModal<TData extends object, TResult = TData | null>(options: CreateModalOptions<TData, TResult, TSurface>): ModalDefinition<TData, TResult>;
+    open(options: OpenModalOptions<TSurface>): StandardModalHandle<void, OpenModalOptions<TSurface>>;
+    alert(options: OpenModalOptions<TSurface>): StandardModalHandle<void, OpenModalOptions<TSurface>>;
+    confirm(options: ConfirmModalOptions<TSurface>): StandardModalHandle<boolean, ConfirmModalOptions<TSurface>>;
+    createModal<TData extends object, TResult = TData | null>(options: CreateModalOptions<TData, TResult, TSurface>): ModalDefinition<TData, TResult, TSurface>;
 };
 
 // @public (undocumented)
@@ -92,9 +92,19 @@ export type ModalManagerOptions<TSurface = ModalSurfaceOptions> = {
 export type ModalOptions<TSurface> = {
     id?: string;
     title: ReactNode;
+    body?: ReactNode;
+    footer?: ReactNode;
     description?: ReactNode;
+    ariaLabel?: string;
     surfaceProps?: TSurface;
     dismissible?: boolean;
+};
+
+// @public (undocumented)
+export type ModalRenderedSlots = {
+    title: ReactNode;
+    body: ReactNode;
+    footer: ReactNode;
 };
 
 // @public (undocumented)
@@ -105,33 +115,76 @@ export type ModalRendererProps<TSurface = ModalSurfaceOptions> = {
     manager: ModalManager<TSurface>;
 };
 
+// @public
+export type ModalSlot<TProps> = ReactNode | {
+    component: ComponentType<TProps>;
+};
+
 // @public (undocumented)
-export type ModalStateUpdate<TData extends object> = Partial<TData> | ((current: Readonly<TData>) => Partial<TData>);
+export type ModalSlotProps<TData extends object, TResult = TData | null, TSurface = ModalSurfaceOptions> = ModalActivity & {
+    data: Readonly<TData>;
+    controls: ModalControls<TResult, TData, TSurface>;
+};
+
+// @public (undocumented)
+export type ModalSlots<TProps> = {
+    title: ModalSlot<TProps>;
+    body?: ModalSlot<TProps>;
+    footer?: ModalSlot<TProps>;
+};
 
 // @public
+export type ModalState<TData extends object, TSurface = ModalSurfaceOptions, TResult = TData | null> = Readonly<Omit<ModalOptions<TSurface>, "id" | keyof ModalSlots<never>> & ModalSlots<ModalSlotProps<TData, TResult, TSurface>> & {
+    data: Readonly<TData>;
+    onClose?: ((event: ModalCloseEvent<TResult>) => void) | null;
+}>;
+
+// @public (undocumented)
+export type ModalStateUpdate<TState extends object, TPatch = Partial<TState>> = TPatch | ((current: Readonly<TState>) => TPatch);
+
+// @public (undocumented)
 export type ModalSurfaceOptions = {
     className?: string;
     style?: CSSProperties;
 };
 
 // @public (undocumented)
-export type ModalSurfaceProps<TSurface> = {
+export type ModalSurfaceProps<TSurface> = ModalRenderedSlots & {
     entry: ModalEntry<ModalView<TSurface>>;
-    body: ReactNode;
     children?: ReactNode;
 };
 
 // @public (undocumented)
-export type ModalView<TSurface> = Readonly<ModalOptions<TSurface> & {
-    renderBody(activity: ModalActivity): ReactNode;
-    actions: readonly ModalAction[];
+export type ModalUpdate<TData extends object, TSurface = ModalSurfaceOptions, TResult = TData | null> = Partial<Omit<ModalState<TData, TSurface, TResult>, "data">> & {
+    data?: Partial<TData>;
+};
+
+// @public (undocumented)
+export type ModalView<TSurface> = Readonly<Omit<ModalOptions<TSurface>, keyof ModalSlots<never>> & {
+    renderSlots(activity: ModalActivity): ModalRenderedSlots;
     returnFocus?: HTMLElement;
 }>;
 
 // @public (undocumented)
-export type OpenModalOptions<TSurface> = ModalOptions<TSurface> & {
-    children?: ReactNode;
+export type OpenModalOptions<TSurface> = StandardModalOptions<TSurface, void>;
+
+// @public (undocumented)
+export type StandardModalHandle<TResult, TOptions extends object> = Promise<TResult> & Omit<ModalControls<TResult, TOptions>, "update"> & {
+    update(patch: ModalStateUpdate<Omit<TOptions, "id">>): void;
+};
+
+// @public (undocumented)
+export type StandardModalOptions<TSurface, TResult> = Omit<ModalOptions<TSurface>, keyof ModalSlots<never>> & ModalSlots<StandardModalSlotProps<TSurface, TResult>> & {
     closeLabel?: ReactNode;
+    confirmLabel?: ReactNode;
+    cancelLabel?: ReactNode;
+    onClose?: ((event: ModalCloseEvent<TResult>) => void) | null;
+};
+
+// @public (undocumented)
+export type StandardModalSlotProps<TSurface, TResult> = ModalActivity & {
+    data: Readonly<StandardModalOptions<TSurface, TResult>>;
+    controls: Omit<StandardModalHandle<TResult, StandardModalOptions<TSurface, TResult>>, keyof Promise<TResult>>;
 };
 
 // @public
