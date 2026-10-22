@@ -26,7 +26,7 @@ const scenarios = [
     description:
       "Prefill a modal with your data and await the edited object. State and result types follow your definition. Cancelling returns the default result, null in this example.",
     hint: "Change the name and save. The returned object updates this project.",
-    code: 'const edit = manager.createModal({\n  initialState: { name: "Website refresh" },\n  defaultResult: null,\n  render: ProjectForm\n})\n\nconst project = await edit.open()\n// { name: string } | null'
+    code: 'const edit = manager.createModal({\n  initialState: { name: "Website refresh" },\n  defaultResult: null,\n  body: { component: ProjectForm }\n})\n\nconst project = await edit.open()\n// { name: string } | null'
   },
   {
     id: "retry",

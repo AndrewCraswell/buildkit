@@ -8,6 +8,7 @@ permissions:
   contents: write
   pull-requests: write
   actions: write
+  statuses: write
 concurrency:
   group: merge-release
   cancel-in-progress: false
@@ -24,12 +25,26 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          VERIFIED_RUN_ID: ${{ github.event.workflow_run.id }}
+          VERIFIED_EVENT: ${{ github.event.workflow_run.event }}
         run: |
           # Read GitHub metadata only. Never check out or execute PR code here.
           number=$(gh pr list --head "$RELEASE_BRANCH" --base main --state open --json number,isDraft,author,headRefOid,isCrossRepository --jq \
             '.[] | select(.isDraft == false and .isCrossRepository == false and .author.login == "app/github-actions") | .number')
           test -n "$number" || exit 0
           test "$(gh pr view "$number" --json headRefOid --jq .headRefOid)" = "$VERIFIED_SHA" || exit 0
+          # workflow_dispatch jobs do not count as required PR checks. Report their
+          # actual successful results as commit statuses, linked to each source job.
+          if test "$VERIFIED_EVENT" = 'workflow_dispatch'; then
+            jobs=$(gh api "repos/$GH_REPO/actions/runs/$VERIFIED_RUN_ID/jobs?filter=latest" --paginate --jq '.jobs[] | {name, conclusion, html_url}')
+            for context in 'verify' 'integration (ubuntu-latest)' 'integration (windows-latest)' 'integration (macos-latest)'; do
+              target=$(printf '%s\n' "$jobs" | jq -r --arg context "$context" 'select(.name == $context and .conclusion == "success") | .html_url')
+              test -n "$target" || { echo "Missing successful CI job: $context" >&2; exit 1; }
+              gh api --method POST "repos/$GH_REPO/statuses/$VERIFIED_SHA" \
+                -f state=success -f context="$context" -f target_url="$target" \
+                -f description="Passed in release CI run $VERIFIED_RUN_ID" --silent
+            done
+          fi
           # GitHub still enforces every branch protection and the current head SHA.
           gh pr merge "$number" --squash --match-head-commit "$VERIFIED_SHA"
           # GITHUB_TOKEN merges do not trigger push workflows automatically.

@@ -1,0 +1,7 @@
+{
+  "type": "major",
+  "comment": "Modal title, body and footer slots accept React nodes and live components. The update method patches slots, presentation, close observers and custom state under data. Custom adapters render resolved slots, and dialogs support explicit accessible names.",
+  "packageName": "@buildkitgg/react-modals",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

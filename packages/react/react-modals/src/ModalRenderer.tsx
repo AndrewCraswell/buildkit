@@ -37,7 +37,7 @@ export function ModalRenderer<TSurface>({ manager }: ModalRendererProps<TSurface
     return entries
       .filter((entry) => entry.parentKey === parentKey)
       .map((entry) => (
-        <Surface key={entry.key} entry={entry} body={entry.content.renderBody(entry)}>
+        <Surface key={entry.key} entry={entry} {...entry.content.renderSlots(entry)}>
           {renderChildren(entry.key)}
         </Surface>
       ))

@@ -24,16 +24,42 @@ defaults; they share this manager and renderer implementation.
 ## API
 
 - createModalManager({ labels?, adapter? }): open, alert, confirm and createModal.
-- createModal({ initialState, render, defaultResult, ...options }): inferred state, partial opening overrides and typed
+- createModal({ initialState, body, defaultResult, ...options }): inferred state, partial opening overrides and typed
   results.
-- controls.update(patch | updater): shallow state updates, including updates based on current values.
+- controls.update(patch | updater): update presentation and custom state together, with state patches under `data`.
+  Functional updaters receive the current presentation and `current.data`.
 - controls.submit(action): one pending action, typed success result and retryable errors.
 - beforeDismiss(data): optional asynchronous cancellation guard.
 - useModals(manager): reactive snapshot without a context provider.
 - ModalRenderer: one host, nested rendering and unmount cleanup.
-- `ModalAdapter<TSurface>`: a surface component receiving entry, body and nested children.
+- `ModalAdapter<TSurface>`: a surface component receiving entry, title, body, footer and nested children.
 - `ModalManagerOptions<TSurface>` and `ModalSurfaceOptions`: shared defaults for UI adapters. Surface options contain
   className and style; custom React surfaces may supply their own generic type.
 
-See [lifecycle and architecture](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modals.md) and
+## Update an open modal
+
+Keep the handle before awaiting its result. Standard modals patch their opening options:
+
+```tsx
+const modal = modals.open({ title: "Loading" })
+modal.update({ title: "Ready", body: "Your results are available." })
+await modal
+```
+
+Custom definitions use the same method, with custom state under `data`:
+
+```tsx
+const modal = editProfile.open()
+modal.update({ title: "Edit Grace's profile", data: { name: "Grace" } })
+modal.update(({ data }) => ({ data: { step: data.step + 1 } }))
+```
+
+Here `editProfile` is a definition with `name` and `step` in its initial state. The component's `controls.update()`
+works identically. Presentation and data each merge shallowly, together in one notification. Each opening has
+independent values. Closed handles ignore updates; IDs are fixed. All slots accept nodes or `{ component: Component }`.
+Custom footers own their buttons. `onClose({ id, result, reason })` observes settlement and can be replaced with
+`update()`.
+
+See [update examples](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modal-updates.md),
+[lifecycle and architecture](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modals.md) and
 [package guide](docs/README.md).

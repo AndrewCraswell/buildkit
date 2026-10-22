@@ -3,27 +3,23 @@ import { StrictMode, useState } from "react"
 import { renderToString } from "react-dom/server"
 import { afterEach, expect, expectTypeOf, it, vi } from "vitest"
 import { createModalManager, ModalRenderer, useModalExit, useModals } from "./index.js"
-import type { ModalBodyProps, ModalSurfaceProps } from "./index.js"
+import type { ModalSlotProps, ModalSurfaceProps } from "./index.js"
 
 afterEach(cleanup)
 
-function TestSurface({ entry, body, children }: ModalSurfaceProps<object>) {
+function TestSurface({ entry, title, body, footer, children }: ModalSurfaceProps<object>) {
   useModalExit(entry)
   return (
-    <section aria-label={String(entry.content.title)}>
+    <section aria-label={String(title)}>
       {body}
-      {entry.content.actions.map((action, index) => (
-        <button key={index} onClick={action.onClick}>
-          {action.label}
-        </button>
-      ))}
+      {footer}
       <button onClick={entry.dismiss}>Dismiss surface</button>
       <button onClick={entry.finishExit}>Finish exit</button>
       {children}
     </section>
   )
 }
-function NameBody({ data, controls }: ModalBodyProps<{ name: string }, string>) {
+function NameBody({ data, controls }: ModalSlotProps<{ name: string }, string>) {
   const [count, setCount] = useState(0)
   return (
     <>
@@ -35,29 +31,40 @@ function NameBody({ data, controls }: ModalBodyProps<{ name: string }, string>) 
 }
 
 it("shares confirm, alert, labels and typed updates in one manager", async () => {
-  const manager = createModalManager({ labels: { cancel: "Keep", close: "Done" } })
-  const confirmation = manager.confirm({ title: "Delete", children: "Original" })
-  confirmation.update({ children: "Updated" })
-  expect(manager.getSnapshot()[0].content.renderBody(manager.getSnapshot()[0])).toBe("Updated")
-  expect(manager.getSnapshot()[0].content.actions[0].label).toBe("Keep")
-  manager.getSnapshot()[0].content.actions[1].onClick()
+  const manager = createModalManager({ adapter: { Surface: TestSurface }, labels: { cancel: "Keep", close: "Done" } })
+  const confirmation = manager.confirm({ title: "Delete", body: "Original" })
+  render(<ModalRenderer manager={manager} />)
+  act(() => confirmation.update({ title: "Updated title", body: "Updated", confirmLabel: "Proceed" }))
+  expect(screen.getByRole("region", { name: "Updated title" })).toBeDefined()
+  expect(screen.getByText("Updated")).toBeDefined()
+  expect(screen.getByRole("button", { name: "Keep" })).toBeDefined()
+  fireEvent.click(screen.getByRole("button", { name: "Proceed" }))
   expect(await confirmation).toBe(true)
-  const cancelled = manager.confirm({ title: "Cancel", confirmLabel: "Delete", cancelLabel: "Keep item" })
-  manager.getSnapshot()[1].content.actions[0].onClick()
+  let cancelled: ReturnType<typeof manager.confirm> | undefined
+  act(() => {
+    manager.clear()
+    cancelled = manager.confirm({ title: "Cancel", cancelLabel: "Keep item" })
+  })
+  fireEvent.click(screen.getByRole("button", { name: "Keep item" }))
   expect(await cancelled).toBe(false)
-  const alert = manager.alert({ title: "Saved" })
-  expect(manager.getSnapshot()[2].content.actions[0].label).toBe("Done")
-  const opened = manager.open({ title: "Info", closeLabel: "Got it" })
-  manager.getSnapshot()[3].content.actions[0].onClick()
-  expect(await opened).toBeUndefined()
-  manager.closeAll()
+  let alert: ReturnType<typeof manager.alert> | undefined
+  act(() => {
+    manager.clear()
+    alert = manager.alert({ title: "Saved" })
+  })
+  fireEvent.click(screen.getByRole("button", { name: "Done" }))
   expect(await alert).toBeUndefined()
-  manager.dispose()
+  act(() => manager.dispose())
 })
 
 it("renders typed components, preserves their state on updates, and settles on real unmount", async () => {
   const manager = createModalManager({ adapter: { Surface: TestSurface } })
-  const name = manager.createModal({ render: NameBody, initialState: { name: "" }, title: "Name", defaultResult: "" })
+  const name = manager.createModal({
+    body: { component: NameBody },
+    initialState: { name: "" },
+    title: "Name",
+    defaultResult: ""
+  })
   const handle = name.open({ name: "Ada" }, { id: "name" })
   expectTypeOf(handle).resolves.toEqualTypeOf<string>()
   const view = render(
@@ -70,7 +77,7 @@ it("renders typed components, preserves their state on updates, and settles on r
   })
   expect(handle.isActive()).toBe(true)
   fireEvent.click(screen.getByText("Count 0"))
-  act(() => handle.update({ name: "Grace" }))
+  act(() => handle.update({ data: { name: "Grace" } }))
   expect(screen.getByText("Count 1")).toBeDefined()
   expect(screen.getByText("Grace")).toBeDefined()
   fireEvent.click(screen.getByText("Save name"))
@@ -129,7 +136,7 @@ it("explains the missing adapter when rendering a headless manager", () => {
 function checkTypes() {
   const manager = createModalManager<{ className?: string }>()
   const definition = manager.createModal<{ name: string }, string>({
-    render: NameBody,
+    body: { component: NameBody },
     initialState: { name: "" },
     title: "Edit",
     defaultResult: ""
@@ -138,11 +145,11 @@ function checkTypes() {
   // @ts-expect-error A result must match the definition.
   handle.close(false)
   // @ts-expect-error Updates only accept the definition's data keys.
-  handle.update({ surname: "Lovelace" })
+  handle.update({ data: { surname: "Lovelace" } })
   // @ts-expect-error Input values are typed.
   definition.open({ name: 1 })
   // @ts-expect-error Custom result types require a dismissal result.
-  manager.createModal({ render: NameBody, initialState: { name: "" }, title: "Edit" })
+  manager.createModal({ body: { component: NameBody }, initialState: { name: "" }, title: "Edit" })
   // @ts-expect-error UI options retain the adapter's surface type.
   manager.open({ title: "Edit", surfaceProps: { unknownProp: true } })
 }

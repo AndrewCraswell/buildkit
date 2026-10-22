@@ -7,19 +7,31 @@
 import type { AriaAttributes } from 'react';
 import type { ComponentType } from 'react';
 import { CreateModalOptions } from '@buildkitgg/react-modals';
+import type { CSSProperties } from 'react';
 import { JSX } from 'react';
 import { ModalAdapter } from '@buildkitgg/react-modals';
-import { ModalBodyProps } from '@buildkitgg/react-modals';
+import { ModalCloseEvent } from '@buildkitgg/react-modals';
+import { ModalCloseReason } from '@buildkitgg/react-modals';
 import { ModalControls } from '@buildkitgg/react-modals';
+import { ModalDefaultFooterProps } from '@buildkitgg/react-modals';
 import { ModalDefinition } from '@buildkitgg/react-modals';
 import { ModalHandle } from '@buildkitgg/react-modals';
 import { ModalLabels } from '@buildkitgg/react-modals';
 import type { ModalManager as ModalManager_2 } from '@buildkitgg/react-modals';
 import { ModalManagerOptions } from '@buildkitgg/react-modals';
+import { ModalRenderedSlots } from '@buildkitgg/react-modals';
+import { ModalSlot } from '@buildkitgg/react-modals';
+import { ModalSlotProps } from '@buildkitgg/react-modals';
+import { ModalSlots } from '@buildkitgg/react-modals';
+import { ModalState } from '@buildkitgg/react-modals';
 import { ModalStateUpdate } from '@buildkitgg/react-modals';
 import { ModalSurfaceOptions } from '@buildkitgg/react-modals';
+import { ModalUpdate } from '@buildkitgg/react-modals';
 import type { MouseEventHandler } from 'react';
 import type { ReactNode } from 'react';
+import { StandardModalHandle } from '@buildkitgg/react-modals';
+import { StandardModalOptions } from '@buildkitgg/react-modals';
+import { StandardModalSlotProps } from '@buildkitgg/react-modals';
 import { useModals } from '@buildkitgg/react-modals';
 
 // @public (undocumented)
@@ -44,9 +56,13 @@ export { CreateModalOptions }
 
 export { ModalAdapter }
 
-export { ModalBodyProps }
+export { ModalCloseEvent }
+
+export { ModalCloseReason }
 
 export { ModalControls }
+
+export { ModalDefaultFooterProps }
 
 export { ModalDefinition }
 
@@ -59,6 +75,8 @@ export type ModalManager = ModalManager_2<ModalSurfaceOptions>;
 
 export { ModalManagerOptions }
 
+export { ModalRenderedSlots }
+
 // @public
 export function ModalRenderer(props: ModalRendererProps): JSX.Element;
 
@@ -67,9 +85,19 @@ export type ModalRendererProps = {
     manager: ModalManager;
 };
 
+export { ModalSlot }
+
+export { ModalSlotProps }
+
+export { ModalSlots }
+
+export { ModalState }
+
 export { ModalStateUpdate }
 
 export { ModalSurfaceOptions }
+
+export { ModalUpdate }
 
 // @public (undocumented)
 export function radixComponents(components: RadixModalComponents): ModalAdapter;
@@ -82,12 +110,18 @@ export type RadixModalComponents = ModalContentComponents & {
     }>;
 };
 
+export { StandardModalHandle }
+
+export { StandardModalOptions }
+
+export { StandardModalSlotProps }
+
 export { useModals }
 
 // Warnings were encountered during analysis:
 //
-// dist/types.d.ts:38:5 - (ae-forgotten-export) The symbol "DialogProps" needs to be exported by the entry point index.d.ts
-// dist/types.d.ts:41:5 - (ae-forgotten-export) The symbol "DialogContentProps" needs to be exported by the entry point index.d.ts
+// dist/types.d.ts:39:5 - (ae-forgotten-export) The symbol "DialogProps" needs to be exported by the entry point index.d.ts
+// dist/types.d.ts:42:5 - (ae-forgotten-export) The symbol "DialogContentProps" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

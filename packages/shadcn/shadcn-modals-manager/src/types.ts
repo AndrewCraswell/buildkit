@@ -1,5 +1,5 @@
 import type { ModalManager as ReactModalManager, ModalSurfaceOptions } from "@buildkitgg/react-modals"
-import type { AriaAttributes, ComponentType, MouseEventHandler, ReactNode } from "react"
+import type { AriaAttributes, CSSProperties, ComponentType, MouseEventHandler, ReactNode } from "react"
 
 export type ModalManager = ReactModalManager<ModalSurfaceOptions>
 export type ModalRendererProps = { manager: ModalManager }
@@ -7,7 +7,7 @@ export type { ModalAdapter } from "@buildkitgg/react-modals"
 
 /** Only the props the adapter supplies, so wrapped registry components remain compatible. */
 export type ModalContentComponents = {
-  DialogTitle: ComponentType<{ children?: ReactNode }>
+  DialogTitle: ComponentType<{ children?: ReactNode; style?: CSSProperties }>
   DialogDescription: ComponentType<{ children?: ReactNode; id?: string }>
   DialogFooter: ComponentType<{ children?: ReactNode }>
   Button: ComponentType<{

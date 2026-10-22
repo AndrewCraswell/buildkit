@@ -51,6 +51,63 @@ afterEach(() => {
 })
 
 describe.each(adapters)("$name", ({ adapter }) => {
+  it("renders custom slots and supports explicit accessible names with no visible title", async () => {
+    const manager = createModalManager({ adapter })
+    const modal = manager.confirm({
+      title: <em>Preview</em>,
+      body: <p>Draft content</p>,
+      footer: <button className="consumer-style">Preview action</button>
+    })
+    render(<ModalRenderer manager={manager} />)
+    expect(screen.getByRole("dialog", { name: "Preview" })).toBeDefined()
+    expect(screen.getByRole("button", { name: "Preview action" }).className).toBe("consumer-style")
+    expect(screen.queryByRole("button", { name: "Confirm" })).toBeNull()
+    act(() => modal.update({ title: null, ariaLabel: "Named preview", body: <p>Revised content</p>, footer: null }))
+    const dialog = screen.getByRole("dialog", { name: "Named preview" })
+    expect(dialog.textContent).toContain("Revised content")
+    expect(screen.queryByRole("button", { name: "Preview action" })).toBeNull()
+    act(() => modal.update({ title: <strong>Visible again</strong>, ariaLabel: undefined, footer: undefined }))
+    expect(screen.getByRole("dialog", { name: "Visible again" })).toBeDefined()
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }))
+    expect(await modal).toBe(true)
+  })
+
+  it("updates a custom dialog's accessible name, description, styling and Escape behavior", async () => {
+    const manager = createModalManager({ adapter })
+    const handle = manager
+      .createModal({
+        title: "Profile",
+        description: "Original description",
+        initialState: { name: "Ada" },
+        defaultResult: null,
+        body: {
+          component: ({ data, controls }) => (
+            <button onClick={() => controls.update({ dismissible: true })}>{data.name}</button>
+          )
+        }
+      })
+      .open()
+    render(<ModalRenderer manager={manager} />)
+    act(() => {
+      handle.update({
+        title: "Updated profile",
+        description: "Review changes",
+        dismissible: false,
+        surfaceProps: { className: "updated-profile" }
+      })
+      handle.update({ data: { name: "Grace" } })
+    })
+    const dialog = screen.getByRole("dialog", { name: "Updated profile" })
+    expect(dialog.classList.contains("updated-profile")).toBe(true)
+    expect(document.getElementById(dialog.getAttribute("aria-describedby") ?? "")?.textContent).toBe("Review changes")
+    fireEvent.keyDown(dialog, { key: "Escape" })
+    expect(handle.isActive()).toBe(true)
+    fireEvent.click(screen.getByRole("button", { name: "Grace" }))
+    fireEvent.keyDown(dialog, { key: "Escape" })
+    await waitFor(() => expect(handle.isActive()).toBe(false))
+    expect(await handle).toBeNull()
+  })
+
   it("uses the same cancellation guard for Escape and the form's Cancel action", async () => {
     const manager = createModalManager({ adapter })
     let isAllowed = false
@@ -60,17 +117,19 @@ describe.each(adapters)("$name", ({ adapter }) => {
       initialState: { name: "Ada" },
       defaultResult: null,
       beforeDismiss: guard,
-      render: function Editor({ controls, isPending }) {
-        return (
-          <button
-            disabled={isPending}
-            onClick={() => {
-              void controls.dismiss()
-            }}
-          >
-            Cancel editing
-          </button>
-        )
+      body: {
+        component: function Editor({ controls, isPending }) {
+          return (
+            <button
+              disabled={isPending}
+              onClick={() => {
+                void controls.dismiss()
+              }}
+            >
+              Cancel editing
+            </button>
+          )
+        }
       }
     })
     const handle = definition.open()
@@ -92,10 +151,10 @@ describe.each(adapters)("$name", ({ adapter }) => {
 
   it("settles confirmations and applies external body updates", async () => {
     const manager = createModalManager({ adapter })
-    const handle = manager.confirm({ title: "Delete draft?", description: "Removes the draft", children: "Old body" })
+    const handle = manager.confirm({ title: "Delete draft?", description: "Removes the draft", body: "Old body" })
     render(<ModalRenderer manager={manager} />)
     expect(screen.getByRole("dialog", { name: "Delete draft?", description: "Removes the draft" })).toBeDefined()
-    act(() => handle.update({ children: "New body" }))
+    act(() => handle.update({ body: "New body" }))
     expect(screen.getByText("New body")).toBeDefined()
     fireEvent.click(screen.getByRole("button", { name: "Confirm" }))
     expect(await handle).toBe(true)
@@ -133,7 +192,7 @@ describe.each(adapters)("$name", ({ adapter }) => {
           onClick={() =>
             manager.open({
               title: "Parent",
-              children: <button onClick={() => manager.confirm({ title: "Child" })}>Open child</button>
+              body: <button onClick={() => manager.confirm({ title: "Child" })}>Open child</button>
             })
           }
         >
@@ -164,28 +223,30 @@ describe.each(adapters)("$name", ({ adapter }) => {
       title: "Profile",
       initialState: { name: "Ada" },
       defaultResult: null,
-      render: function Profile({ data, controls, error, isPending }) {
-        return (
-          <>
-            <p>{data.name}</p>
-            {error instanceof Error && <p role="alert">{error.message}</p>}
-            <button
-              disabled={isPending}
-              onClick={() => {
-                void controls.submit(() => {
-                  attempts++
-                  return attempts === 1
-                    ? new Promise<{ name: string }>((_, reject) => {
-                        rejectSave = reject
-                      })
-                    : data
-                })
-              }}
-            >
-              Save profile
-            </button>
-          </>
-        )
+      body: {
+        component: function Profile({ data, controls, error, isPending }) {
+          return (
+            <>
+              <p>{data.name}</p>
+              {error instanceof Error && <p role="alert">{error.message}</p>}
+              <button
+                disabled={isPending}
+                onClick={() => {
+                  void controls.submit(() => {
+                    attempts++
+                    return attempts === 1
+                      ? new Promise<{ name: string }>((_, reject) => {
+                          rejectSave = reject
+                        })
+                      : data
+                  })
+                }}
+              >
+                Save profile
+              </button>
+            </>
+          )
+        }
       }
     })
     const handle = definition.open()
@@ -200,7 +261,7 @@ describe.each(adapters)("$name", ({ adapter }) => {
       rejectSave(new Error("Save failed"))
     })
     expect(screen.getByRole("alert").textContent).toBe("Save failed")
-    act(() => handle.update({ name: "Grace" }))
+    act(() => handle.update({ data: { name: "Grace" } }))
     fireEvent.click(screen.getByRole("button", { name: "Save profile" }))
     expect(await handle).toEqual({ name: "Grace" })
     await waitFor(() => expect(manager.getSnapshot()).toHaveLength(0))

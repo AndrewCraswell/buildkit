@@ -43,6 +43,7 @@ needs a human discussion**, not a silent add.
 
 ## Documentation
 
+- Document only current behavior. Do not add migration guides or comparisons with earlier implementations.
 - **Keep this file brief** — it's the entry point; link to `docs/` articles rather than duplicating detail.
 - **Prefer small, focused `docs/` pages**, and update them (and the [index](../docs/README.md)) in the same change as
   the behavior they describe.

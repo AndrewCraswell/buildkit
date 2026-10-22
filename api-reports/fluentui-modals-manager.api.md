@@ -7,15 +7,26 @@
 import { CreateModalOptions } from '@buildkitgg/react-modals';
 import { JSX } from 'react';
 import { ModalAdapter } from '@buildkitgg/react-modals';
-import { ModalBodyProps } from '@buildkitgg/react-modals';
+import { ModalCloseEvent } from '@buildkitgg/react-modals';
+import { ModalCloseReason } from '@buildkitgg/react-modals';
 import { ModalControls } from '@buildkitgg/react-modals';
+import { ModalDefaultFooterProps } from '@buildkitgg/react-modals';
 import { ModalDefinition } from '@buildkitgg/react-modals';
 import { ModalHandle } from '@buildkitgg/react-modals';
 import { ModalLabels } from '@buildkitgg/react-modals';
 import type { ModalManager as ModalManager_2 } from '@buildkitgg/react-modals';
 import { ModalManagerOptions } from '@buildkitgg/react-modals';
+import { ModalRenderedSlots } from '@buildkitgg/react-modals';
+import { ModalSlot } from '@buildkitgg/react-modals';
+import { ModalSlotProps } from '@buildkitgg/react-modals';
+import { ModalSlots } from '@buildkitgg/react-modals';
+import { ModalState } from '@buildkitgg/react-modals';
 import { ModalStateUpdate } from '@buildkitgg/react-modals';
 import { ModalSurfaceOptions } from '@buildkitgg/react-modals';
+import { ModalUpdate } from '@buildkitgg/react-modals';
+import { StandardModalHandle } from '@buildkitgg/react-modals';
+import { StandardModalOptions } from '@buildkitgg/react-modals';
+import { StandardModalSlotProps } from '@buildkitgg/react-modals';
 import { useModals } from '@buildkitgg/react-modals';
 
 // @public (undocumented)
@@ -25,9 +36,13 @@ export { CreateModalOptions }
 
 export { ModalAdapter }
 
-export { ModalBodyProps }
+export { ModalCloseEvent }
+
+export { ModalCloseReason }
 
 export { ModalControls }
+
+export { ModalDefaultFooterProps }
 
 export { ModalDefinition }
 
@@ -40,6 +55,8 @@ export type ModalManager = ModalManager_2<ModalSurfaceOptions>;
 
 export { ModalManagerOptions }
 
+export { ModalRenderedSlots }
+
 // @public
 export function ModalRenderer(input: ModalRendererProps): JSX.Element;
 
@@ -48,9 +65,25 @@ export type ModalRendererProps = {
     manager: ModalManager;
 };
 
+export { ModalSlot }
+
+export { ModalSlotProps }
+
+export { ModalSlots }
+
+export { ModalState }
+
 export { ModalStateUpdate }
 
 export { ModalSurfaceOptions }
+
+export { ModalUpdate }
+
+export { StandardModalHandle }
+
+export { StandardModalOptions }
+
+export { StandardModalSlotProps }
 
 export { useModals }
 

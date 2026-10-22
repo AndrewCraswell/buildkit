@@ -65,7 +65,7 @@ jobs:
           git commit -m 'chore: update generated shadcn styles'
           gh auth setup-git
           git push origin "$branch"
-          printf '%s\n' "Upstream shadcn update. Validation result: $RESULT." '' 'This pipeline PR merges automatically after required CI checks pass. API baselines are never accepted automatically. Failed updates need repair and release preparation before merging. Publishing only starts after main CI succeeds and still requires npm environment approval.' > "$RUNNER_TEMP/shadcn-pr.md"
+          printf '%s\n' "Upstream shadcn update. Validation result: $RESULT." '' 'This pipeline PR merges automatically after required CI checks pass. API baselines are never accepted automatically. Failed updates need repair and release preparation before merging. Packages publish automatically after main CI succeeds.' > "$RUNNER_TEMP/shadcn-pr.md"
           gh pr create --base main --head "$branch" --title 'chore: update generated shadcn styles' --body-file "$RUNNER_TEMP/shadcn-pr.md"
           gh workflow run ci.yml --ref "$branch"
       - uses: actions/upload-artifact@v4

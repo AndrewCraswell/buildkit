@@ -1,4 +1,4 @@
-name: Publish reviewed release
+name: Release changed packages
 on:
   workflow_run:
     workflows: [CI]
@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Dispatch only a prepared version change at current main
+      - name: Prepare or publish changed packages at verified main
         env:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -32,7 +32,10 @@ jobs:
           node --input-type=module <<'NODE'
           import {execFileSync} from 'node:child_process';
           import {existsSync,readFileSync,readdirSync} from 'node:fs';
-          if (existsSync('change') && readdirSync('change').some(name => name.endsWith('.json'))) process.exit(0);
+          if (existsSync('change') && readdirSync('change').some(name => name.endsWith('.json'))) {
+            execFileSync('gh', ['workflow','run','prepare-release.yml','--ref','main'], {stdio:'inherit'});
+            process.exit(0);
+          }
           const files = execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD', '--', 'packages/*/*/package.json'], {encoding:'utf8'}).trim().split('\n').filter(Boolean);
           const changed = files.some(file => {
             if (!existsSync(file)) return false;

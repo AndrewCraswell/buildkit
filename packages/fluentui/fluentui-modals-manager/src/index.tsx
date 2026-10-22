@@ -9,6 +9,7 @@ import type {
   ModalManager as ReactModalManager,
   ModalManagerOptions,
   ModalSurfaceOptions,
+  ModalDefaultFooterProps,
   ModalSurfaceProps
 } from "@buildkitgg/react-modals"
 import {
@@ -28,7 +29,7 @@ export function createModalManager(options?: ModalManagerOptions): ModalManager 
   return createReactModalManager<ModalSurfaceOptions>({ ...options, adapter: options?.adapter ?? defaultAdapter })
 }
 
-function ModalSurface({ entry, body, children }: ModalSurfaceProps<ModalSurfaceOptions>) {
+function ModalSurface({ entry, title, body, footer, children }: ModalSurfaceProps<ModalSurfaceOptions>) {
   const descriptionId = useId()
   useModalExit(entry)
   const view = entry.content
@@ -55,22 +56,18 @@ function ModalSurface({ entry, body, children }: ModalSurfaceProps<ModalSurfaceO
         {...view.surfaceProps}
         aria-describedby={view.description ? descriptionId : undefined}
         aria-busy={entry.isPending || undefined}
+        aria-label={view.ariaLabel}
+        {...(view.ariaLabel ? { "aria-labelledby": undefined } : {})}
       >
         <DialogBody>
-          <DialogTitle>{view.title}</DialogTitle>
+          <DialogTitle style={title === null || title === undefined ? { display: "none" } : undefined}>
+            {title}
+          </DialogTitle>
           <DialogContent>
             {view.description && <p id={descriptionId}>{view.description}</p>}
             {body}
           </DialogContent>
-          {view.actions.length > 0 && (
-            <DialogActions>
-              {view.actions.map((action, index) => (
-                <Button key={index} appearance={action.appearance} onClick={action.onClick} disabled={entry.isPending}>
-                  {action.label}
-                </Button>
-              ))}
-            </DialogActions>
-          )}
+          {footer !== null && footer !== undefined && <DialogActions fluid>{footer}</DialogActions>}
           {children}
         </DialogBody>
       </DialogSurface>
@@ -78,7 +75,22 @@ function ModalSurface({ entry, body, children }: ModalSurfaceProps<ModalSurfaceO
   )
 }
 
-const defaultAdapter = { Surface: ModalSurface }
+function DefaultFooter({ kind, labels, isPending, dismiss, confirm }: ModalDefaultFooterProps) {
+  return (
+    <>
+      <Button appearance="secondary" onClick={dismiss} disabled={isPending}>
+        {kind === "confirm" ? labels.cancel : labels.close}
+      </Button>
+      {kind === "confirm" && (
+        <Button appearance="primary" onClick={confirm} disabled={isPending}>
+          {labels.confirm}
+        </Button>
+      )}
+    </>
+  )
+}
+
+const defaultAdapter = { Surface: ModalSurface, DefaultFooter }
 
 export type ModalRendererProps = { manager: ModalManager }
 /** Renders the manager's adapter. The default surface needs a FluentProvider. */
@@ -88,7 +100,7 @@ export function ModalRenderer({ manager }: ModalRendererProps) {
 
 export { useModals } from "@buildkitgg/react-modals"
 export type {
-  ModalBodyProps,
+  ModalSlotProps,
   ModalAdapter,
   ModalControls,
   ModalHandle,
@@ -97,5 +109,16 @@ export type {
   ModalManagerOptions,
   ModalSurfaceOptions,
   ModalStateUpdate,
+  ModalSlot,
+  ModalSlots,
+  ModalRenderedSlots,
+  ModalDefaultFooterProps,
+  StandardModalSlotProps,
+  StandardModalOptions,
+  ModalCloseEvent,
+  ModalCloseReason,
+  ModalState,
+  ModalUpdate,
+  StandardModalHandle,
   CreateModalOptions
 } from "@buildkitgg/react-modals"
