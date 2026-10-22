@@ -1,0 +1,78 @@
+{
+  "name": "@buildkitgg/shadcn-baseui-maia",
+  "version": "0.2.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Upstream shadcn Base UI components in the maia style, with compiled CSS and TypeScript declarations.",
+  "scripts": {
+    "build": "node ../../tooling/shadcn-generator/src/build.mjs maia",
+    "check:types": "pnpm build",
+    "prepack": "pnpm build"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.9.0",
+    "@shadcn/react": "^0.3.1",
+    "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
+    "cn": "^0.5.0",
+    "date-fns": "^4.4.0",
+    "embla-carousel-react": "^8.6.0",
+    "input-otp": "^1.5.0",
+    "lucide-react": "^1.58.0",
+    "next-themes": "^0.4.6",
+    "react-day-picker": "^10.0.2",
+    "react-resizable-panels": "^4.14.5",
+    "recharts": "3.10.1",
+    "shiki": "^4.5.0",
+    "sonner": "^2.0.8"
+  },
+  "devDependencies": {
+    "@repo/shadcn-generator": "workspace:*"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/*.css",
+    "dist/tokens.json",
+    "README.md",
+    "LICENSE",
+    "upstream.json",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": {
+      "types": "./dist/styles.d.ts",
+      "default": "./dist/styles.css"
+    },
+    "./styles-no-reset.css": {
+      "types": "./dist/styles.d.ts",
+      "default": "./dist/styles-no-reset.css"
+    },
+    "./tokens.json": "./dist/tokens.json"
+  },
+  "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "repository": {
+    "url": "git+https://github.com/AndrewCraswell/buildkit.git",
+    "type": "git",
+    "directory": "packages/shadcn/shadcn-baseui-maia"
+  },
+  "homepage": "https://github.com/AndrewCraswell/buildkit/tree/main/packages/shadcn/shadcn-baseui-maia#readme",
+  "bugs": {
+    "url": "https://github.com/AndrewCraswell/buildkit/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

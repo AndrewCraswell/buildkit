@@ -1,0 +1,20 @@
+{
+  "name": "@buildkitgg/shadcn-baseui-nova",
+  "entries": [
+    {
+      "date": "Thu, 22 Oct 2026 20:48:40 GMT",
+      "version": "0.2.0",
+      "tag": "@buildkitgg/shadcn-baseui-nova_v0.2.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "41898282+github-actions[bot]@users.noreply.github.com",
+            "package": "@buildkitgg/shadcn-baseui-nova",
+            "commit": "not available",
+            "comment": "Generate upstream Base UI style packages with a shared public API, dependency alias support, and derived token metadata."
+          }
+        ]
+      }
+    }
+  ]
+}

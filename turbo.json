@@ -22,7 +22,7 @@
     "build": {
       "dependsOn": ["^build", "^transit"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "storybook-static/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "storybook-static/**", ".generated/**"]
     },
     "build-storybook": {
       "dependsOn": ["^build"],
@@ -38,16 +38,19 @@
       "dependsOn": ["^check:unused"]
     },
     "test": {
-      "dependsOn": ["^transit"],
+      "dependsOn": ["^build", "^transit"],
       "outputs": ["coverage/**"]
     },
     "test:coverage": {
-      "dependsOn": ["^transit"],
+      "dependsOn": ["^build", "^transit"],
       "outputs": ["coverage/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "@repo/shadcn-generator#test:coverage": {
+      "outputs": []
     }
   }
 }

@@ -2,6 +2,47 @@
   "name": "@buildkitgg/shadcn-modals-manager",
   "entries": [
     {
+      "date": "Thu, 22 Oct 2026 20:48:35 GMT",
+      "version": "0.2.0",
+      "tag": "@buildkitgg/shadcn-modals-manager_v0.2.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "41898282+github-actions[bot]@users.noreply.github.com",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "commit": "not available",
+            "comment": "Use the application-selected component kit as a required peer dependency so managers inherit the installed style. BREAKING: apps must explicitly install a named style through the kit dependency alias; the kit is no longer a transitive dependency. See docs/shadcn/migration.md."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "comment": "Bump @buildkitgg/react-modals to v0.1.1",
+            "commit": "not available"
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "comment": "Bump @buildkitgg/fluentui-modals-manager to v0.1.1",
+            "commit": "not available"
+          }
+        ],
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "commit": "1392b8a477c260ce62ab3cedfa161866dfd0159a",
+            "comment": "Refresh dependencies and verify compatibility with React 19.3 and Vitest 5."
+          },
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "commit": "a9a2014fa2ef1f1fdeff2e4b0bcb68e915707a27",
+            "comment": "Update repository metadata for packages grouped by core, React, UI integrations, and tooling."
+          }
+        ]
+      }
+    },
+    {
       "date": "Sat, 17 Oct 2026 21:18:16 GMT",
       "version": "0.1.0",
       "tag": "@buildkitgg/shadcn-modals-manager_v0.1.0",

@@ -1,0 +1,45 @@
+name: Publish reviewed release
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  dispatch:
+    if:
+      github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Dispatch only a prepared version change at current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          test "$(gh api repos/$GITHUB_REPOSITORY/commits/main --jq .sha)" = "$VERIFIED_SHA" || exit 0
+          node --input-type=module <<'NODE'
+          import {execFileSync} from 'node:child_process';
+          import {existsSync,readFileSync,readdirSync} from 'node:fs';
+          if (existsSync('change') && readdirSync('change').some(name => name.endsWith('.json'))) process.exit(0);
+          const files = execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD', '--', 'packages/*/*/package.json'], {encoding:'utf8'}).trim().split('\n').filter(Boolean);
+          const changed = files.some(file => {
+            if (!existsSync(file)) return false;
+            const pkg = JSON.parse(readFileSync(file, 'utf8'));
+            if (pkg.private || !pkg.name.startsWith('@buildkitgg/')) return false;
+            let before;
+            try { before = JSON.parse(execFileSync('git', ['show', `HEAD^:${file}`], {encoding:'utf8',stdio:['ignore','pipe','ignore']})); } catch { return true; }
+            return before.version !== pkg.version;
+          });
+          if (changed) execFileSync('gh', ['workflow','run','publish.yml','--ref','main','-f','package=*','-f','dry_run=false'], {stdio:'inherit'});
+          NODE

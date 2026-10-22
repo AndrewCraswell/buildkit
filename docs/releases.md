@@ -6,9 +6,9 @@ the generated change file. Pull request CI checks release notes and runs `pnpm v
 ## Prepare and publish
 
 1. Run **Prepare release** from GitHub Actions on `main`. It bumps versions, updates changelogs and the lockfile,
-   verifies the repository, and opens a release pull request. Git hooks run normally. Review and merge that PR. GitHub
-   suppresses PR workflow triggers for the built-in workflow token, so preparation runs verification itself; CI runs
-   again on the merge to `main`.
+   verifies the repository, and opens a release pull request. Git hooks run normally. Review and merge that PR.
+   Automation-created PR workflows may require approval. Preparation verifies the change itself, and CI runs again on
+   the merge to `main`.
 2. Wait for main CI to pass. Run **Publish packages** on `main`. Keep **dry_run** enabled to preview. Select `*` for all
    public Buildkit packages, or an unscoped package name such as `fluentui-theme` to include that package and its
    dependencies. Pending Beachball change files must be consumed by a merged release PR before publication.
@@ -18,10 +18,12 @@ the generated change file. Pull request CI checks release notes and runs `pnpm v
    become installable before publishing dependents. The workflow saves its publication report even after a partial
    failure.
 
-Only public `@buildkitgg/*` packages can publish. Private packages remain incubating. Publishing is manual and does not
-change versions. Recursive publishing skips existing versions, so a partial release can be retried at the same commit.
-Check the report and registry after an interrupted run. Never bump versions just to retry a failed upload. Release
-branches can be deleted after merging. The workflow rejects stale commits if main advances before publishing.
+Only public `@buildkitgg/*` packages can publish. Private packages remain incubating. Publishing does not change
+versions. Successful push CI on main automatically dispatches publishing for prepared public package version changes
+with no pending Beachball files; npm environment approval is still required. Manual dispatch remains available for
+retries. Recursive publishing skips existing versions, so a partial release can be retried at the same commit. Check the
+report and registry after an interrupted run. Never bump versions just to retry a failed upload. Release branches can be
+deleted after merging. The workflow rejects stale commits if main advances before publishing.
 
 ## npm setup
 

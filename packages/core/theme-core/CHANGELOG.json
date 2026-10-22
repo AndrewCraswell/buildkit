@@ -2,6 +2,33 @@
   "name": "@buildkitgg/theme-core",
   "entries": [
     {
+      "date": "Thu, 22 Oct 2026 20:48:40 GMT",
+      "version": "0.1.2",
+      "tag": "@buildkitgg/theme-core_v0.1.2",
+      "comments": {
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/theme-core",
+            "commit": "1392b8a477c260ce62ab3cedfa161866dfd0159a",
+            "comment": "Refresh dependencies and verify compatibility with React 19.3 and Vitest 5."
+          },
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/theme-core",
+            "commit": "a9a2014fa2ef1f1fdeff2e4b0bcb68e915707a27",
+            "comment": "Update repository metadata for packages grouped by core, React, UI integrations, and tooling."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/theme-core",
+            "comment": "Bump @buildkitgg/preferences-core to v0.1.2",
+            "commit": "not available"
+          }
+        ]
+      }
+    },
+    {
       "date": "Sat, 17 Oct 2026 06:51:58 GMT",
       "version": "0.1.1",
       "tag": "@buildkitgg/theme-core_v0.1.1",

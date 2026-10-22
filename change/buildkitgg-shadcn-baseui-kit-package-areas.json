@@ -1,7 +1,0 @@
-{
-  "type": "patch",
-  "comment": "Update repository metadata for packages grouped by core, React, UI integrations, and tooling.",
-  "packageName": "@buildkitgg/shadcn-baseui-kit",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}
