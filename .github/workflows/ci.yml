@@ -21,12 +21,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Require release notes for public package changes
-        if:
-          github.event_name == 'pull_request' && !(github.event.pull_request.user.login == 'github-actions[bot]' &&
-          startsWith(github.head_ref, 'codex/release-'))
+        if: github.event_name == 'pull_request'
         env:
           BASE_BRANCH: ${{ github.base_ref }}
-        run: pnpm check:change --branch "origin/$BASE_BRANCH"
+        run: pnpm --filter @repo/api-tools release:check
       - name: Verify code, public API baselines, and builds
         run: pnpm validate
   integration:

@@ -6,7 +6,8 @@
     "api:check": "node src/reports.ts",
     "api:update": "node src/reports.ts --update",
     "check:types": "tsc --noEmit",
-    "lint": "oxlint --max-warnings=0"
+    "lint": "oxlint --max-warnings=0",
+    "release:check": "node src/check-release.mjs"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.59.4",
