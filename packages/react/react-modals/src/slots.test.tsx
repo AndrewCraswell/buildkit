@@ -26,6 +26,22 @@ function Counter({ data }: ModalSlotProps<{ count: number }>) {
   )
 }
 
+it.each(["standard", "custom"])("passes only public slot props to %s modal components", (kind) => {
+  const manager = createModalManager({ adapter: { Surface } })
+  function Slot(props: object) {
+    return <span>{Object.getOwnPropertyNames(props).sort().join(", ")}</span>
+  }
+  const slots = { title: { component: Slot }, body: { component: Slot }, footer: { component: Slot } }
+  if (kind === "standard") {
+    manager.open(slots)
+  } else {
+    manager.createModal({ ...slots, initialState: {}, defaultResult: null }).open()
+  }
+  render(<ModalRenderer manager={manager} />)
+  expect(screen.getAllByText("controls, data, error, isPending")).toHaveLength(3)
+  act(() => manager.dispose())
+})
+
 it("preserves component state across updates and sibling replacement, and remounts a replaced component", async () => {
   const user = userEvent.setup()
   const manager = createModalManager({ adapter: { Surface } })

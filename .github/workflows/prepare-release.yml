@@ -43,5 +43,5 @@ jobs:
           git commit -m 'chore: prepare package releases'
           gh auth setup-git
           git push origin "$branch"
-          gh pr create --base main --head "$branch" --title 'chore: prepare package releases' --body 'Beachball version and changelog updates. This release PR merges automatically after required CI checks pass. npm publication still requires environment approval.'
+          gh pr create --base main --head "$branch" --title 'chore: prepare package releases' --body 'Beachball version and changelog updates. This release PR merges automatically after required CI checks pass. Packages publish automatically after main CI succeeds.'
           gh workflow run ci.yml --ref "$branch"

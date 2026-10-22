@@ -72,10 +72,11 @@ overrides. Component utility classes are not invented into a second token system
 ## Weekly updates
 
 The weekly GitHub workflow runs on Monday. It updates, regenerates, checks the committed API baselines, prepares
-Beachball patch versions, and runs `pnpm validate`. Compatible updates are committed with a normal fast-forward push and
-dispatch the existing trusted-publishing workflow. It never force-pushes or bypasses branch protection.
+Beachball patch versions, and runs `pnpm validate`. Compatible updates open a pull request that merges automatically
+after required CI checks pass. Main CI then starts trusted publishing automatically. Git hooks and branch protections
+apply throughout.
 
 Failed updates open a review PR. API changes require review and an explicit `pnpm api:update`; API-compatible visual
-changes can still need manual assessment. If main disallows bot pushes, the review PR must be merged before publishing.
-New npm package names require their initial publication and trusted-publisher setup; the workflow cannot authorize those
-automatically. Existing npm environment approvals remain in effect.
+changes can still need manual assessment. New npm package names require their initial publication and trusted-publisher
+setup; the workflow cannot authorize those automatically. Publication of configured packages has no manual approval
+gate.

@@ -133,7 +133,7 @@ export function createModalManager<TSurface = ModalSurfaceOptions>(
         surfaceProps: state.surfaceProps,
         dismissible: state.dismissible,
         renderSlots(activity) {
-          const props = { data: state, controls, ...activity }
+          const props = { data: state, controls, isPending: activity.isPending, error: activity.error }
           return {
             title: renderSlot(state.title, props),
             body: renderSlot(state.body, props),
@@ -198,7 +198,7 @@ export function createModalManager<TSurface = ModalSurfaceOptions>(
               ...viewOptions,
               id: controls.id,
               renderSlots(activity) {
-                const props = { data, controls, ...activity }
+                const props = { data, controls, isPending: activity.isPending, error: activity.error }
                 return {
                   title: renderSlot(title, props),
                   body: renderSlot(body, props),
