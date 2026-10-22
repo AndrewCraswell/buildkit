@@ -22,10 +22,6 @@
     "packages/tooling/dev-domains": {
       "entry": ["src/cli/main.ts", "src/config/schema.ts", "src/node.ts", "src/playwright.ts"]
     },
-    "packages/shadcn/shadcn-baseui-kit": {
-      "entry": ["src/index.ts", "src/styles.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
     "packages/core/theme-core": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
@@ -93,6 +89,53 @@
     },
     "packages/react/tanstack-router": {
       "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/core/configuration-core": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/react/react-configuration": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/tooling/shadcn-generator": {
+      "entry": ["src/*.mjs"],
+      "ignoreDependencies": ["@tailwindcss/cli", "tailwindcss", "tw-animate-css"]
+    },
+    "packages/shadcn/shadcn-baseui-luma": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "packages/shadcn/shadcn-baseui-lyra": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "packages/shadcn/shadcn-baseui-maia": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "packages/shadcn/shadcn-baseui-mira": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "packages/shadcn/shadcn-baseui-nova": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "packages/shadcn/shadcn-baseui-rhea": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "packages/shadcn/shadcn-baseui-sera": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "packages/shadcn/shadcn-baseui-vega": {
+      "entry": [".generated/index.ts"],
+      "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
+    },
+    "apps/shadcn-catalog": {
       "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }

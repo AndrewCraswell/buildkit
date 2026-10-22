@@ -3,6 +3,7 @@
 Managed shadcn dialogs with a default renderer and optional Base UI or Radix registry components.
 
 ```sh
+pnpm add @buildkitgg/shadcn-baseui-kit@npm:@buildkitgg/shadcn-baseui-vega
 pnpm add @buildkitgg/shadcn-modals-manager react react-dom
 ```
 
@@ -19,10 +20,10 @@ export function App() {
 const confirmed = await modals.confirm({ title: "Delete draft?" })
 ```
 
-The default renderer uses `@buildkitgg/shadcn-baseui-kit`, which is included as a dependency. Import the stylesheet
-once; it provides the kit's tokens and compiled utilities without a global reset. If your app already loads the kit's
-styles, no second import is needed. Override the shadcn CSS variables to apply your theme. React and React DOM are
-peers.
+The default renderer uses `@buildkitgg/shadcn-baseui-kit`, which the app supplies as a peer dependency. Import the
+stylesheet once; it provides the kit's tokens and compiled utilities without a global reset. If your app already loads
+the kit's styles, no second import is needed. Override the shadcn CSS variables to apply your theme. React and React DOM
+are peers.
 
 ## Switching UI libraries
 
@@ -85,3 +86,8 @@ callback. Add native styling or layout customization inside your wrappers rather
 See [lifecycle and architecture](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modals.md),
 [typed forms](https://github.com/AndrewCraswell/buildkit/blob/main/docs/modal-forms.md) and
 [package guide](docs/README.md).
+
+## Component style
+
+Install `@buildkitgg/shadcn-baseui-kit` or alias a generated style under that name. The manager uses the app's peer
+implementation and stylesheet. [Style selection](../../../docs/shadcn/styles.md) needs no renderer adapter.

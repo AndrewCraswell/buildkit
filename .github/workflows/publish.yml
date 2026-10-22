@@ -49,7 +49,7 @@ jobs:
           }
           NODE
       - run: pnpm install --frozen-lockfile
-      - run: pnpm verify
+      - run: pnpm validate
       - name: Preview pending publications
         env:
           PACKAGE: ${{ inputs.package }}

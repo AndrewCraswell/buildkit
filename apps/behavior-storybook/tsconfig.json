@@ -3,10 +3,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "noEmit": true,
-    "paths": {
-      "@catalog": ["../../packages/shadcn/shadcn-baseui-kit/stories/catalog.stories.tsx"]
-    }
+    "noEmit": true
   },
   "include": ["src", ".storybook"]
 }

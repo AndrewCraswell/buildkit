@@ -22,7 +22,10 @@
     "test:coverage": "turbo run test:coverage",
     "change": "beachball change",
     "check:change": "beachball check",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "update:shadcn": "pnpm --filter @repo/shadcn-generator update:shadcn",
+    "generate": "pnpm --filter @repo/shadcn-generator generate && pnpm install",
+    "validate": "pnpm verify && pnpm --filter @repo/shadcn-generator validate"
   },
   "devDependencies": {
     "beachball": "^2.65.5",

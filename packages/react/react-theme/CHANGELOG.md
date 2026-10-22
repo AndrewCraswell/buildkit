@@ -1,8 +1,18 @@
 # Change Log - @buildkitgg/react-theme
 
-<!-- This log was last generated on Sat, 17 Oct 2026 06:51:58 GMT and should not be manually modified. -->
+<!-- This log was last generated on Thu, 22 Oct 2026 20:48:41 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.1.2
+
+Thu, 22 Oct 2026 20:48:41 GMT
+
+### Patches
+
+- Refresh dependencies and verify compatibility with React 19.3 and Vitest 5. (ajcraswell@gmail.com)
+- Update repository metadata for packages grouped by core, React, UI integrations, and tooling. (ajcraswell@gmail.com)
+- Bump @buildkitgg/theme-core to v0.1.2
 
 ## 0.1.1
 

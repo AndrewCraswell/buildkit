@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -27,7 +28,7 @@ jobs:
           BASE_BRANCH: ${{ github.base_ref }}
         run: pnpm check:change --branch "origin/$BASE_BRANCH"
       - name: Verify code, public API baselines, and builds
-        run: pnpm verify
+        run: pnpm validate
   integration:
     strategy:
       fail-fast: false

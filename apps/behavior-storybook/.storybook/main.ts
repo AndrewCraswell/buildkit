@@ -1,19 +1,7 @@
-import { fileURLToPath } from "node:url"
 import { defineMain } from "@repo/storybook-config/main"
 import react from "@vitejs/plugin-react"
 export default defineMain({
   framework: "@storybook/react-vite",
   stories: ["../src/**/*.stories.tsx"],
-  viteFinal: (config) => ({
-    ...config,
-    resolve: {
-      ...config.resolve,
-      alias: {
-        "@catalog": fileURLToPath(
-          new URL("../../../packages/shadcn/shadcn-baseui-kit/stories/catalog.stories.tsx", import.meta.url)
-        )
-      }
-    },
-    plugins: [...(config.plugins ?? []), react({ compiler: true })]
-  })
+  viteFinal: (config) => ({ ...config, plugins: [...(config.plugins ?? []), react({ compiler: true })] })
 })

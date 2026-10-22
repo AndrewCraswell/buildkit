@@ -1,4 +1,35 @@
+import { shadcnStylePackages } from "./shadcnStyles.js"
 export const packages = [
+  {
+    name: "configuration-core",
+    group: "Core",
+    summary: "Typed configuration with provider evaluation, safe defaults, and optional developer overrides.",
+    code: 'const config = createConfiguration({ defaults: { exports: false }, context: {} })\nawait config.refresh()\nconfig.get("exports")',
+    api: [
+      "createConfiguration(options): infer setting keys, values, and targeting context.",
+      "refresh / setContext: evaluate settings and ignore superseded responses.",
+      "override / reset / resetAll: manage explicit developer overrides.",
+      "getSetting / getSnapshot / subscribe: read stable observable state."
+    ],
+    notes:
+      "The application owns client lifecycle. Providers supply evaluated values; overrides use preferences internally. No ECS or vendor SDK dependency.",
+    example: "react-react-configuration--defaults-and-loading"
+  },
+  {
+    name: "react-configuration",
+    group: "React",
+    summary: "Provider-free React subscriptions for typed configuration.",
+    code: 'import { createConfiguration } from "@buildkitgg/react-configuration"\n\nexport const config = createConfiguration({\n  defaults: { exports: false }, context: {}\n})\n\nfunction ExportStatus() {\n  const { value } = config.useSetting("exports")\n  return <p>{value ? "Available" : "Unavailable"}</p>\n}\n\n// Core commands also work outside React.\nconfig.get("exports")',
+    api: [
+      "createConfiguration(options): return core commands and bound React hooks.",
+      "config.useSetting(key): subscribe to one typed setting and its source.",
+      "config.useConfiguration(): subscribe to values, context, load state, and errors."
+    ],
+    notes:
+      "The application owns client lifecycle. Providers supply evaluated values; overrides use preferences internally. No ECS or vendor SDK dependency.",
+    example: "react-react-configuration--defaults-and-loading"
+  },
+
   {
     name: "dev-domains",
     group: "Tooling",
@@ -95,20 +126,7 @@ export const packages = [
       "Fluent UI v9, React 19 and React DOM 19 are peers supplied by the app. The provider supplies styling; selection is external. Use Fluent's createLightTheme/createDarkTheme or extend its web themes for custom tokens. Browser preferences restore after mount, so SSR must account for possible appearance changes.",
     example: "fluent-ui-fluentui-theme--system"
   },
-  {
-    name: "shadcn-baseui-kit",
-    group: "shadcn",
-    summary: "Compiled shadcn Base UI components and CSS, exported from one package.",
-    code: 'pnpm add @buildkitgg/shadcn-baseui-kit\n\n// In your application:\nimport { Button } from "@buildkitgg/shadcn-baseui-kit"\nimport "@buildkitgg/shadcn-baseui-kit/styles.css"\n\n<Button>Save changes</Button>',
-    api: [
-      "Root exports: import components directly from the package.",
-      "styles.css: compiled styles with reset; import once.",
-      "styles-no-reset.css: use when the app owns its reset."
-    ],
-    notes:
-      "React and React DOM are peer dependencies. No registry connection is required. Override CSS theme variables after the stylesheet. The theme adapter is optional. Components below reuse the package's maintained examples.",
-    example: "shadcn-shadcn-baseui-kit-actions--button"
-  },
+  ...shadcnStylePackages,
   {
     name: "modal-core",
     group: "Core",

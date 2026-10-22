@@ -9,3 +9,7 @@ storybook-static/
 *.log
 *.tsbuildinfo
 .DS_Store
+
+.generated/
+.vitepress/.temp/
+.vitepress/cache/

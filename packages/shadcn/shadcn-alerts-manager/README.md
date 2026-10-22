@@ -40,3 +40,8 @@ Import `@buildkitgg/shadcn-alerts-manager/styles.css` once, or use the kit style
 registry components use their application CSS.
 
 See [alert architecture and native toast guidance](https://github.com/AndrewCraswell/buildkit/blob/main/docs/alerts.md).
+
+## Component style
+
+Install `@buildkitgg/shadcn-baseui-kit` or alias a generated style under that name. The manager uses the app's peer
+implementation and stylesheet. [Style selection](../../../docs/shadcn/styles.md) needs no renderer adapter.

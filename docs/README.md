@@ -28,7 +28,12 @@ Preferences packages: [core](../packages/core/preferences-core/README.md),
 Package-specific docs live in each package’s `docs/README.md`. Start with
 [dev-domains](../packages/tooling/dev-domains/docs/README.md).
 
-[shadcn-baseui-kit](../packages/shadcn/shadcn-baseui-kit/docs/README.md) documents the compiled Base UI component
-package.
+[shadcn component styles](shadcn/README.md) documents installation, styling, and maintenance of the generated Base UI
+packages.
 
 [Route tabs and panels](routing.md): shared behavior and React Router / TanStack Router integrations.
+
+Configuration: [core and provider contract](../packages/core/configuration-core/README.md),
+[React subscriptions](../packages/react/react-configuration/README.md).
+
+[Generated shadcn styles and dependency aliases](shadcn/styles.md).
