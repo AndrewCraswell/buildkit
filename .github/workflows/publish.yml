@@ -81,7 +81,8 @@ jobs:
         with:
           node-version: 24
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - name: Build package artifacts
+        run: pnpm exec turbo run build --filter="./packages/**"
       - name: Publish prepared versions in dependency order
         env:
           PACKAGE: ${{ inputs.package }}

@@ -17,4 +17,21 @@ Buildkit's shadcn managers use the same peer dependency and inherit this selecti
 Use `styles-no-reset.css` when the app already supplies Tailwind's reset. Colors and light/dark mode remain customizable
 through CSS variables. Style selection is installation-time, not runtime.
 
+## Design tokens
+
+Read the selected style's defaults through the same alias:
+
+```js
+import { readFile } from "node:fs/promises"
+const url = import.meta.resolve("@buildkitgg/shadcn-baseui-kit/tokens.json")
+const tokens = JSON.parse(await readFile(new URL(url), "utf8"))
+// tokens.light["radius-sm"].resolvedValue: concrete value
+// tokens.light["radius-sm"].sourceValue: upstream CSS expression
+```
+
+The export includes light and dark defaults, the upstream revision, and resolution metadata. Application CSS overrides
+are not included.
+
+[Migrate from the standalone kit](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/migration.md).
+
 [Setup, maintenance, and release checks](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/styles.md).

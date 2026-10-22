@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-baseui-rhea",
   "entries": [
     {
+      "date": "Thu, 22 Oct 2026 21:22:51 GMT",
+      "version": "0.2.1",
+      "tag": "@buildkitgg/shadcn-baseui-rhea_v0.2.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "41898282+github-actions[bot]@users.noreply.github.com",
+            "package": "@buildkitgg/shadcn-baseui-rhea",
+            "commit": "not available",
+            "comment": "Document token metadata and migration in the published package README; validate GitHub trusted publishing."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 22 Oct 2026 20:48:38 GMT",
       "version": "0.2.0",
       "tag": "@buildkitgg/shadcn-baseui-rhea_v0.2.0",

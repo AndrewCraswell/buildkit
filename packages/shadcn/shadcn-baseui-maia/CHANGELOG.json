@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-baseui-maia",
   "entries": [
     {
+      "date": "Thu, 22 Oct 2026 21:22:51 GMT",
+      "version": "0.2.1",
+      "tag": "@buildkitgg/shadcn-baseui-maia_v0.2.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "41898282+github-actions[bot]@users.noreply.github.com",
+            "package": "@buildkitgg/shadcn-baseui-maia",
+            "commit": "not available",
+            "comment": "Document token metadata and migration in the published package README; validate GitHub trusted publishing."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 22 Oct 2026 20:48:37 GMT",
       "version": "0.2.0",
       "tag": "@buildkitgg/shadcn-baseui-maia_v0.2.0",

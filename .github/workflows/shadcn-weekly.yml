@@ -45,7 +45,7 @@ jobs:
         run: |
           pnpm exec node packages/tooling/shadcn-generator/src/release.mjs
           pnpm exec beachball bump
-          pnpm install --lockfile-only
+          pnpm install
           pnpm format
           pnpm install --frozen-lockfile
       - name: Validate release artifacts and npm aliases
