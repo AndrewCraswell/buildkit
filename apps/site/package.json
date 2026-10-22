@@ -18,7 +18,7 @@
     "@buildkitgg/react-theme": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
-    "lucide-react": "^1.58.0",
+    "lucide-react": "^1.59.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-error-boundary": "^6.1.1"
@@ -26,11 +26,11 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "tailwindcss": "^4.3.3",
-    "shadcn": "4.22.0",
+    "shadcn": "4.22.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "oxc-transform-react": "0.152.0",
+    "oxc-transform-react": "0.154.0",
     "@repo/typescript-config": "workspace:*",
     "@repo/oxlint-config": "workspace:*",
     "@types/node": "24.13.2",
