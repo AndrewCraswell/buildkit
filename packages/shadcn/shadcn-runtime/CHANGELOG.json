@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-runtime",
   "entries": [
     {
+      "date": "Fri, 23 Oct 2026 05:37:32 GMT",
+      "version": "0.1.1",
+      "tag": "@buildkitgg/shadcn-runtime_v0.1.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-runtime",
+            "commit": "not available",
+            "comment": "Publish the runtime through the trusted GitHub workflow to validate automated releases."
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 23 Oct 2026 04:27:43 GMT",
       "version": "0.1.0",
       "tag": "@buildkitgg/shadcn-runtime_v0.1.0",
