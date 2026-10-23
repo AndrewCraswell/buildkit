@@ -63,4 +63,5 @@ jobs:
       pull-requests: write
       actions: write
       statuses: write
-    uses: ./.github/workflows/merge-release.yml
+    # Run the reviewed implementation, never a workflow from the dispatched branch.
+    uses: AndrewCraswell/buildkit/.github/workflows/merge-release.yml@55ff7b58f44fada6bd3a1d3bf5b1e9d96a5307b5
