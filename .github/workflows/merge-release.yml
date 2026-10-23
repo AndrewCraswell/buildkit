@@ -1,9 +1,6 @@
 name: Merge verified release
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: ["codex/release-*", "codex/shadcn-update-*"]
+  workflow_call:
 permissions:
   contents: write
   pull-requests: write
@@ -15,18 +12,18 @@ concurrency:
 jobs:
   merge:
     if: >-
-      github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name ==
-      github.repository
+      github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/heads/codex/release-') ||
+      startsWith(github.ref, 'refs/heads/codex/shadcn-update-'))
     runs-on: ubuntu-latest
     steps:
       - name: Merge the verified pipeline PR and start main workflows
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
-          VERIFIED_RUN_ID: ${{ github.event.workflow_run.id }}
-          VERIFIED_EVENT: ${{ github.event.workflow_run.event }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
+          VERIFIED_SHA: ${{ github.sha }}
+          VERIFIED_RUN_ID: ${{ github.run_id }}
+          VERIFIED_EVENT: ${{ github.event_name }}
         run: |
           # Read GitHub metadata only. Never check out or execute PR code here.
           number=$(gh pr list --head "$RELEASE_BRANCH" --base main --state open --json number,isDraft,author,headRefOid,isCrossRepository --jq \
