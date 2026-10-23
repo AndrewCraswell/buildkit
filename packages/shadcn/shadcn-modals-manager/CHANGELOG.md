@@ -1,8 +1,20 @@
 # Change Log - @buildkitgg/shadcn-modals-manager
 
-<!-- This log was last generated on Thu, 22 Oct 2026 20:48:35 GMT and should not be manually modified. -->
+<!-- This log was last generated on Fri, 23 Oct 2026 00:34:48 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 1.0.0
+
+Fri, 23 Oct 2026 00:34:48 GMT
+
+### Major changes
+
+- Modal title, body and footer slots accept React nodes and live components. The update method patches slots,
+  presentation, close observers and custom state under data. Custom adapters render resolved slots, and dialogs support
+  explicit accessible names. (ajcraswell@gmail.com)
+- Bump @buildkitgg/react-modals to v1.0.0
+- Bump @buildkitgg/fluentui-modals-manager to v1.0.0
 
 ## 0.2.0
 
