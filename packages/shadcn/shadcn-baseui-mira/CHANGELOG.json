@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-baseui-mira",
   "entries": [
     {
+      "date": "Fri, 23 Oct 2026 09:15:08 GMT",
+      "version": "0.4.0",
+      "tag": "@buildkitgg/shadcn-baseui-mira_v0.4.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-baseui-mira",
+            "commit": "740c6e86d9ae914b12786e12de2bdde82b998b2a",
+            "comment": "In RTL, a Sheet's `side` is the physical edge again, as in shadcn: `side=\"left\"` opens on the left. To open from the start edge, pass `side={direction === \"rtl\" ? \"right\" : \"left\"}`. A Sidebar's mobile Sheet now opens from the same edge as the desktop Sidebar."
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 23 Oct 2026 04:27:43 GMT",
       "version": "0.3.0",
       "tag": "@buildkitgg/shadcn-baseui-mira_v0.3.0",
