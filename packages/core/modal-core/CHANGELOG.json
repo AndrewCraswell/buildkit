@@ -2,6 +2,21 @@
   "name": "@buildkitgg/modal-core",
   "entries": [
     {
+      "date": "Fri, 23 Oct 2026 00:34:48 GMT",
+      "version": "0.2.0",
+      "tag": "@buildkitgg/modal-core_v0.2.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/modal-core",
+            "commit": "8bad2aa957c6ca4060ff9cb8acdb05891c5b5bda",
+            "comment": "Close observers receive a typed result and lifecycle reason once per settlement, including completion, dismissal and teardown."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 22 Oct 2026 20:48:42 GMT",
       "version": "0.1.1",
       "tag": "@buildkitgg/modal-core_v0.1.1",
