@@ -77,6 +77,11 @@ and the package's universal border/outline and body color rules. It still define
 classes; it is not CSS isolation. Components expect compatible base styles such as border-box sizing and normalized form
 controls. Arbitrary resets may require adjustments.
 
+For Tailwind 4 apps, import `tailwindcss` and `@buildkitgg/shadcn-baseui-kit/tailwind.css` instead of either compiled
+stylesheet. The source entry registers component scanning, tokens, variants, and animations automatically. Do not also
+import manager stylesheets: they import compiled kit CSS. `theme.css` supplies only plain theme variables, not component
+utilities. See [theming](theming.md).
+
 ## Custom themes
 
 Import your theme after the package stylesheet. Override standard shadcn CSS variables; no package rebuild is needed:
@@ -132,9 +137,10 @@ export function Details() {
 }
 ```
 
-Keep accessible labels and descriptions in your application compositions. Tooltips need `TooltipProvider`. Notifications
-use `Toaster` with `toast`; the alternative `SonnerToaster` uses the `sonner` API. Install libraries you import directly
-as your app's dependencies instead of relying on transitive dependencies.
+Use `ShadcnLocalizationProvider` for built-in labels and keep application content in your compositions. See
+[localization and RTL](localization.md). Tooltips need `TooltipProvider`. Notifications use `Toaster` with `toast`; the
+alternative `SonnerToaster` uses the `sonner` API. Install libraries you import directly as your app's dependencies
+instead of relying on transitive dependencies.
 
 ## Scope and tradeoffs
 

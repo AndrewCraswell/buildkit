@@ -4,6 +4,7 @@
 - [Migration from the standalone kit](migration.md)
 - [Upstream inventory](../../packages/shadcn/shadcn-baseui-nova/upstream.json)
 - [Theming and stylesheet options](theming.md)
+- [Localization, RTL, and class merging](localization.md)
 - [Framework integration](integration.md)
 - [Releases and version policy](releasing.md)
 

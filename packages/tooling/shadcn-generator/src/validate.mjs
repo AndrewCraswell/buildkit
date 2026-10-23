@@ -37,6 +37,7 @@ const workspace = resolve(root, "dist/style-consumers")
 const tarballs = resolve(workspace, "tarballs")
 const packageFolders = [
   ...matrix.map((item) => item.directory),
+  "packages/shadcn/shadcn-runtime",
   "packages/core/modal-core",
   "packages/react/react-modals",
   "packages/shadcn/shadcn-modals-manager",
@@ -147,6 +148,26 @@ try {
     await command(["install", "--no-frozen-lockfile", "--ignore-scripts", "--prefer-offline"], fixture)
     await command(["exec", "tsc", "--noEmit"], fixture)
     await command(["exec", "node", "--experimental-import-meta-resolve", "server.mjs"], fixture)
+    await command(["exec", "vite", "build"], fixture)
+    // The precompiled path must not require a Tailwind compiler or configuration in the consumer.
+    const consumerManifest = readJson(resolve(fixture, "package.json"))
+    assert.ok(!consumerManifest.dependencies.tailwindcss && !consumerManifest.devDependencies.tailwindcss)
+    // Exercise the alternative build input against the actual packed JavaScript, not workspace TSX.
+    await command(["add", "-D", "--ignore-scripts", "tailwindcss@^4.3.3", "@tailwindcss/cli@^4.3.3"], fixture)
+    write(
+      resolve(fixture, "input.css"),
+      '@import "tailwindcss";\n@import "@buildkitgg/shadcn-baseui-kit/tailwind.css";\n'
+    )
+    await command(["exec", "tailwindcss", "-i", "input.css", "-o", "combined.css", "--minify"], fixture)
+    const combined = readFileSync(resolve(fixture, "combined.css"), "utf8")
+    assert.ok(combined.includes(".inline-flex"), `${style}: packed component utilities were not scanned`)
+    assert.ok(combined.includes(".light"), `${style}: light island variables missing`)
+    assert.ok(combined.includes("rtl"), `${style}: RTL utilities missing`)
+    assert.doesNotMatch(combined, /@(source|theme|utility)\s/)
+    const consumerSource = readFileSync(resolve(fixture, "src.tsx"), "utf8")
+      .replace('import "@buildkitgg/shadcn-baseui-kit/styles.css"', 'import "./combined.css"')
+      .replace(/import "@buildkitgg\/shadcn-(?:modals|alerts)-manager\/styles.css"\n/g, "")
+    write(resolve(fixture, "src.tsx"), consumerSource)
     await command(["exec", "vite", "build"], fixture)
     // Vite must never bundle a second implementation through a manager dependency.
     process.stdout.write(

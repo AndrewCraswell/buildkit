@@ -10,7 +10,7 @@ import { Avatar as Avatar_2 } from '@base-ui/react/avatar';
 import { Button as Button_2 } from '@base-ui/react/button';
 import { Checkbox as Checkbox_2 } from '@base-ui/react/checkbox';
 import { ClassProp } from 'class-variance-authority/types';
-import { cn } from 'cn';
+import { cn } from '@buildkitgg/shadcn-runtime';
 import { Collapsible as Collapsible_2 } from '@base-ui/react/collapsible';
 import { Combobox as Combobox_2 } from '@base-ui/react';
 import { Command as Command_2 } from 'cmdk';
@@ -414,6 +414,8 @@ export const Combobox: typeof Combobox_2.Root;
 // @public (undocumented)
 export function ComboboxChip(input: Combobox_2.Chip.Props & {
     showRemove?: boolean;
+} & {
+    removeLabel?: string;
 }): React_2.JSX.Element;
 
 // @public (undocumented)
@@ -1452,6 +1454,9 @@ export function useSidebar(): SidebarContextProps;
 
 // @public (undocumented)
 export const useToastManager: typeof Toast_2.useToastManager;
+
+
+export * from "@buildkitgg/shadcn-runtime";
 
 // Warnings were encountered during analysis:
 //

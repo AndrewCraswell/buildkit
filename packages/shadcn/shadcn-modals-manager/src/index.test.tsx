@@ -1,10 +1,37 @@
 import { Dialog as Primitive } from "@base-ui/react/dialog"
+import { ShadcnLocalizationProvider } from "@buildkitgg/shadcn-baseui-kit"
 import * as Radix from "@radix-ui/react-dialog"
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { baseUiComponents, createModalManager, ModalRenderer, radixComponents } from "./index.js"
 import type { BaseUiModalComponents, RadixModalComponents } from "./index.js"
+
+it("updates provider labels while preserving manager and per-modal overrides", async () => {
+  const manager = createModalManager({ labels: { confirm: "Approve" } })
+  const view = render(
+    <ShadcnLocalizationProvider strings={{ cancel: "Annuler" }}>
+      <ModalRenderer manager={manager} />
+    </ShadcnLocalizationProvider>
+  )
+  act(() => {
+    void manager.confirm({ title: "Confirm", cancelLabel: "Keep" })
+  })
+  expect(await screen.findByRole("button", { name: "Keep" })).toBeTruthy()
+  expect(screen.getByRole("button", { name: "Approve" })).toBeTruthy()
+  act(() => manager.clear())
+  act(() => {
+    void manager.confirm({ title: "Again" })
+  })
+  expect(await screen.findByRole("button", { name: "Annuler" })).toBeTruthy()
+  view.rerender(
+    <ShadcnLocalizationProvider strings={{ cancel: "Abbrechen" }}>
+      <ModalRenderer manager={manager} />
+    </ShadcnLocalizationProvider>
+  )
+  expect(screen.getByRole("button", { name: "Abbrechen" })).toBeTruthy()
+  act(() => manager.clear())
+})
 
 const components: BaseUiModalComponents = {
   Dialog: Primitive.Root,
