@@ -1,8 +1,19 @@
 # Change Log - @buildkitgg/react-modals
 
-<!-- This log was last generated on Thu, 22 Oct 2026 20:48:41 GMT and should not be manually modified. -->
+<!-- This log was last generated on Fri, 23 Oct 2026 00:00:00 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 1.0.0
+
+Fri, 23 Oct 2026 00:00:00 GMT
+
+### Major changes
+
+- Modal title, body and footer slots accept React nodes and live components. The update method patches slots,
+  presentation, close observers and custom state under data. Custom adapters render resolved slots, and dialogs support
+  explicit accessible names. (ajcraswell@gmail.com)
+- Bump @buildkitgg/modal-core to v0.2.0
 
 ## 0.1.1
 

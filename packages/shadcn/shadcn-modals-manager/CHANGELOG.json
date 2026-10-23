@@ -2,6 +2,33 @@
   "name": "@buildkitgg/shadcn-modals-manager",
   "entries": [
     {
+      "date": "Fri, 23 Oct 2026 00:00:00 GMT",
+      "version": "1.0.0",
+      "tag": "@buildkitgg/shadcn-modals-manager_v1.0.0",
+      "comments": {
+        "major": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "commit": "8bad2aa957c6ca4060ff9cb8acdb05891c5b5bda",
+            "comment": "Modal title, body and footer slots accept React nodes and live components. The update method patches slots, presentation, close observers and custom state under data. Custom adapters render resolved slots, and dialogs support explicit accessible names."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "comment": "Bump @buildkitgg/react-modals to v1.0.0",
+            "commit": "not available"
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "comment": "Bump @buildkitgg/fluentui-modals-manager to v1.0.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 22 Oct 2026 20:48:35 GMT",
       "version": "0.2.0",
       "tag": "@buildkitgg/shadcn-modals-manager_v0.2.0",
