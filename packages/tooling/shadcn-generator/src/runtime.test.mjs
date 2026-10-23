@@ -26,6 +26,7 @@ test("every upstream style receives localization and RTL without direct cn impor
       if (name === "ui/sheet.tsx" || name === "ui/sidebar.tsx") {
         // shadcn's side is a physical edge. The kit ships the converter's output with no direction rewrites of its own.
         assert.match(result, /data-\[side=left\]:left-0/)
+        assert.match(result, /data-\[side=right\]:right-0/)
       }
       if (name === "ui/combobox.tsx") {
         assert.match(result, /strings.showOptions/)
