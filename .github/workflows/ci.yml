@@ -45,3 +45,22 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @buildkitgg/dev-domains test:integration
+  release:
+    needs: [verify, integration]
+    if: >-
+      github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      actions: write
+    uses: ./.github/workflows/publish-after-ci.yml
+  merge-release:
+    needs: [verify, integration]
+    if: >-
+      github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/heads/codex/release-') ||
+      startsWith(github.ref, 'refs/heads/codex/shadcn-update-'))
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+      statuses: write
+    uses: ./.github/workflows/merge-release.yml

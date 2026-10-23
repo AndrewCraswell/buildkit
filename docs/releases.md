@@ -18,6 +18,9 @@ the generated change file. Pull request CI checks release notes and runs `pnpm v
    become installable before publishing dependents. The workflow saves its publication report even after a partial
    failure.
 
+CI calls the release and merge workflows directly after verification and all platform integration jobs succeed. Each
+handoff runs as part of that CI run; preparation, publication, and post-merge main CI are dispatched explicitly.
+
 Only public `@buildkitgg/*` packages can publish. Private packages remain incubating. Publishing does not change
 versions. Successful push or manually dispatched CI on main starts release preparation when Beachball change files are
 pending, or publication when public package versions change with no pending change files. Dispatch only proceeds for the
