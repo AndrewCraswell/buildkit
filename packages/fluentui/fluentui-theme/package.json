@@ -9,7 +9,7 @@
   "license": "MIT",
   "peerDependencies": {
     "react": "^19.2.0",
-    "@fluentui/react-components": "^9.74.9",
+    "@fluentui/react-components": "^9.74.10",
     "react-dom": "^19.2.0"
   },
   "sideEffects": false,
@@ -48,7 +48,7 @@
     "react": "19.3.1",
     "happy-dom": "^21.0.3",
     "@types/react-dom": "^19.3.0",
-    "@fluentui/react-components": "^9.74.9",
+    "@fluentui/react-components": "^9.74.10",
     "@testing-library/user-event": "^14.6.8"
   },
   "types": "./dist/index.d.ts",
