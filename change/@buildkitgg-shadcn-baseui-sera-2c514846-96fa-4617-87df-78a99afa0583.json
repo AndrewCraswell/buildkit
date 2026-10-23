@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "In RTL, a Sheet's `side` is the physical edge again, as in shadcn: `side=\"left\"` opens on the left. To open from the start edge, pass `side={direction === \"rtl\" ? \"right\" : \"left\"}`. A Sidebar's mobile Sheet now opens from the same edge as the desktop Sidebar.",
+  "packageName": "@buildkitgg/shadcn-baseui-sera",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}
