@@ -52,7 +52,7 @@ function RuntimeExample() {
         </Dialog>
         <Sheet>
           <SheetTrigger render={<Button />}>Open sheet</SheetTrigger>
-          <SheetContent side="left" dir={direction}>
+          <SheetContent side={isRtl ? "right" : "left"} dir={direction}>
             <SheetTitle>Direction</SheetTitle>
             <SheetDescription>The sheet follows the reading direction.</SheetDescription>
           </SheetContent>

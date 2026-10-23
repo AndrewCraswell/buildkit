@@ -52,19 +52,6 @@ export function transformRuntime(file) {
       declaration.setModuleSpecifier("@buildkitgg/shadcn-runtime")
     }
   }
-  // The upstream transform preserves physical sheet anchors but mirrors its borders and transitions.
-  // Complete that logical layout so the anchor and animation stay on the same edge.
-  if (file.getBaseName() === "sheet.tsx") {
-    for (const literal of file.getDescendantsOfKind(SyntaxKind.StringLiteral)) {
-      const value = literal.getLiteralValue()
-      const logical = value
-        .replace(/(data-\[side=left\]:)left-/g, "$1start-")
-        .replace(/(data-\[side=right\]:)right-/g, "$1end-")
-      if (logical !== value) {
-        literal.setLiteralValue(logical)
-      }
-    }
-  }
   if (file.getBaseName() === "carousel.tsx") {
     file.addImportDeclaration({ moduleSpecifier: "@base-ui/react/direction-provider", namedImports: ["useDirection"] })
     const fn = file.getFunctionOrThrow("Carousel")

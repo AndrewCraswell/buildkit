@@ -25,8 +25,9 @@ Set `lang` and `dir` on the document as well, for example `<html lang="ur" dir="
 controls Base UI behavior; the HTML attribute controls layout and inherited direction, including body portals. For
 independently directed regions, set both and give portaled content the matching direction/container.
 
-Logical spacing, alignment, icon direction, and horizontal translations are generated for all styles. Sheet and sidebar
-`left`/`right` selections follow the start/end edges in RTL. Carousel direction follows the localization provider unless
+Logical spacing, alignment, icon direction, and horizontal translations are generated for all styles. A Sheet's and
+Sidebar's `side`, and a Drawer's `swipeDirection`, are physical edges, as in shadcn: choose them by direction, for
+example `side={direction === "rtl" ? "right" : "left"}`. Carousel direction follows the localization provider unless
 explicitly overridden through its options. Do not apply a second RTL transform to the published components.
 
 ## Strongly typed strings
