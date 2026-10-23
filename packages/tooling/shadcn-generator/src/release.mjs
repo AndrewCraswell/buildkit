@@ -17,6 +17,9 @@ const baseline = JSON.parse(
 const current = readJson(resolve(root, "packages/tooling/shadcn-generator/package-template.json"))
 // Extractor references external prop types; it cannot prove that a dependency's major update is compatible.
 for (const [name, range] of Object.entries(current.dependencies)) {
+  if (range.startsWith("workspace:") && range === baseline.dependencies[name]) {
+    continue
+  }
   const before = baseline.dependencies[name]?.match(/^(?:\^|~)?(\d+)\.(\d+)\./)
   const after = range.match(/^(?:\^|~)?(\d+)\.(\d+)\./)
   if (!before || !after || before[1] !== after[1] || (after[1] === "0" && before[2] !== after[2])) {

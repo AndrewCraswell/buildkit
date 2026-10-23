@@ -1,8 +1,17 @@
 # Change Log - @buildkitgg/shadcn-modals-manager
 
-<!-- This log was last generated on Fri, 23 Oct 2026 00:34:48 GMT and should not be manually modified. -->
+<!-- This log was last generated on Fri, 23 Oct 2026 04:27:43 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 1.1.0
+
+Fri, 23 Oct 2026 04:27:43 GMT
+
+### Minor changes
+
+- Add shared localization, RTL support, configurable class merging, and separate compiled and Tailwind source CSS
+  entries. (acraswell@users.noreply.github.com)
 
 ## 1.0.0
 

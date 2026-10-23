@@ -1,0 +1,66 @@
+{
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "name": "@buildkitgg/shadcn-runtime",
+  "license": "MIT",
+  "sideEffects": false,
+  "dependencies": {
+    "cn": "^0.5.0",
+    "@base-ui/react": "^1.9.0"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "docs/*.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint --max-warnings=0",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "check:types": "pnpm build && tsc --noEmit"
+  },
+  "version": "0.1.0",
+  "type": "module",
+  "devDependencies": {
+    "happy-dom": "^21.0.3",
+    "@types/node": "^24.13.2",
+    "@repo/typescript-config": "workspace:*",
+    "@repo/oxlint-config": "workspace:*",
+    "vitest": "5.0.5",
+    "@vitest/coverage-v8": "5.0.5",
+    "typescript": "catalog:",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@testing-library/react": "^16.3.3"
+  },
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndrewCraswell/buildkit.git",
+    "directory": "packages/shadcn/shadcn-runtime"
+  },
+  "homepage": "https://github.com/AndrewCraswell/buildkit/tree/main/packages/shadcn/shadcn-runtime#readme",
+  "bugs": {
+    "url": "https://github.com/AndrewCraswell/buildkit/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "description": "Shared localization, direction and class merging for Buildkit shadcn components.",
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

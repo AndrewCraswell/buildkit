@@ -10,7 +10,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
@@ -26,7 +29,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
@@ -42,7 +48,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
@@ -58,7 +67,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
@@ -74,7 +86,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
@@ -90,7 +105,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
@@ -106,7 +124,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
@@ -122,7 +143,10 @@ export const shadcnStylePackages = [
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",

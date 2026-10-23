@@ -1,8 +1,26 @@
+import { ShadcnLocalizationProvider } from "@buildkitgg/shadcn-baseui-kit"
 import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, expect, it, vi } from "vitest"
 import { AlertRegion, createAlertManager } from "./index.js"
 afterEach(cleanup)
+it("inherits reactive region and dismissal labels with explicit override precedence", () => {
+  const manager = createAlertManager()
+  manager.info({ title: "Notice" })
+  const view = render(
+    <ShadcnLocalizationProvider strings={{ notifications: "Avis", dismiss: "Fermer" }}>
+      <AlertRegion manager={manager} />
+    </ShadcnLocalizationProvider>
+  )
+  expect(screen.getByRole("region", { name: "Avis" })).toBeTruthy()
+  expect(screen.getByRole("button", { name: "Fermer" })).toBeTruthy()
+  view.rerender(
+    <ShadcnLocalizationProvider strings={{ dismiss: "Schließen" }}>
+      <AlertRegion manager={manager} dismissLabel="Custom" />
+    </ShadcnLocalizationProvider>
+  )
+  expect(screen.getByRole("button", { name: "Custom" })).toBeTruthy()
+})
 it("renders native alerts, actions, intents, and localized dismissal", async () => {
   const manager = createAlertManager()
   const onAction = vi.fn<() => void>()

@@ -137,6 +137,9 @@
     },
     "apps/shadcn-catalog": {
       "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/shadcn/shadcn-runtime": {
+      "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
 }

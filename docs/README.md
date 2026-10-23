@@ -38,3 +38,5 @@ Configuration: [core and provider contract](../packages/core/configuration-core/
 [React subscriptions](../packages/react/react-configuration/README.md).
 
 [Generated shadcn styles and dependency aliases](shadcn/styles.md).
+
+[Shadcn localization, RTL, and class merging](shadcn/localization.md).

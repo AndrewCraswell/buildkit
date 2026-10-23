@@ -8,7 +8,7 @@ Import `@buildkitgg/shadcn-baseui-kit/styles.css` once in the app entry before y
 `@buildkitgg/shadcn-baseui-kit`. No dependency transpilation or registry configuration is needed. Enable your app's
 React Compiler and retain its normal StrictMode and error-boundary shell.
 
-For applications already using Tailwind, use the [no-reset setup](theming.md#an-app-that-already-uses-tailwind-4).
+For applications already using Tailwind, use the [source CSS setup](theming.md#an-app-that-already-uses-tailwind-4).
 
 ## Next.js App Router
 

@@ -32,6 +32,7 @@ jobs:
           pnpm generate
           pnpm format
       - name: Detect upstream updates
+        if: always()
         id: changes
         run: |
           if test -n "$(git status --porcelain)"; then

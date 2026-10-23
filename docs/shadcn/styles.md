@@ -40,11 +40,14 @@ pnpm validate
 
 `update:shadcn` downloads a pinned Git commit and updates the shadcn generator and Base UI dependencies. The snapshot
 records the revision and SHA-256 hashes of the downloaded files. `generate` derives style packages, exports, component
-source, and stylesheets from that snapshot. Builds do not access the network or alter upstream component behavior.
+source, and stylesheets from that snapshot. Builds do not access the network. A shared adaptation pass adds logical
+direction, localized labels, accessible combobox actions, and shared class merging. The upstream snapshot remains
+unchanged.
 
 `validate` runs repository verification, including API Extractor baselines, then compares every generated declaration
 across styles and installs packed artifacts in standalone consumers. Consumers check strict peer resolution, TypeScript,
-server rendering, and a Vite production build. Browser acceptance remains necessary for visual changes.
+server rendering, and Vite production builds both without Tailwind and with a consumer-owned Tailwind build. Browser
+acceptance remains necessary for visual changes.
 
 If upstream introduces an import outside the supported catalog or an incompatible public API, generation or validation
 fails. Review the change; do not add a silent fallback. `pnpm api:update` explicitly accepts reviewed API baseline
@@ -80,3 +83,11 @@ Failed updates open a review PR. API changes require review and an explicit `pnp
 changes can still need manual assessment. New npm package names require their initial publication and trusted-publisher
 setup; the workflow cannot authorize those automatically. Publication of configured packages has no manual approval
 gate.
+
+## Shared runtime and update checks
+
+All styles depend on `@buildkitgg/shadcn-runtime` and re-export its provider and configuration. The generator rewrites
+imports and semantic label nodes once for every style. Unknown static UI labels stop generation for review. Do not edit
+generated output or automatically accept changed API baselines. Regression tests exercise all upstream styles,
+localization defaults and overrides, shared class merging, and RTL transformations. Packed consumers include the runtime
+and test both stylesheet paths.

@@ -1,15 +1,32 @@
 import { readFileSync, existsSync, rmSync } from "node:fs"
+import { createRequire } from "node:module"
 import { resolve, relative, posix } from "node:path"
 import { pathToFileURL } from "node:url"
 import postcss from "postcss"
-import { createStyleMap, transformStyle, transformIcons } from "shadcn/utils"
+import { createStyleMap, transformStyle, transformIcons, transformDirection } from "shadcn/utils"
 import { Project, ts } from "ts-morph"
+import { transformRuntime } from "./runtime.mjs"
 import { root, templatePath, tool, snapshot, variants, readJson, write, writeJson, pnpm } from "./shared.mjs"
 import { designTokens } from "./tokens.mjs"
 
 const data = snapshot()
 const template = readJson(templatePath)
 const project = new Project({ useInMemoryFileSystem: true })
+const require = createRequire(import.meta.url)
+
+function animationCss() {
+  const directory = require.resolve
+    .paths("tw-animate-css")
+    .map((path) => resolve(path, "tw-animate-css"))
+    .find((path) => existsSync(resolve(path, "package.json")))
+  if (!directory) {
+    throw new Error("Missing tw-animate-css")
+  }
+  return (
+    `/*! ${readFileSync(resolve(directory, "LICENSE"), "utf8")} */\n` +
+    readFileSync(resolve(directory, "dist/tw-animate.css"), "utf8")
+  )
+}
 
 async function themeData() {
   const js = ts.transpileModule(data.themes, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText
@@ -40,7 +57,8 @@ async function themeData() {
     palette: neutral.name,
     cssVariables: neutral.cssVars,
     tailwind: Object.fromEntries(mappings.map((node) => [node.prop, node.value])),
-    css: `@import "tw-animate-css";\n@import "shadcn/tailwind.css";\n@custom-variant dark (&:is(.dark *));\n@theme inline {\n${mappings.map((node) => node.toString() + ";").join("\n")}\n}\n:root {${vars(neutral.cssVars.light)}}\n.dark {${vars(neutral.cssVars.dark)}}\n`
+    css: `:root, .light {${vars(neutral.cssVars.light)}}\n.dark {${vars(neutral.cssVars.dark)}}\n`,
+    tailwindCss: `@import "./theme.css";\n@import "./animations.css";\n@import "./shadcn.css";\n@source "./ui";\n@custom-variant dark (&:where(.dark, .dark *):not(:where(.light, .light *)));\n@theme inline {\n${mappings.map((node) => node.toString() + ";").join("\n")}\n}\n`
   }
 }
 
@@ -60,10 +78,12 @@ export async function generateSources(style, directory) {
   const exports = []
   for (const [filename, source] of Object.entries(data.sources)) {
     let content = await transformStyle(source, { styleMap })
+    content = await transformDirection(content, true)
     const file = project.createSourceFile(filename, content, { overwrite: true })
     if (content.includes("IconPlaceholder")) {
       await transformIcons({ sourceFile: file, filename, raw: content, config: { iconLibrary: "lucide" } })
     }
+    transformRuntime(file)
     for (const declaration of file.getImportDeclarations()) {
       const specifier = declaration.getModuleSpecifierValue()
       if (!specifier.startsWith("@/")) {
@@ -96,10 +116,16 @@ export async function generateSources(style, directory) {
       exports.push(`export * from "${modulePath}"`)
     }
   }
-  write(resolve(output, "index.ts"), '"use client"\n' + exports.join("\n") + "\n")
+  write(
+    resolve(output, "index.ts"),
+    '"use client"\nexport * from "@buildkitgg/shadcn-runtime"\n' + exports.join("\n") + "\n"
+  )
   write(resolve(output, "styles.ts"), "export {}\n")
   const theme = await themeData()
-  write(resolve(output, "shared.css"), '@source "./";\n' + theme.css)
+  write(resolve(output, "theme.css"), theme.css)
+  write(resolve(output, "tailwind.css"), theme.tailwindCss)
+  write(resolve(output, "animations.css"), animationCss())
+  write(resolve(output, "shadcn.css"), readFileSync(new URL(import.meta.resolve("shadcn/tailwind.css")), "utf8"))
   writeJson(
     resolve(output, "tokens.json"),
     designTokens({
@@ -113,11 +139,11 @@ export async function generateSources(style, directory) {
   )
   write(
     resolve(output, "styles.css"),
-    '@import "tailwindcss" source(none);\n@import "./shared.css";\n@layer base { * { @apply border-border outline-ring/50; } body { @apply bg-background text-foreground; } }\n'
+    '@import "tailwindcss" source(none);\n@import "./tailwind.css";\n@layer base { * { @apply border-border outline-ring/50; } body { @apply bg-background text-foreground; } }\n'
   )
   write(
     resolve(output, "styles-no-reset.css"),
-    '@layer theme, base, components, utilities;\n@import "tailwindcss/theme.css" layer(theme);\n@import "tailwindcss/utilities.css" layer(utilities) source(none);\n@import "./shared.css";\n'
+    '@layer theme, base, components, utilities;\n@import "tailwindcss/theme.css" layer(theme);\n@import "tailwindcss/utilities.css" layer(utilities) source(none);\n@import "./tailwind.css";\n'
   )
   writeJson(resolve(output, "tsconfig.json"), {
     extends: relative(output, resolve(root, "packages/tooling/typescript-config/react-library.json")).replaceAll(
@@ -188,7 +214,7 @@ export function generateManifests() {
     write(resolve(directory, "LICENSE"), readFileSync(resolve(tool, "LICENSE"), "utf8"))
     write(
       resolve(directory, "README.md"),
-      `# ${name}\n\nGenerated from the pinned upstream shadcn Base UI catalog. Do not edit generated components.\n\nSelect this style once using a dependency alias:\n\n\`\`\`sh\npnpm add @buildkitgg/shadcn-baseui-kit@npm:${name}\n\`\`\`\n\n\`\`\`tsx\nimport { Button } from "@buildkitgg/shadcn-baseui-kit"\nimport "@buildkitgg/shadcn-baseui-kit/styles.css"\n\`\`\`\n\nBuildkit's shadcn managers use the same peer dependency and inherit this selection.\nImport styles once at the app entry. Use \`styles-no-reset.css\` when the app already supplies Tailwind's reset.\nColors and light/dark mode remain customizable through CSS variables. Style selection is installation-time, not runtime.\n\n## Design tokens\n\nRead the selected style's defaults through the same alias:\n\n\`\`\`js\nimport { readFile } from "node:fs/promises"\nconst url = import.meta.resolve("@buildkitgg/shadcn-baseui-kit/tokens.json")\nconst tokens = JSON.parse(await readFile(new URL(url), "utf8"))\n// tokens.light["radius-sm"].resolvedValue: concrete value\n// tokens.light["radius-sm"].sourceValue: upstream CSS expression\n\`\`\`\n\nThe export includes light and dark defaults, the upstream revision, and resolution metadata. Application CSS overrides are not included.\n\n[Migrate from the standalone kit](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/migration.md).\n\n[Setup, maintenance, and release checks](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/styles.md).\n`
+      `# ${name}\n\nGenerated from the pinned upstream shadcn Base UI catalog. Do not edit generated components.\n\nSelect this style once using a dependency alias:\n\n\`\`\`sh\npnpm add @buildkitgg/shadcn-baseui-kit@npm:${name}\n\`\`\`\n\n\`\`\`tsx\nimport { Button } from "@buildkitgg/shadcn-baseui-kit"\nimport "@buildkitgg/shadcn-baseui-kit/styles.css"\n\`\`\`\n\nBuildkit's shadcn managers use the same peer dependency and inherit this selection.\nImport styles once at the app entry. Use \`styles-no-reset.css\` when the app already supplies Tailwind's reset.\nColors and light/dark mode remain customizable through CSS variables. Style selection is installation-time, not runtime.\n\nTailwind 4 apps import \`tailwind.css\` alongside Tailwind instead of compiled styles; it registers component scanning automatically. Apps without Tailwind import \`styles.css\`. Do not combine these paths or import manager stylesheets with the Tailwind source entry.\n\nThe root exports \`ShadcnLocalizationProvider\` (English defaults), \`useShadcnLocalization\`, and \`setCn\`. See [localization and RTL](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/localization.md) and [styling](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/theming.md).\n\n## Design tokens\n\nRead the selected style's defaults through the same alias:\n\n\`\`\`js\nimport { readFile } from "node:fs/promises"\nconst url = import.meta.resolve("@buildkitgg/shadcn-baseui-kit/tokens.json")\nconst tokens = JSON.parse(await readFile(new URL(url), "utf8"))\n// tokens.light["radius-sm"].resolvedValue: concrete value\n// tokens.light["radius-sm"].sourceValue: upstream CSS expression\n\`\`\`\n\nThe export includes light and dark defaults, the upstream revision, and resolution metadata. Application CSS overrides are not included.\n\n[Migrate from the standalone kit](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/migration.md).\n\n[Setup, maintenance, and release checks](https://github.com/AndrewCraswell/buildkit/blob/main/docs/shadcn/styles.md).\n`
     )
   }
 }
@@ -203,7 +229,10 @@ function generateDocumentation() {
       "Root export: components, component types, and shared utilities.",
       "styles.css: compiled styles with Tailwind Preflight.",
       "styles-no-reset.css: compiled styles for apps that supply their own reset.",
-      "tokens.json: light/dark defaults with resolvedValue and sourceValue."
+      "tokens.json: light/dark defaults with resolvedValue and sourceValue.",
+      "tailwind.css: source input with automatic component scanning for Tailwind 4 apps.",
+      "theme.css: plain CSS variables without utilities or reset.",
+      "ShadcnLocalizationProvider, useShadcnLocalization, and setCn: shared runtime configuration."
     ],
     notes:
       "The shared kit name is a dependency alias, not an additional package. Modal and alert managers use that peer dependency. Select a style at installation; customize colors and light/dark mode through CSS variables. See the upstream shadcn documentation for individual components.",
