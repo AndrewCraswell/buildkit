@@ -41,7 +41,9 @@ New packages require an initial authenticated publication before npm allows trus
 API and packed consumer first, remove `private` in a reviewed change, and perform that initial release using npm's
 interactive authentication. Then configure its trusted publisher and complete a CI publication within npm's activation
 window. Do not remove `private` merely to test the workflow. See the
-[npm trust command](https://docs.npmjs.com/cli/v11/commands/npm-trust/) for authenticated setup.
+[npm trust command](https://docs.npmjs.com/cli/v11/commands/npm-trust/) for authenticated setup. Use npm 12 and specify
+`--allow-publish` when creating the trust configuration. After the initial authenticated publication, prepare a patch
+release through the normal PR workflow so CI publishes a new version and validates the trust before it expires.
 
 Beachball handles versioning in the release PR; pnpm handles registry uploads. Beachball's automatic Git push is not
 used because it bypasses Git hooks. Both release workflows preserve normal repository checks. Release jobs use fresh
