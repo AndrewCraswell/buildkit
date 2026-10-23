@@ -1,8 +1,18 @@
 # Change Log - @buildkitgg/shadcn-baseui-maia
 
-<!-- This log was last generated on Fri, 23 Oct 2026 04:27:43 GMT and should not be manually modified. -->
+<!-- This log was last generated on Fri, 23 Oct 2026 09:15:08 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.4.0
+
+Fri, 23 Oct 2026 09:15:08 GMT
+
+### Minor changes
+
+- In RTL, a Sheet's `side` is the physical edge again, as in shadcn: `side="left"` opens on the left. To open from the
+  start edge, pass `side={direction === "rtl" ? "right" : "left"}`. A Sidebar's mobile Sheet now opens from the same
+  edge as the desktop Sidebar. (ajcraswell@gmail.com)
 
 ## 0.3.0
 
