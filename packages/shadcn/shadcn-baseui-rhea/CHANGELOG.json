@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-baseui-rhea",
   "entries": [
     {
+      "date": "Mon, 26 Oct 2026 15:16:09 GMT",
+      "version": "0.4.1",
+      "tag": "@buildkitgg/shadcn-baseui-rhea_v0.4.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "41898282+github-actions[bot]@users.noreply.github.com",
+            "package": "@buildkitgg/shadcn-baseui-rhea",
+            "commit": "not available",
+            "comment": "Regenerate the component catalog from upstream and update supported dependencies."
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 23 Oct 2026 09:15:08 GMT",
       "version": "0.4.0",
       "tag": "@buildkitgg/shadcn-baseui-rhea_v0.4.0",
