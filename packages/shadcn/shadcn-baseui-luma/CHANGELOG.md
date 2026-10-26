@@ -1,8 +1,17 @@
 # Change Log - @buildkitgg/shadcn-baseui-luma
 
-<!-- This log was last generated on Fri, 23 Oct 2026 09:15:08 GMT and should not be manually modified. -->
+<!-- This log was last generated on Mon, 26 Oct 2026 15:16:09 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.4.1
+
+Mon, 26 Oct 2026 15:16:09 GMT
+
+### Patches
+
+- Regenerate the component catalog from upstream and update supported dependencies.
+  (41898282+github-actions[bot]@users.noreply.github.com)
 
 ## 0.4.0
 

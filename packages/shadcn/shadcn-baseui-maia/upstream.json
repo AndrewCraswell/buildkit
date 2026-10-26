@@ -1,8 +1,8 @@
 {
   "repository": "https://github.com/shadcn-ui/ui",
-  "revision": "fa38b4960fa3c9aa0f2639b5a54ec0566fdd0240",
+  "revision": "8f04138777c1b6996e709993362a7b0a12888ecf",
   "style": "base-maia",
-  "generator": "4.22.0",
+  "generator": "4.22.1",
   "components": [
     "accordion",
     "alert-dialog",
