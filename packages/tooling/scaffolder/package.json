@@ -1,7 +1,9 @@
 {
   "name": "@buildkitgg/scaffolder",
   "version": "0.0.0",
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "description": "Plan-first project scaffolding engine: catalogs of targets, templates and add-ons, with safe upgrades",
   "type": "module",
@@ -14,6 +16,7 @@
     "dist/**/*.d.ts",
     "README.md",
     "docs/*.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "exports": {

@@ -4,7 +4,7 @@ A plan-first scaffolding engine. A product describes what projects can be made o
 slots and add-ons. The engine turns answers into a reviewed **plan**, applies it safely, and later adds to, changes or
 upgrades the project without overwriting your edits.
 
-Incubating: the package is private while Buildkit's and SpawnKit's catalogs move onto it. Requires Node.js 24 or later.
+Requires Node.js 24 or later. Until 1.0, minor versions may change the catalog and manifest types.
 
 ## Table of contents
 
