@@ -14,6 +14,9 @@
     "LICENSE.md": {
       "upstream": "7a07f7d9085cb3157e4377d944988c9712933141b0f7201955ceccfac92abde4",
       "vendored": "7a07f7d9085cb3157e4377d944988c9712933141b0f7201955ceccfac92abde4"
+    },
+    "README.md": {
+      "vendored": "bf836ba41bc6e85935b1838974b1161e6892bc5007d3bb5b05466ae9daaed5c6"
     }
   }
 }

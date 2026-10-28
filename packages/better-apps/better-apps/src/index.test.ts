@@ -37,6 +37,14 @@ describe("getFeatureTables", () => {
     expect(comment?.indexes).toEqual([{ fields: ["subjectType", "subjectId"] }])
   })
 
+  it("keeps one copy of an index several features declare", () => {
+    const threads = defineFeature({
+      id: "threads",
+      schema: { comment: { fields: {}, indexes: [{ fields: ["subjectType", "subjectId"] }] } }
+    })
+    expect(getFeatureTables([comments, threads]).comment?.indexes).toEqual([{ fields: ["subjectType", "subjectId"] }])
+  })
+
   it("adds no tables of its own", () => {
     expect(getFeatureTables([defineFeature({ id: "presence" })])).toEqual({})
   })
@@ -53,6 +61,11 @@ describe("getFeatureTables", () => {
   it("rejects tables Better Auth reserves", () => {
     const user = defineFeature({ id: "profiles", schema: { user: { fields: {} } } })
     expect(() => getFeatureTables([user])).toThrow('can\'t declare a "user" table')
+  })
+
+  it("rejects model names Better Auth reserves", () => {
+    const profiles = defineFeature({ id: "profiles", schema: { profile: { modelName: "session", fields: {} } } })
+    expect(() => getFeatureTables([profiles])).toThrow('can\'t declare a "session" table')
   })
 })
 

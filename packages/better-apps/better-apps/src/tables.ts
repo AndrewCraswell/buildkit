@@ -30,8 +30,12 @@ export function getFeatureTables(features: readonly BetterAppsFeature[]): Better
     }
     ids.add(feature.id)
     for (const [key, table] of Object.entries(feature.schema ?? {})) {
-      if (reservedModels.has(key)) {
-        throw new Error(`The "${feature.id}" feature can't declare a "${key}" table. Better Auth reserves that name.`)
+      for (const name of [key, table.modelName]) {
+        if (name && reservedModels.has(name)) {
+          throw new Error(
+            `The "${feature.id}" feature can't declare a "${name}" table. Better Auth reserves that name.`
+          )
+        }
       }
       const existing = tables[key]
       tables[key] = {

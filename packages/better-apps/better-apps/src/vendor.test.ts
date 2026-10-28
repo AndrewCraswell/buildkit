@@ -26,7 +26,7 @@ describe("vendored Better Auth source", () => {
     const present = readdirSync(vendorRoot, { recursive: true, withFileTypes: true })
       .filter((entry) => entry.isFile())
       .map((entry) => relative(vendorRoot, resolve(entry.parentPath, entry.name)).replaceAll("\\", "/"))
-      .filter((path) => path !== "snapshot.json" && path !== "README.md")
+      .filter((path) => path !== "snapshot.json")
     expect(present.sort()).toEqual(Object.keys(snapshot.files).sort())
   })
 
