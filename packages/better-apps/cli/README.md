@@ -11,7 +11,7 @@ Create `better-apps.config.ts` with a default export of your database adapter an
 ```ts
 import { drizzleAdapter } from "@better-auth/drizzle-adapter"
 import { defineFeature, type BetterAppsOptions } from "better-apps"
-import { db } from "./db"
+import { db } from "./db.ts"
 
 const comments = defineFeature({
   id: "comments",
@@ -34,7 +34,8 @@ the same output without writing a file.
 ## Behavior
 
 - Schema generation supports the Drizzle adapter.
-- The config is loaded with Node's own TypeScript support, so it can't use syntax that Node can't strip, such as enums.
+- The config is loaded with Node's own TypeScript support. Relative imports need their file extension, such as
+  `./db.ts`, and the config can't use syntax that Node can't strip, such as enums.
 - An existing schema file is replaced.
 
 See the [package docs](docs/README.md).

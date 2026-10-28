@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { linkSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -40,6 +40,21 @@ describe("better-apps generate", () => {
   it("explains a missing config", async () => {
     expect(await run(["generate", "--config", "missing.config.ts"], context)).toBe(1)
     expect(stderr).toContain("Can't find missing.config.ts")
+  })
+
+  it("won't replace the config file", async () => {
+    expect(await run(["generate", "--output", "better-apps.config.ts"], context)).toBe(1)
+    expect(stderr).toContain(
+      "Can't write the schema to better-apps.config.ts, which is the config file. Pass another path with --output."
+    )
+  })
+
+  it("recognizes the config file through another path to it", async () => {
+    writeFileSync(join(output, "better-apps.config.ts"), "export default {}\n")
+    linkSync(join(output, "better-apps.config.ts"), join(output, "schema.ts"))
+    expect(await run(["generate", "-o", "schema.ts"], { ...context, cwd: output })).toBe(1)
+    expect(stderr).toContain("Can't write the schema to schema.ts, which is the config file.")
+    expect(readFileSync(join(output, "better-apps.config.ts"), "utf8")).toBe("export default {}\n")
   })
 
   it("explains a config without a database adapter", async () => {

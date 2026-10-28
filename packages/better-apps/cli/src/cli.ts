@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs"
+import { existsSync, statSync } from "node:fs"
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname, relative, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -32,6 +32,18 @@ function isOptions(value: unknown): value is BetterAppsOptions {
     "features" in value &&
     Array.isArray(value.features)
   )
+}
+
+// Compares files rather than paths, so a different letter case or a link to the same file still matches.
+function isSameFile(first: string, second: string): boolean {
+  if (first === second) {
+    return true
+  }
+  if (!existsSync(first) || !existsSync(second)) {
+    return false
+  }
+  const [a, b] = [statSync(first), statSync(second)]
+  return a.dev === b.dev && a.ino === b.ino
 }
 
 async function loadConfig(path: string, cwd: string): Promise<BetterAppsOptions> {
@@ -73,8 +85,14 @@ export async function run(args: readonly string[], context: CliContext): Promise
     return 1
   }
   try {
-    const config = await loadConfig(resolve(context.cwd, values.config), context.cwd)
+    const configPath = resolve(context.cwd, values.config)
     const file = resolve(context.cwd, values.output)
+    if (isSameFile(file, configPath)) {
+      throw new Error(
+        `Can't write the schema to ${relative(context.cwd, file)}, which is the config file. Pass another path with --output.`
+      )
+    }
+    const config = await loadConfig(configPath, context.cwd)
     const { code } = await generateSchema({ ...config, file })
     await mkdir(dirname(file), { recursive: true })
     await writeFile(file, code ?? "")
