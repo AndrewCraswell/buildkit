@@ -34,7 +34,8 @@ function isOptions(value: unknown): value is BetterAppsOptions {
   )
 }
 
-// Compares files rather than paths, so a different letter case or a link to the same file still matches.
+// Compares files rather than paths, so a different letter case or a link to the same file still matches. File ids are
+// read as bigints, since 64-bit ids such as NTFS's lose precision as numbers.
 function isSameFile(first: string, second: string): boolean {
   if (first === second) {
     return true
@@ -42,7 +43,7 @@ function isSameFile(first: string, second: string): boolean {
   if (!existsSync(first) || !existsSync(second)) {
     return false
   }
-  const [a, b] = [statSync(first), statSync(second)]
+  const [a, b] = [statSync(first, { bigint: true }), statSync(second, { bigint: true })]
   return a.dev === b.dev && a.ino === b.ino
 }
 
