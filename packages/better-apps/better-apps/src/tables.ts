@@ -1,8 +1,11 @@
 import type { BetterAuthDBSchema, DBTableIndex } from "@better-auth/core/db"
+import { toSnakeCase } from "@better-auth/core/utils/string"
 import type { BetterAppsFeature } from "./feature.js"
 
-// Better Auth's runtime adapters always define these models. A feature table with the same key would merge into them.
-const reservedModels = new Set(["user", "session", "account", "verification", "rateLimit"])
+// Better Auth's runtime adapters always define these models, and its generators write them as these snake_case tables.
+// A feature table with the same key would merge into them; one with the same table name would collide in a shared
+// database. Names are compared after the generators' snake_case conversion, so `User` and `rate_limit` match too.
+const reservedTables = new Set(["user", "session", "account", "verification", "rateLimit"].map(toSnakeCase))
 
 function mergeIndexes(...collections: readonly (readonly DBTableIndex[] | undefined)[]): DBTableIndex[] {
   const indexes: DBTableIndex[] = []
@@ -31,7 +34,7 @@ export function getFeatureTables(features: readonly BetterAppsFeature[]): Better
     ids.add(feature.id)
     for (const [key, table] of Object.entries(feature.schema ?? {})) {
       for (const name of [key, table.modelName]) {
-        if (name && reservedModels.has(name)) {
+        if (name && reservedTables.has(toSnakeCase(name))) {
           throw new Error(
             `The "${feature.id}" feature can't declare a "${name}" table. Better Auth reserves that name.`
           )

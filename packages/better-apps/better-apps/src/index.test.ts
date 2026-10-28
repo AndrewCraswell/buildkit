@@ -67,6 +67,11 @@ describe("getFeatureTables", () => {
     const profiles = defineFeature({ id: "profiles", schema: { profile: { modelName: "session", fields: {} } } })
     expect(() => getFeatureTables([profiles])).toThrow('can\'t declare a "session" table')
   })
+
+  it.each(["User", "RateLimit", "rate_limit"])("rejects %s, which generates a reserved table name", (modelName) => {
+    const feature = defineFeature({ id: "profiles", schema: { profile: { modelName, fields: {} } } })
+    expect(() => getFeatureTables([feature])).toThrow(`can't declare a "${modelName}" table`)
+  })
 })
 
 describe("generateSchema", () => {

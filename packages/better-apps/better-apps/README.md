@@ -35,7 +35,8 @@ Write `code` to a schema file that `drizzle-kit` reads, then generate migrations
   `defaultValue`, table indexes and custom `modelName` or `fieldName`.
 - Several features can extend the same table. Later fields win, and indexes are merged.
 - Better Apps adds no tables of its own. Feature tables can't use the names Better Auth reserves: `user`, `session`,
-  `account`, `verification` and `rateLimit`. That lets Better Auth share the same database.
+  `account`, `verification` and `rateLimit`, or any name that becomes the same snake_case table, such as `User` or
+  `rate_limit`. That lets Better Auth share the same database.
 - Schema generation supports the Drizzle adapter.
 
 See the [package docs](docs/README.md).
