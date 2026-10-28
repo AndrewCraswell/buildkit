@@ -155,6 +155,9 @@ describe("resolveSelection", () => {
     expect(projectNameProblem("My App")).toBeDefined()
     expect(projectNameProblem("node_modules")).toBeDefined()
     expect(projectNameProblem("@scope/app")).toBeUndefined()
+    expect(projectNameProblem("-rf")).toBeDefined()
+    expect(projectNameProblem("~app")).toBeDefined()
+    expect(projectNameProblem("@-x/app")).toBeDefined()
   })
 
   it("rejects unknown templates, targets and modes", () => {
@@ -382,6 +385,8 @@ describe("questions and catalog CI", () => {
           description: "",
           slot: "nope",
           requires: ["@x/missing", "slot:nope", "provides:nope"],
+          conflicts: ["slot:database"],
+          after: ["provides:i18n"],
           ask: ["missing"],
           options: z.object({ needed: z.string() }),
           migrations: [
@@ -418,6 +423,8 @@ describe("questions and catalog CI", () => {
     }
     const problems = checkCatalog(broken)
     const missing = [
+      "uses slot:database in conflicts or after",
+      "uses provides:i18n in conflicts or after",
       "isn't a semantic version",
       "More than one add-on has the id @x/bad",
       "uses facet webgl",

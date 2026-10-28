@@ -70,5 +70,9 @@ export function relativeModule(fromFile: string, toPath: string): string {
   }
   const up = from.slice(common).map(() => "..")
   const relative = [...up, ...to.slice(common)].join("/")
-  return relative.startsWith("..") ? relative : `./${relative}`
+  // `..foo` is a name, not a parent folder, so it needs `./` too.
+  if (relative === ".." || relative.startsWith("../")) {
+    return relative
+  }
+  return relative === "" ? "." : `./${relative}`
 }

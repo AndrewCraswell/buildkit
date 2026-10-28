@@ -96,6 +96,9 @@ export function render(catalog: CatalogManifest, resolved: ResolvedSelection, se
     result.nextSteps.push(...(manifest.nextSteps?.(context) ?? []))
   }
   result.entries = entries
+  for (const { definition, owner } of points) {
+    checkPath(owner, definition.file)
+  }
   const rendered = renderPoints({ points, entries, product: settings.product })
   for (const [path, file] of rendered.files) {
     claimFile(result, path, { content: file.content, ownership: "owned", contributors: file.contributors })

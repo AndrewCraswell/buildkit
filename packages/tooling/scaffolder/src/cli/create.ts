@@ -45,6 +45,10 @@ export function createCli(options: CliOptions): CommandDef {
       { type: "string", description: `${slot.choose} Use --no-${slot.id} for no ${slot.title.toLowerCase()}` }
     ])
   )
+  const alongside: ArgsDef[string] = {
+    type: "string",
+    description: "Add an add-on with this change, as a decision's choice does. Repeatable, or comma-separated"
+  }
   const extra: Record<string, ArgsDef> = {
     init: {
       template: positional("Template to start from"),
@@ -64,7 +68,12 @@ export function createCli(options: CliOptions): CommandDef {
       set: { type: "string", description: "Set an option: <add-on>.<option>=<value>. Repeatable" },
       ...slotArgs
     },
-    upgrade: { list: { type: "boolean", description: "Show what an upgrade changes, and write nothing" } }
+    upgrade: {
+      list: { type: "boolean", description: "Show what an upgrade changes, and write nothing" },
+      with: alongside
+    },
+    sync: { with: alongside },
+    config: { with: alongside }
   }
   const subCommands = Object.fromEntries(
     Object.entries(descriptions).map(([name, description]) => [

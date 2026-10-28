@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { z } from "zod"
 import { definePoint } from "../manifest/define.js"
 import { PlanError } from "../plan/errors.js"
-import { applyFixture, initRequest } from "../testing/fixture.js"
+import { applyFixture, fixtureCatalog, initRequest, planFixture } from "../testing/fixture.js"
 import { renderPoints, type PointEntry } from "./render.js"
 
 const list = definePoint({
@@ -171,5 +171,18 @@ describe("renderPoints", () => {
     expect(files["src/generated/fixture/client.ts"]).toContain('import { I18nProvider } from "../../i18n/setup"')
     expect(files["vite.config.ts"]).toContain("./src/generated/fixture/config")
     expect(files["src/generated/fixture/server.ts"]).toContain('"DATABASE_URL": {"type":"string"}')
+  })
+
+  it("checks each point's file like any contributed path", async () => {
+    const catalog = fixtureCatalog()
+    const [target] = catalog.targets
+    const [first] = target?.points ?? []
+    if (!target || !first) {
+      throw new Error("The fixture target has points.")
+    }
+    const unsafe = { ...catalog, targets: [{ ...target, points: [{ ...first, file: "src/a/../b.ts" }] }] }
+    const planned = await planFixture({}, initRequest(), { catalog: unsafe })
+    expect(planned.error).toMatchObject({ code: "E_UNSAFE_PATH", paths: ["src/a/../b.ts"] })
+    expect(planned.error?.message).toContain("web contributes")
   })
 })

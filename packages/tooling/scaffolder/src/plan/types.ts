@@ -12,9 +12,13 @@ export type Intent =
       replace: string[]
       options: Record<string, Record<string, unknown>>
     }
-  | { command: "config"; options: Record<string, Record<string, unknown>> }
-  | { command: "upgrade" }
-  | { command: "sync" }
+  /**
+   * `addons` on config, upgrade and sync are add-on ids to add with the change. A decision's choice uses them to stay
+   * the same command, such as an upgrade whose new catalog makes an installed add-on need a slot.
+   */
+  | { command: "config"; options: Record<string, Record<string, unknown>>; addons?: string[] }
+  | { command: "upgrade"; addons?: string[] }
+  | { command: "sync"; addons?: string[] }
 
 export type Resolution = "keep-current" | "take-incoming" | { content: string }
 

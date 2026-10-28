@@ -46,12 +46,14 @@ function addingTo(catalog: CatalogManifest, request: PlanRequest, id: string, re
       replace: replace === undefined ? intent.replace : [...new Set([...intent.replace, replace])]
     })
   }
-  return withIntent(request, {
-    command: "add",
-    addons: [id],
-    replace: replace === undefined ? [] : [replace],
-    options: {}
-  })
+  if (replace === undefined) {
+    // Stay the same command: an upgrade turned into an add would stop at the catalog-mismatch check.
+    return withIntent(request, {
+      ...intent,
+      addons: [...(intent.addons ?? []).filter((name) => !refersTo(catalog, name, id)), id]
+    })
+  }
+  return withIntent(request, { command: "add", addons: [id], replace: [replace], options: {} })
 }
 
 /** Turns a resolver issue into a decision whose every choice is a complete request. */

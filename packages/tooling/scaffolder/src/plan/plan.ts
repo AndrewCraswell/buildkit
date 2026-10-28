@@ -1,5 +1,5 @@
 import { diffLines } from "diff"
-import { findAddon } from "../manifest/catalog.js"
+import { findAddon, lookupAddon } from "../manifest/catalog.js"
 import type { CatalogManifest, TargetContext } from "../manifest/types.js"
 import { jsonFormat, yamlFormat } from "../merge/formats.js"
 import { planSharedDocument, planSharedEnv, planSharedLines, type SharedResult } from "../merge/shared.js"
@@ -23,7 +23,16 @@ import { errorInfo, PlanError } from "./errors.js"
 import { canonicalJson, compareText, isRecord, parsePointer } from "./json.js"
 import { render, type Rendered } from "./render.js"
 import { RecordingTree, ScratchTree, type FileState, type VirtualTree } from "./tree.js"
-import type { Operation, OperationClass, PackageChange, Plan, PlanConflict, PlanRequest, Resolution } from "./types.js"
+import type {
+  Intent,
+  Operation,
+  OperationClass,
+  PackageChange,
+  Plan,
+  PlanConflict,
+  PlanRequest,
+  Resolution
+} from "./types.js"
 
 export interface PlanInput {
   catalog: CatalogManifest
@@ -104,6 +113,20 @@ function stateText(tree: RecordingTree, path: string): string | undefined {
   return state.kind === "file" ? state.content : undefined
 }
 
+/**
+ * The add-ons an add can carry into the upgrade it has to wait for. Only a plain add can: slot names, replacements and
+ * options need the add itself, so for those the user adds again after upgrading.
+ */
+function carriedAdditions(catalog: CatalogManifest, intent: Intent): string[] {
+  if (intent.command !== "add" || intent.replace.length > 0 || Object.keys(intent.options).length > 0) {
+    return []
+  }
+  const ids = intent.addons
+    .map((name) => lookupAddon(catalog, name))
+    .map((lookup) => ("id" in lookup ? lookup.id : undefined))
+  return ids.every((id): id is string => id !== undefined) ? ids : []
+}
+
 async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
   const { request, settings } = input
   const configPath = settings.configFile
@@ -137,11 +160,19 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
   const command = request.intent.command
   if (lock && command !== "upgrade" && lock.catalog.version !== catalog.version) {
     const recorded = lock.catalog.version
+    const carried = carriedAdditions(catalog, request.intent)
     result.decisions.push({
       id: "catalog-mismatch",
       message: `This project was planned with catalog ${recorded}, and ${catalog.version} is installed. Upgrade first, or plan with ${recorded}.`,
       choices: [
-        { id: "upgrade", label: `Upgrade to ${catalog.version}`, request: { intent: { command: "upgrade" } } },
+        {
+          id: "upgrade",
+          label:
+            carried.length > 0
+              ? `Upgrade to ${catalog.version} and add ${carried.map((id) => findAddon(catalog, id)?.title ?? id).join(", ")}`
+              : `Upgrade to ${catalog.version}`,
+          request: { intent: { command: "upgrade", ...(carried.length > 0 ? { addons: carried } : {}) } }
+        },
         ...(input.catalogs?.(recorded)
           ? [{ id: "recorded", label: `Plan with ${recorded}`, request: { ...request, catalogVersion: recorded } }]
           : [])

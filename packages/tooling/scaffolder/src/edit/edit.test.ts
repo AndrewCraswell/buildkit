@@ -58,6 +58,11 @@ describe("yaml", () => {
     })
     expect(parseYaml("")).toEqual({ ok: true, value: undefined })
     expect(parseYaml("a:\n  __proto__: 1\n")).toEqual({ ok: false, reason: "unsafe-key", pointer: "/a/__proto__" })
+    expect(parseYaml("a: &k __proto__\nb:\n  *k : 1\n")).toEqual({
+      ok: false,
+      reason: "unsafe-key",
+      pointer: "/b/__proto__"
+    })
     expect(parseYaml("a: [1\n")).toMatchObject({ ok: false, reason: "invalid" })
   })
 
@@ -102,10 +107,26 @@ describe("env", () => {
       ["C", "x"]
     ])
     expect(setEnvValue(text, "A", "2")).toContain("\nA=2\n")
-    expect(setEnvValue(undefined, "D", "has space", "The D value")).toBe('# The D value\nD="has space"\n')
+    expect(setEnvValue(undefined, "D", "has space", "The D value")).toBe("# The D value\nD='has space'\n")
     expect(removeEnvKey("# The D value\nD=1\nE=2\n", "D", "The D value")).toBe("E=2\n")
     expect(removeEnvKey("D=1\n", "D")).toBe("")
     expect(removeEnvKey("E=1\n", "D")).toBe("E=1\n")
+  })
+
+  it("reads back every value it writes, without escapes dotenv would keep", () => {
+    for (const value of ['say "hi"', "C:\\new\\path", "it's", "has space", "a#b", "x=y", "two\nlines", `it's "both"`]) {
+      expect(readEnv(setEnvValue(undefined, "A", value)).get("A")).toBe(value)
+    }
+    expect(setEnvValue(undefined, "A", 'say "hi"')).toBe("A='say \"hi\"'\n")
+    expect(setEnvValue(undefined, "A", "two\nlines")).toBe('A="two\\nlines"\n')
+    expect(() => setEnvValue(undefined, "A", "it's\n\"`")).toThrow("A's value can't be written")
+    expect(readEnv("A=1 # the port\nB=a#b\nC='x' # quoted\n")).toEqual(
+      new Map([
+        ["A", "1"],
+        ["B", "a#b"],
+        ["C", "x"]
+      ])
+    )
   })
 })
 

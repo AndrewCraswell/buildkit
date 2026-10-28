@@ -71,7 +71,15 @@ export function checkCatalog(catalog: CatalogManifest, options: { matrix?: boole
     if (addon.slot && !findSlot(catalog, addon.slot)) {
       problems.push(`${addon.id} fills slot ${addon.slot}, which isn't defined.`)
     }
-    for (const reference of [...(addon.requires ?? []), ...(addon.conflicts ?? []), ...(addon.after ?? [])]) {
+    // The resolver reads `slot:` and `provides:` only in requires. Elsewhere they'd be accepted and do nothing.
+    for (const reference of [...(addon.conflicts ?? []), ...(addon.after ?? [])]) {
+      if (reference.startsWith("slot:") || reference.startsWith("provides:")) {
+        problems.push(`${addon.id} uses ${reference} in conflicts or after, which take add-on ids only.`)
+      } else if (!findAddon(catalog, reference)) {
+        problems.push(`${addon.id} refers to ${reference}, which isn't in the catalog.`)
+      }
+    }
+    for (const reference of addon.requires ?? []) {
       if (reference.startsWith("slot:")) {
         if (!findSlot(catalog, reference.slice(5))) {
           problems.push(`${addon.id} refers to ${reference}, which isn't defined.`)

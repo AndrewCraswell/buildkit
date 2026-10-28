@@ -82,7 +82,8 @@ describe("applyPlan", () => {
     expect((await planProject(context, { intent: { command: "sync" } })).status).toBe("unchanged")
     expect(await applyPlan({ ...planned, status: "unchanged" }, { root: project, settings })).toEqual({
       status: "unchanged",
-      written: []
+      written: [],
+      notices: []
     })
     expect((await failure(() => applyPlan({ ...planned, status: "conflict" }, { root: project, settings }))).code).toBe(
       "E_USAGE"
@@ -131,6 +132,7 @@ describe("applyPlan", () => {
     expect(readFileSync(join(project, "notes.txt"), "utf8")).toBe("mine\n")
     expect(existsSync(join(project, ".fixture/journal.json"))).toBe(false)
     expect(existsSync(join(project, ".fixture/apply.lock"))).toBe(false)
+    expect(listFiles(project).filter((file) => file.startsWith(".fixture/backup/"))).toEqual([])
   })
 
   it("refuses when a file changed after planning, without writing anything", async () => {
@@ -169,6 +171,20 @@ describe("applyPlan", () => {
       .map((file) => readFileSync(join(project, file), "utf8"))
       .join("\n")
     expect(everything).not.toContain("key@sentry")
+    expect(listFiles(project).filter((file) => file.startsWith(".fixture/backup/"))).toEqual([])
+  })
+
+  it("reports a secrets file it can't write, and still releases the lock", async () => {
+    await initProject()
+    mkdirSync(join(project, ".env"))
+    const planned = await planProject(context, addRequest(["sentry"]))
+    const result = await applyPlan(planned, { root: project, settings, secrets: { SENTRY_DSN: "https://key@x/1" } })
+    expect(result.status).toBe("applied")
+    expect(result.notices).toEqual([expect.objectContaining({ code: "secrets-not-written", path: ".env" })])
+    expect(result.notices[0]?.text).toContain("Set SENTRY_DSN there yourself")
+    expect(result.notices[0]?.text).not.toContain("key@x")
+    expect(existsSync(join(project, ".fixture/apply.lock"))).toBe(false)
+    expect(readFileSync(join(project, ".env.example"), "utf8")).toContain("SENTRY_DSN=")
   })
 
   it.skipIf(process.platform === "win32")("makes the secrets file readable only by you", async () => {

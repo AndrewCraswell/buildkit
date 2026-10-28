@@ -1,10 +1,10 @@
-import { readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs"
+import { readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs"
 import { hostname } from "node:os"
 import { join } from "node:path"
 import { z } from "zod"
 import { setEnvValue } from "../edit/env.js"
 import { PlanError } from "../plan/errors.js"
-import type { Operation, Plan } from "../plan/types.js"
+import type { Notice, Operation, Plan } from "../plan/types.js"
 import type { ProductSettings } from "../state/settings.js"
 import {
   createExclusive,
@@ -170,13 +170,14 @@ function applyOrder(operations: Operation[]): Operation[] {
 /**
  * Applies a planned plan. It holds the apply lock, refuses if any file changed since planning, journals each step,
  * backs up what it overwrites or deletes, and writes the lock last. If a step fails, it rolls back what this run did.
+ * Backups are removed once the apply finishes, or once a rollback restores every file.
  */
 export async function applyPlan(
   plan: Plan,
   options: ApplyOptions
-): Promise<{ status: "applied" | "unchanged"; written: string[] }> {
+): Promise<{ status: "applied" | "unchanged"; written: string[]; notices: Notice[] }> {
   if (plan.status === "unchanged") {
-    return { status: "unchanged", written: [] }
+    return { status: "unchanged", written: [], notices: [] }
   }
   if (plan.status !== "planned") {
     throw new PlanError("E_USAGE", `Only a planned plan can be applied, and this one is ${plan.status}.`)
@@ -188,6 +189,7 @@ export async function applyPlan(
   const operations = applyOrder(plan.operations)
   const journal: Journal = { fingerprint: plan.fingerprint, started: new Date().toISOString(), entries: [] }
   const written: string[] = []
+  const backupRoot = backupFolder(paths.backups, plan.fingerprint)
   try {
     const drifted = operations.filter((operation) => currentContent(root, operation.path) !== operation.before)
     if (drifted.length > 0) {
@@ -199,7 +201,6 @@ export async function applyPlan(
         }
       )
     }
-    const backupRoot = join(paths.backups, plan.fingerprint.slice(0, 16))
     for (const operation of operations) {
       const target = join(root, operation.path)
       const entry: JournalEntry = {
@@ -234,7 +235,11 @@ export async function applyPlan(
     }
   } catch (error) {
     if (journal.entries.length > 0) {
-      await rollback(root, journal)
+      const report = await rollback(root, journal)
+      // A file someone else changed was left as it is, so its backup stays for them.
+      if (report.changed.length === 0) {
+        rmSync(backupRoot, { recursive: true, force: true })
+      }
     }
     await removeFile(paths.journal).catch(() => undefined)
     releaseLock(root, settings)
@@ -247,12 +252,30 @@ export async function applyPlan(
       `Apply failed and was rolled back: ${error instanceof Error ? error.message : String(error)}`
     )
   }
-  await removeFile(paths.journal)
-  if (options.secrets && Object.keys(options.secrets).length > 0) {
-    await writeSecretsFile(root, settings, options.secrets)
+  const notices: Notice[] = []
+  try {
+    await removeFile(paths.journal)
+    rmSync(backupRoot, { recursive: true, force: true })
+    if (options.secrets && Object.keys(options.secrets).length > 0) {
+      try {
+        await writeSecretsFile(root, settings, options.secrets)
+      } catch (error) {
+        // The changes are applied either way, so this is a notice rather than a failure.
+        notices.push({
+          code: "secrets-not-written",
+          path: settings.secretsFile,
+          text: `The changes were applied, but ${settings.secretsFile} couldn't be written (${error instanceof Error ? error.message : String(error)}). Set ${Object.keys(options.secrets).join(", ")} there yourself.`
+        })
+      }
+    }
+  } finally {
+    releaseLock(root, settings)
   }
-  releaseLock(root, settings)
-  return { status: "applied", written }
+  return { status: "applied", written, notices }
+}
+
+function backupFolder(backups: string, fingerprint: string): string {
+  return join(backups, fingerprint.slice(0, 16))
 }
 
 async function writeSecretsFile(root: string, settings: ProductSettings, secrets: Record<string, string>) {
@@ -318,6 +341,9 @@ export async function recover(
     return { status: hadState ? "recovered" : "unchanged", report: empty }
   }
   const report = await rollback(root, journal)
+  if (report.changed.length === 0) {
+    rmSync(backupFolder(paths.backups, journal.fingerprint), { recursive: true, force: true })
+  }
   await removeFile(paths.journal)
   releaseLock(root, settings)
   return { status: "recovered", report }

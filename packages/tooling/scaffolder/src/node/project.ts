@@ -71,6 +71,7 @@ export async function applyReviewed(
     ...(options.secrets ? { secrets: options.secrets } : {}),
     ...(options.hooks ? { hooks: options.hooks } : {})
   })
+  current.notices.push(...result.notices)
   return { plan: current, status: result.status }
 }
 

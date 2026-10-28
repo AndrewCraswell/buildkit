@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process"
-import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { z } from "zod"
@@ -8,10 +8,11 @@ import { PlanError } from "../plan/errors.js"
 import { isRecord } from "../plan/json.js"
 import type { ProductSettings } from "../state/settings.js"
 import { isValidVersion } from "../upgrade/semver.js"
+import { withRetries } from "./fs.js"
 
 export type CommandRunner = (command: string, args: string[], cwd: string) => Promise<{ code: number; output: string }>
 
-const packageNamePattern = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+const packageNamePattern = /^(?:@[a-z0-9][a-z0-9-._~]*\/)?[a-z0-9][a-z0-9-._~]*$/
 const integritySchema = z.object({ name: z.string(), version: z.string(), integrity: z.string() })
 
 export const runCommand: CommandRunner = (command, args, cwd) =>
@@ -76,42 +77,52 @@ export class CatalogStore {
     }
   }
 
-  /** Downloads a catalog version into the cache and records its integrity. */
+  /**
+   * Downloads a catalog version into the cache and records its integrity. It installs beside the cached copy and
+   * replaces it only after the install and the integrity check pass, so a failed fetch keeps what worked offline.
+   */
   async fetch(
     version: string,
     expectedIntegrity?: string
   ): Promise<{ version: string; integrity: string; folder: string }> {
     this.#check(version)
     const folder = this.folder(version)
-    rmSync(folder, { recursive: true, force: true })
-    mkdirSync(folder, { recursive: true })
-    writeFileSync(join(folder, "package.json"), `${JSON.stringify({ private: true }, null, 2)}\n`)
-    const spec = `${this.#installed.id}@${version}`
-    const result = await this.#run(
-      "npm",
-      ["install", spec, "--ignore-scripts", "--no-audit", "--no-fund", "--save-exact"],
-      folder
-    )
-    if (result.code !== 0) {
-      rmSync(folder, { recursive: true, force: true })
-      throw new PlanError(
-        "E_BASELINE_UNAVAILABLE",
-        `Couldn't fetch ${spec}: ${result.output.trim().split("\n").slice(-3).join(" ")}`
+    const staging = `${folder}.partial`
+    rmSync(staging, { recursive: true, force: true })
+    mkdirSync(staging, { recursive: true })
+    try {
+      writeFileSync(join(staging, "package.json"), `${JSON.stringify({ private: true }, null, 2)}\n`)
+      const spec = `${this.#installed.id}@${version}`
+      const result = await this.#run(
+        "npm",
+        ["install", spec, "--ignore-scripts", "--no-audit", "--no-fund", "--save-exact"],
+        staging
       )
-    }
-    const integrity = this.#lockedIntegrity(folder)
-    if (expectedIntegrity !== undefined && integrity !== expectedIntegrity) {
-      rmSync(folder, { recursive: true, force: true })
-      throw new PlanError(
-        "E_BASELINE_UNAVAILABLE",
-        `${spec} doesn't match the integrity recorded in the lock, so it wasn't used.`
+      if (result.code !== 0) {
+        throw new PlanError(
+          "E_BASELINE_UNAVAILABLE",
+          `Couldn't fetch ${spec}: ${result.output.trim().split("\n").slice(-3).join(" ")}`
+        )
+      }
+      const integrity = this.#lockedIntegrity(staging)
+      if (expectedIntegrity !== undefined && integrity !== expectedIntegrity) {
+        throw new PlanError(
+          "E_BASELINE_UNAVAILABLE",
+          `${spec} doesn't match the integrity recorded in the lock, so it wasn't used.`
+        )
+      }
+      writeFileSync(
+        join(staging, "integrity.json"),
+        `${JSON.stringify({ name: this.#installed.id, version, integrity }, null, 2)}\n`
       )
+      rmSync(folder, { recursive: true, force: true })
+      await withRetries(() => renameSync(staging, folder))
+      this.#loaded.delete(version)
+      return { version, integrity, folder }
+    } catch (error) {
+      rmSync(staging, { recursive: true, force: true })
+      throw error
     }
-    writeFileSync(
-      join(folder, "integrity.json"),
-      `${JSON.stringify({ name: this.#installed.id, version, integrity }, null, 2)}\n`
-    )
-    return { version, integrity, folder }
   }
 
   #lockedIntegrity(folder: string): string {

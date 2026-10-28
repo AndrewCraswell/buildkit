@@ -57,7 +57,7 @@ export type ResolveIssue =
 
 export type ResolveResult = { ok: true; value: ResolvedSelection } | { ok: false; issue: ResolveIssue }
 
-const projectNamePattern = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+const projectNamePattern = /^(?:@[a-z0-9][a-z0-9-._~]*\/)?[a-z0-9][a-z0-9-._~]*$/
 
 /** npm-safe names only: no path separators, spaces, uppercase or leading dots. */
 export function projectNameProblem(name: string): string | undefined {

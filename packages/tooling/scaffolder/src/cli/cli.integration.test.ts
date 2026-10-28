@@ -470,7 +470,15 @@ describe("add and other commands", () => {
     expect(envelope(applied.out).status).toBe("applied")
     expect(readFileSync(join(root, "demo/src/main.ts"), "utf8")).toContain("ready")
     const mismatch = await run(["add", "i18n", "--cwd", "demo", "--yes", "--json"])
-    expect(envelope(mismatch.out).decisions?.[0]?.id).toBe("catalog-mismatch")
+    const decision = envelope(mismatch.out).decisions?.[0]
+    expect(decision?.id).toBe("catalog-mismatch")
+    const argv = decision?.choices[0]?.argv ?? []
+    expect(argv).toEqual(["fixture", "upgrade", "--with", "i18n"])
+    const carried = await run([...argv.slice(1), "--cwd", "demo", "--yes", "--json"])
+    expect(envelope(carried.out).status).toBe("applied")
+    expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain("@fixture/i18n")
+    const along = await run(["config", "set", "--with", "storybook", "--cwd", "demo", "--yes", "--json"])
+    expect(envelope(along.out).status).not.toBe("error")
   })
 
   it("status, explain, schema and recover describe the project", async () => {
@@ -536,6 +544,11 @@ describe("add and other commands", () => {
     )
     const failed = await run(["catalog", "fetch", "0.8.0", "--cwd", "demo", "--json"], { runCommand })
     expect(envelope(failed.out).error?.code).toBe("E_BASELINE_UNAVAILABLE")
+    const offline: CliOptions["runCommand"] = async () => ({ code: 1, output: "npm ERR! network" })
+    const refetch = await run(["catalog", "fetch", "0.9.0", "--cwd", "demo", "--json"], { runCommand: offline })
+    expect(envelope(refetch.out).error?.code).toBe("E_BASELINE_UNAVAILABLE")
+    expect(existsSync(join(root, "demo/.fixture/catalogs/0.9.0/integrity.json"))).toBe(true)
+    expect(existsSync(join(root, "demo/.fixture/catalogs/0.9.0.partial"))).toBe(false)
     expect((await run(["catalog", "fetch", "latest", "--cwd", "demo"], { runCommand })).code).toBe(2)
     expect((await run(["catalog", "fetch", "--cwd", "demo"])).code).toBe(2)
     expect((await run(["catalog", "frob"])).code).toBe(2)

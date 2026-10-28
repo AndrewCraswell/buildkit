@@ -42,6 +42,7 @@ export interface ApplyOptions {
 export function applyPlan(plan: Plan, options: ApplyOptions): Promise<{
     status: "applied" | "unchanged";
     written: string[];
+    notices: Notice[];
 }>;
 
 // @public
@@ -180,6 +181,7 @@ export function writeArtifacts(plan: Plan, folder: string, options: {
 
 // Warnings were encountered during analysis:
 //
+// dist/node/apply.d.ts:38:5 - (ae-forgotten-export) The symbol "Notice" needs to be exported by the entry point node.d.ts
 // dist/node/catalogs.d.ts:18:9 - (ae-forgotten-export) The symbol "CatalogManifest" needs to be exported by the entry point node.d.ts
 // dist/node/project.d.ts:19:5 - (ae-forgotten-export) The symbol "PlanRequest" needs to be exported by the entry point node.d.ts
 

@@ -487,12 +487,12 @@ export class CliRuntime {
   }
 
   async config(argv: string[]): Promise<number> {
-    const flags = parseFlags(argv, spec({}))
+    const flags = parseFlags(argv, spec({ lists: ["with"] }))
     const json = flags.booleans.has("json")
     const root = this.#root(flags)
     const [action, ...rest] = flags.positionals
     if (action === "set") {
-      if (rest.length === 0) {
+      if (rest.length === 0 && (flags.lists.get("with") ?? []).length === 0) {
         throw new PlanError("E_USAGE", "config set takes <add-on>.<option>=<value>.")
       }
       const options: Record<string, Record<string, unknown>> = {}
@@ -500,7 +500,11 @@ export class CliRuntime {
         const id = requireAddonId(this.options.catalog, addon)
         options[id] = { ...options[id], [key]: value }
       }
-      return this.#planAndApply(root, { intent: { command: "config", options }, ...this.#requestExtras(flags) }, flags)
+      return this.#planAndApply(
+        root,
+        { intent: { command: "config", options, ...this.#alongside(flags) }, ...this.#requestExtras(flags) },
+        flags
+      )
     }
     const state = readSafely(root, this.#settings.configFile)
     if (state.kind !== "file") {
@@ -527,10 +531,10 @@ export class CliRuntime {
   }
 
   async upgrade(argv: string[]): Promise<number> {
-    const flags = parseFlags(argv, spec({ booleans: ["list"] }))
+    const flags = parseFlags(argv, spec({ booleans: ["list"], lists: ["with"] }))
     return this.#planAndApply(
       this.#root(flags),
-      { intent: { command: "upgrade" }, ...this.#requestExtras(flags) },
+      { intent: { command: "upgrade", ...this.#alongside(flags) }, ...this.#requestExtras(flags) },
       flags,
       {
         applies: !flags.booleans.has("list")
@@ -539,8 +543,18 @@ export class CliRuntime {
   }
 
   async sync(argv: string[]): Promise<number> {
-    const flags = parseFlags(argv, spec({}))
-    return this.#planAndApply(this.#root(flags), { intent: { command: "sync" }, ...this.#requestExtras(flags) }, flags)
+    const flags = parseFlags(argv, spec({ lists: ["with"] }))
+    return this.#planAndApply(
+      this.#root(flags),
+      { intent: { command: "sync", ...this.#alongside(flags) }, ...this.#requestExtras(flags) },
+      flags
+    )
+  }
+
+  /** `--with` on config set, upgrade and sync: add-ons to add with the change, as a decision's choice writes them. */
+  #alongside(flags: ParsedFlags): { addons?: string[] } {
+    const names = flags.lists.get("with") ?? []
+    return names.length > 0 ? { addons: names.map((name) => requireAddonId(this.options.catalog, name)) } : {}
   }
 
   /** Fails when generated files, the lock or seeds are out of date, or seeds still hold conflict markers. */

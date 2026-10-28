@@ -605,6 +605,29 @@ describe("upgrade", () => {
   const v1 = fixtureCatalog(1)
   const catalogs = (version: string) => (version === "1.0.0" ? v1 : undefined)
 
+  it("a choice an upgrade needs stays an upgrade, so it finishes", async () => {
+    const files = await project({ slots: { database: null } })
+    const v2 = fixtureCatalog(2)
+    const strict = {
+      ...v2,
+      addons: v2.addons.map((addon) =>
+        addon.id === "@fixture/lint" ? { ...addon, requires: ["slot:database"] } : addon
+      )
+    }
+    const planned = await planFixture(files, { intent: { command: "upgrade" } }, { catalog: strict, catalogs })
+    expect(planned.status).toBe("needs-decision")
+    const [first] = planned.decisions[0]?.choices ?? []
+    expect(first?.request).toEqual({ intent: { command: "upgrade", addons: ["@fixture/db-sqlite"] } })
+    if (!first) {
+      throw new Error("missing choice")
+    }
+    const upgraded = await planFixture(files, first.request, { catalog: strict, catalogs })
+    expect(upgraded.status).toBe("planned")
+    expect(upgraded.operations.find((operation) => operation.path === "fixture.jsonc")?.content).toContain(
+      "@fixture/db-sqlite"
+    )
+  })
+
   it("merges your seed edits with the new version, runs migrations and lists agent tasks", async () => {
     const files = await project()
     const edited = { ...files, "src/main.ts": `// note\n${files["src/main.ts"]}`, "scripts/ci.sh": "npm run lint\n" }
@@ -668,6 +691,20 @@ describe("upgrade", () => {
     const planned = await planFixture(files, addRequest(["i18n"]), { catalog: fixtureCatalog(2), catalogs })
     expect(planned.status).toBe("needs-decision")
     expect(planned.decisions[0]?.choices.map((choice) => choice.id)).toEqual(["upgrade", "recorded"])
+    const upgrade = planned.decisions[0]?.choices[0]
+    expect(upgrade?.label).toBe("Upgrade to 2.0.0 and add Localization")
+    expect(upgrade?.request).toEqual({ intent: { command: "upgrade", addons: ["@fixture/i18n"] } })
+    if (!upgrade) {
+      throw new Error("missing choice")
+    }
+    const upgraded = await planFixture(files, upgrade.request, { catalog: fixtureCatalog(2), catalogs })
+    expect(upgraded.status).toBe("planned")
+    expect(upgraded.operations.map((operation) => operation.path)).toContain("src/i18n/setup.ts")
+    const replacing = await planFixture(files, addRequest(["ui-fancy"], ["ui-basic"]), {
+      catalog: fixtureCatalog(2),
+      catalogs
+    })
+    expect(replacing.decisions[0]?.choices[0]?.request).toEqual({ intent: { command: "upgrade" } })
     const recorded = planned.decisions[0]?.choices[1]?.request
     if (!recorded) {
       throw new Error("missing choice")

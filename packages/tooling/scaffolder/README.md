@@ -165,9 +165,24 @@ project hasn't changed since; applying it twice is a no-op.
 
 ## The JSON envelope and exit codes
 
-With `--json`, every command prints one JSON envelope: `status`, `fingerprint`, `operations` (path, action, class and
-line counts), `decisions` (each choice with its `request` and `argv`), `conflicts`, `packages`, `env`, `commands`,
-`migrations`, `notices`, `nextSteps` and `error`. Files that may hold secrets show no contents or line counts.
+With `--json`, the commands that plan or change the project (`init`, `add`, `config set`, `upgrade`, `sync`, `check`,
+`plan show`, `catalog fetch` and `recover`) print one JSON envelope: `status`, `fingerprint`, `operations` (path,
+action, class and line counts), `decisions` (each choice with its `request` and `argv`), `conflicts`, `packages`, `env`,
+`commands`, `migrations`, `notices`, `nextSteps` and `error`. Files that may hold secrets show no contents or line
+counts.
+
+The commands that only read print their own JSON instead:
+
+| Command      | `--json` prints                                                                |
+| ------------ | ------------------------------------------------------------------------------ |
+| `config`     | The config, as an object                                                       |
+| `config get` | The add-on's options or the option's value, or `null`                          |
+| `status`     | `{ catalog, files, deleted }`: each file's path, class, state and contributors |
+| `explain`    | An object whose `kind` is `path`, `addon`, `entry` or `unknown`                |
+| `catalog`    | The questionnaire: each template's questions, by mode                          |
+| `schema`     | `{ config, lock, request }`, each a JSON Schema                                |
+
+When any command fails, it prints the envelope with `status: "error"`.
 
 | Code | Meaning                       |
 | ---- | ----------------------------- |

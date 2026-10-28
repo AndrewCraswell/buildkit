@@ -16,9 +16,9 @@ const answers = z.object({
 const intent = z.discriminatedUnion("command", [
   z.object({ command: z.literal("init"), answers }),
   z.object({ command: z.literal("add"), addons: z.array(z.string()), replace: z.array(z.string()), options }),
-  z.object({ command: z.literal("config"), options }),
-  z.object({ command: z.literal("upgrade") }),
-  z.object({ command: z.literal("sync") })
+  z.object({ command: z.literal("config"), options, addons: z.array(z.string()).optional() }),
+  z.object({ command: z.literal("upgrade"), addons: z.array(z.string()).optional() }),
+  z.object({ command: z.literal("sync"), addons: z.array(z.string()).optional() })
 ])
 
 /** Validates a request from an untrusted source, such as a plan file or the dashboard. */

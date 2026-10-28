@@ -36,6 +36,24 @@ describe("ensureImport", () => {
     )
   })
 
+  it("never adds names to a namespace or type-only import", () => {
+    expect(ensureImport("a.ts", 'import * as ns from "m"\n', { module: "m", named: ["b"] })).toBe(
+      'import * as ns from "m"\nimport { b } from "m"\n'
+    )
+    expect(
+      ensureImport("a.ts", 'import type { Plugin } from "vite"\n', { module: "vite", named: ["defineConfig"] })
+    ).toBe('import type { Plugin } from "vite"\nimport { defineConfig } from "vite"\n')
+    expect(ensureImport("a.ts", 'import { type Plugin } from "vite"\n', { module: "vite", named: ["Plugin"] })).toBe(
+      'import { Plugin } from "vite"\n'
+    )
+    expect(
+      ensureImport("a.ts", 'import * as ns from "m"\nimport { b } from "m"\n', { module: "m", named: ["b", "c"] })
+    ).toBe('import * as ns from "m"\nimport { b, c } from "m"\n')
+    expect(ensureImport("a.ts", 'import { a } from "m"\nimport { b } from "m"\n', { module: "m", named: ["b"] })).toBe(
+      'import { a } from "m"\nimport { b } from "m"\n'
+    )
+  })
+
   it("refuses source that doesn't parse", () => {
     expect(() => ensureImport("a.ts", "import {", { module: "m" })).toThrow("can't be parsed")
   })

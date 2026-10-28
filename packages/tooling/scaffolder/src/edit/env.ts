@@ -16,7 +16,7 @@ export function readEnv(text: string | undefined): Map<string, string> {
 export function setEnvValue(text: string | undefined, name: string, value: string, description?: string): string {
   const lines = envLines(text)
   const index = lines.findIndex((line) => parseEnvLine(line)?.name === name)
-  const rendered = `${name}=${formatEnvValue(value)}`
+  const rendered = `${name}=${formatEnvValue(name, value)}`
   if (index !== -1) {
     lines[index] = rendered
     return joinEnv(lines)
@@ -52,10 +52,31 @@ function parseEnvLine(line: string): { name: string; value: string } | undefined
     return undefined
   }
   const raw = (match[2] ?? "").trim()
-  const quoted = /^(["'])(.*)\1$/.exec(raw)
-  return { name, value: quoted ? (quoted[2] ?? "") : raw }
+  const quote = raw[0]
+  const end = quote === "'" || quote === '"' || quote === "`" ? raw.indexOf(quote, 1) : -1
+  if (end > 0) {
+    const inner = raw.slice(1, end)
+    // As in dotenv: double quotes expand \n and \r, and single quotes and backticks keep everything as written.
+    return { name, value: quote === '"' ? inner.replaceAll("\\n", "\n").replaceAll("\\r", "\r") : inner }
+  }
+  // An unquoted value ends where a comment starts.
+  const comment = raw.search(/\s#/)
+  return { name, value: comment === -1 ? raw : raw.slice(0, comment).trimEnd() }
 }
 
-function formatEnvValue(value: string): string {
-  return /[\s#"'=]/.test(value) ? JSON.stringify(value) : value
+/** Quotes a value so dotenv and Node's `--env-file` read it back unchanged. None of the styles needs escapes. */
+function formatEnvValue(name: string, value: string): string {
+  if (!/[\s#"'`=\\]/.test(value)) {
+    return value
+  }
+  if (!value.includes("'") && !value.includes("\n")) {
+    return `'${value}'`
+  }
+  if (!value.includes('"') && !value.includes("\\")) {
+    return `"${value.replaceAll("\n", "\\n")}"`
+  }
+  if (!value.includes("`") && !value.includes("\n")) {
+    return `\`${value}\``
+  }
+  throw new Error(`${name}'s value can't be written to an env file: it has a line break and quotes or backslashes.`)
 }

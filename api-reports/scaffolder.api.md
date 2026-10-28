@@ -441,13 +441,21 @@ export type Intent = {
     addons: string[];
     replace: string[];
     options: Record<string, Record<string, unknown>>;
-} | {
+}
+/**
+* `addons` on config, upgrade and sync are add-on ids to add with the change. A decision's choice uses them to stay
+* the same command, such as an upgrade whose new catalog makes an installed add-on need a slot.
+*/
+| {
     command: "config";
     options: Record<string, Record<string, unknown>>;
+    addons?: string[];
 } | {
     command: "upgrade";
+    addons?: string[];
 } | {
     command: "sync";
+    addons?: string[];
 };
 
 // @public (undocumented)

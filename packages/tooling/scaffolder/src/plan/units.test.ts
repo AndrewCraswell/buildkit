@@ -72,6 +72,9 @@ describe("paths", () => {
     expect(caseCollision(["a", "a"])).toBeUndefined()
     expect(relativeModule("src/generated/x/client.ts", "src/i18n/setup")).toBe("../../i18n/setup")
     expect(relativeModule("client.ts", "src/x")).toBe("./src/x")
+    expect(relativeModule("client.ts", "..foo/x")).toBe("./..foo/x")
+    expect(relativeModule("src/a/client.ts", "src")).toBe("..")
+    expect(relativeModule("src/client.ts", "src")).toBe(".")
   })
 })
 
@@ -319,5 +322,12 @@ describe("envelope", () => {
       "a.b=true"
     ])
     expect(requestArgv({ intent: { command: "sync" } })).toEqual(["sync"])
+    expect(requestArgv({ intent: { command: "upgrade", addons: ["@x/db"] } })).toEqual(["upgrade", "--with", "db"])
+    expect(requestArgv({ intent: { command: "config", options: {}, addons: ["@x/db"] } })).toEqual([
+      "config",
+      "set",
+      "--with",
+      "db"
+    ])
   })
 })

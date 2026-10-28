@@ -46,10 +46,11 @@ export function requestArgv(request: PlanRequest): string[] {
       break
     case "config":
       argv.push("config", "set", ...setFlags(intent.options).filter((_, index) => index % 2 === 1))
+      argv.push(...(intent.addons ?? []).flatMap((id) => ["--with", shortName(id)]))
       break
     case "upgrade":
     case "sync":
-      argv.push(intent.command)
+      argv.push(intent.command, ...(intent.addons ?? []).flatMap((id) => ["--with", shortName(id)]))
       break
   }
   for (const [id, resolution] of Object.entries(request.resolve ?? {})) {

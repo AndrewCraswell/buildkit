@@ -81,14 +81,38 @@ export function ensureImport(filename: string, source: string, spec: ImportSpec)
   const program = parse(filename, source)
   const body = Array.isArray(program.body) ? program.body.filter(isNode) : []
   const imports = body.filter((node) => node.type === "ImportDeclaration")
-  const existing = imports.find((node) => isNode(node.source) && node.source.value === spec.module)
+  // Type-only imports are erased at runtime, so neither they nor `type` specifiers count as importing a value.
+  const values = imports.filter(
+    (node) => isNode(node.source) && node.source.value === spec.module && node.importKind !== "type"
+  )
+  const valueSpecifiers = values.flatMap(specifiersOf).filter((node) => node.importKind !== "type")
+  const present = new Set(
+    valueSpecifiers.filter((node) => node.type === "ImportSpecifier").map((node) => nameOf(node.imported))
+  )
   const edit = new MagicString(source)
+  // `import { type A }` becomes `import { A }` when the value is wanted, rather than importing A twice.
+  for (const node of values.flatMap(specifiersOf)) {
+    const imported = node.imported
+    const name = nameOf(imported)
+    if (node.importKind === "type" && isNode(imported) && name !== undefined && spec.named?.includes(name)) {
+      edit.remove(node.start, imported.start)
+      present.add(name)
+    }
+  }
+  const missing = (spec.named ?? []).filter((name) => !present.has(name))
+  const defaultName = valueSpecifiers.some((node) => node.type === "ImportDefaultSpecifier")
+    ? undefined
+    : spec.defaultName
+  if (values.length > 0 && missing.length === 0 && !defaultName) {
+    return edit.toString()
+  }
+  // `import * as ns, { a }` isn't valid, so names never join a namespace import.
+  const existing = values.find(
+    (node) => missing.length === 0 || !specifiersOf(node).some((s) => s.type === "ImportNamespaceSpecifier")
+  )
   if (existing) {
-    const specifiers = Array.isArray(existing.specifiers) ? existing.specifiers.filter(isNode) : []
+    const specifiers = specifiersOf(existing)
     const named = specifiers.filter((node) => node.type === "ImportSpecifier")
-    const present = new Set(named.map((node) => nameOf(node.imported)))
-    const missing = (spec.named ?? []).filter((name) => !present.has(name))
-    const defaultName = specifiers.some((node) => node.type === "ImportDefaultSpecifier") ? undefined : spec.defaultName
     const [first] = specifiers
     if (!first) {
       // A side-effect import, `import "m"`: write it again with the names.
@@ -115,7 +139,7 @@ export function ensureImport(filename: string, source: string, spec: ImportSpec)
     }
     return edit.toString()
   }
-  const line = `${renderImport(spec)}\n`
+  const line = `${renderImport({ module: spec.module, named: missing, ...(defaultName ? { defaultName } : {}) })}\n`
   const last = imports.at(-1)
   if (last) {
     edit.appendLeft(last.end, `\n${line.trimEnd()}`)
@@ -123,6 +147,10 @@ export function ensureImport(filename: string, source: string, spec: ImportSpec)
     edit.prepend(line)
   }
   return edit.toString()
+}
+
+function specifiersOf(node: Node): Node[] {
+  return Array.isArray(node.specifiers) ? node.specifiers.filter(isNode) : []
 }
 
 function renderImport(spec: ImportSpec): string {

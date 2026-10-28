@@ -85,17 +85,23 @@ export function desiredSelection(
         }
         selection.addons[id] = { ...selection.addons[id], ...options }
       }
+      addAlong(catalog, selection, intent.addons)
       return { ok: true, selection, required: [], adopt: false, unchanged: [] }
     }
     case "upgrade":
-    case "sync":
-      return {
-        ok: true,
-        selection: selectionFromConfig(requireConfig(config, intent.command)),
-        required: [],
-        adopt: false,
-        unchanged: []
-      }
+    case "sync": {
+      const selection = selectionFromConfig(requireConfig(config, intent.command))
+      addAlong(catalog, selection, intent.addons)
+      return { ok: true, selection, required: [], adopt: false, unchanged: [] }
+    }
+  }
+}
+
+/** Adds the add-ons a config, upgrade or sync request carries, keeping options for any already selected. */
+function addAlong(catalog: CatalogManifest, selection: Selection, names: readonly string[] | undefined) {
+  for (const name of names ?? []) {
+    const id = requireAddonId(catalog, name)
+    selection.addons[id] ??= {}
   }
 }
 

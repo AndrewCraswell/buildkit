@@ -1,4 +1,4 @@
-import { isPair, isScalar, isSeq, parseDocument, visit } from "yaml"
+import { isAlias, isPair, isScalar, isSeq, parseDocument, visit } from "yaml"
 import { formatPointer, isUnsafeKey } from "../plan/json.js"
 import type { JsonParseResult, JsonPath } from "./json.js"
 
@@ -15,12 +15,21 @@ export function parseYaml(text: string): JsonParseResult {
   if (first) {
     return { ok: false, reason: "invalid", message: first.message }
   }
+  // A key may be an alias, `*k: 1`, so resolve it before checking: toJS() would create an own `__proto__` from it.
+  const keyText = (key: unknown): string | undefined => {
+    const node = isAlias(key) ? key.resolve(document) : key
+    return isScalar(node) ? String(node.value) : undefined
+  }
   let unsafe: string | undefined
   visit(document, {
     Pair(_, pair, path) {
-      if (isScalar(pair.key) && isUnsafeKey(String(pair.key.value))) {
-        const parents = path.flatMap((node) => (isPair(node) && isScalar(node.key) ? [String(node.key.value)] : []))
-        unsafe = formatPointer([...parents, String(pair.key.value)])
+      const key = keyText(pair.key)
+      if (key !== undefined && isUnsafeKey(key)) {
+        const parents = path.flatMap((node) => {
+          const parent = isPair(node) ? keyText(node.key) : undefined
+          return parent === undefined ? [] : [parent]
+        })
+        unsafe = formatPointer([...parents, key])
         return visit.BREAK
       }
       return undefined

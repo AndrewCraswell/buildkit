@@ -235,7 +235,9 @@ async function askOption(prompter: Prompter, title: string, question: OptionQues
   const answer = await prompter.text({
     message,
     ...(initial === undefined ? {} : { initialValue: initial }),
-    validate: (value) => (numeric && Number.isNaN(Number(value)) ? "Enter a number." : undefined)
+    // Number("") is 0, so a blank answer has to be refused on its own.
+    validate: (value) =>
+      numeric && (value.trim() === "" || Number.isNaN(Number(value))) ? "Enter a number." : undefined
   })
   if (answer === cancelled) {
     return cancelled
