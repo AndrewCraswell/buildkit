@@ -19,6 +19,9 @@
     "packages/tooling/storybook-config": {
       "ignoreDependencies": ["@chromatic-com/storybook", "@storybook/addon-a11y", "@storybook/addon-vitest"]
     },
+    "packages/tooling/scaffolder": {
+      "entry": ["src/core.ts", "src/edit.ts", "src/edit-code.ts", "src/node.ts", "src/cli.ts"]
+    },
     "packages/tooling/dev-domains": {
       "entry": ["src/cli/main.ts", "src/config/schema.ts", "src/node.ts", "src/playwright.ts"]
     },

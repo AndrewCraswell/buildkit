@@ -1,0 +1,11 @@
+/** `@buildkitgg/scaffolder/cli`: command builders, the generated wizard and the JSON envelope for product CLIs. */
+export { CliRuntime } from "./cli/commands.js"
+export type { CliIo, CliOptions } from "./cli/commands.js"
+export { createCli, runCli } from "./cli/create.js"
+export { parseFlags, parseSet } from "./cli/flags.js"
+export type { FlagSpec, ParsedFlags } from "./cli/flags.js"
+export { describeEnvelope } from "./cli/output.js"
+export { cancelled, clackPrompter } from "./cli/prompter.js"
+export type { Cancelled, Prompter, SelectOption } from "./cli/prompter.js"
+export { askSecrets, completeAnswers, emptyAnswers, runWizard } from "./cli/wizard.js"
+export type { PartialAnswers } from "./cli/wizard.js"
