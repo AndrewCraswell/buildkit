@@ -16,6 +16,7 @@
     "**/node_modules/**",
     "pnpm-lock.yaml",
     "api-reports/*.api.md",
-    "**/.generated/**"
+    "**/.generated/**",
+    "**/src/vendor/**"
   ]
 }

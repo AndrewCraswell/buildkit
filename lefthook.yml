@@ -2,10 +2,14 @@ pre-commit:
   commands:
     lint:
       glob: "*.{ts,tsx,js,jsx,mjs,cjs}"
+      exclude:
+        - "**/src/vendor/**"
       run: node node_modules/oxlint/bin/oxlint --fix {staged_files}
       stage_fixed: true
     format:
       glob: "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,md,yml,yaml}"
+      exclude:
+        - "**/src/vendor/**"
       run: node node_modules/oxfmt/bin/oxfmt {staged_files}
       stage_fixed: true
 pre-push:

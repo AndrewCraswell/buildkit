@@ -1,0 +1,46 @@
+import type { BetterAuthDBSchema, DBTableIndex } from "@better-auth/core/db"
+import type { BetterAppsFeature } from "./feature.js"
+
+// Better Auth's runtime adapters always define these models. A feature table with the same key would merge into them.
+const reservedModels = new Set(["user", "session", "account", "verification", "rateLimit"])
+
+function mergeIndexes(...collections: readonly (readonly DBTableIndex[] | undefined)[]): DBTableIndex[] {
+  const indexes: DBTableIndex[] = []
+  const seen = new Set<string>()
+  for (const index of collections.flatMap((collection) => collection ?? [])) {
+    const definition = JSON.stringify([index.name ?? null, index.fields, index.unique ?? false])
+    if (!seen.has(definition)) {
+      seen.add(definition)
+      indexes.push(index)
+    }
+  }
+  return indexes
+}
+
+/**
+ * Merges the tables of every feature. Features may extend a table another feature declares; later fields win.
+ * Unlike Better Auth's `getAuthTables`, no built-in tables are added.
+ */
+export function getFeatureTables(features: readonly BetterAppsFeature[]): BetterAuthDBSchema {
+  const tables: BetterAuthDBSchema = {}
+  const ids = new Set<string>()
+  for (const feature of features) {
+    if (ids.has(feature.id)) {
+      throw new Error(`The "${feature.id}" feature is registered more than once.`)
+    }
+    ids.add(feature.id)
+    for (const [key, table] of Object.entries(feature.schema ?? {})) {
+      if (reservedModels.has(key)) {
+        throw new Error(`The "${feature.id}" feature can't declare a "${key}" table. Better Auth reserves that name.`)
+      }
+      const existing = tables[key]
+      tables[key] = {
+        modelName: table.modelName || existing?.modelName || key,
+        fields: { ...existing?.fields, ...table.fields },
+        indexes: mergeIndexes(existing?.indexes, table.indexes),
+        disableMigrations: table.disableMigration ?? existing?.disableMigrations
+      }
+    }
+  }
+  return tables
+}
