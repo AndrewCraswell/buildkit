@@ -9,6 +9,14 @@
 module.exports = {
   branch: "origin/main",
   access: "public",
+  // Better Apps platform packages share inferred types, so they release together at one version. Features don't join.
+  groups: [
+    {
+      name: "better-apps-platform",
+      include: ["packages/better-apps/better-apps", "packages/better-apps/cli"],
+      disallowedChangeTypes: null
+    }
+  ],
   ignorePatterns: [
     "**/*.test.{ts,tsx}",
     "**/*.stories.tsx",

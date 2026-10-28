@@ -32,13 +32,28 @@ function typeEntry(value: unknown): string | undefined {
   return undefined
 }
 
+// Report names for the published package families. Better Apps keeps its own names: `better-apps` and `@better-apps/*`.
+function reportName(name: string): string | undefined {
+  if (name.startsWith("@buildkitgg/")) {
+    return name.slice("@buildkitgg/".length)
+  }
+  if (name === "better-apps") {
+    return name
+  }
+  return name.startsWith("@better-apps/") ? "better-apps-" + name.slice("@better-apps/".length) : undefined
+}
+
 const expectedReports = new Set<string>()
 const models: { package: string; entryPoint: string; model: string; report: string }[] = []
 let hasErrors = false
 for (const manifest of globSync("packages/*/*/package.json", { cwd: root }).sort()) {
   const manifestPath = resolve(root, manifest)
   const pkg: unknown = JSON.parse(readFileSync(manifestPath, "utf8"))
-  if (!isRecord(pkg) || typeof pkg.name !== "string" || !pkg.name.startsWith("@buildkitgg/")) {
+  if (!isRecord(pkg) || typeof pkg.name !== "string") {
+    continue
+  }
+  const name = reportName(pkg.name)
+  if (!name) {
     continue
   }
   if (!isRecord(pkg.exports)) {
@@ -62,9 +77,7 @@ for (const manifest of globSync("packages/*/*/package.json", { cwd: root }).sort
     if (entryPoint.includes("*")) {
       throw new Error(`Expand typed wildcard exports before extraction: ${pkg.name}/${entryPoint}`)
     }
-    const slug =
-      pkg.name.slice("@buildkitgg/".length) +
-      (entryPoint === "." ? "" : "--" + entryPoint.slice(2).replaceAll("/", "--"))
+    const slug = name + (entryPoint === "." ? "" : "--" + entryPoint.slice(2).replaceAll("/", "--"))
     if (expectedReports.has(slug + ".api.md")) {
       throw new Error(`API report name collision: ${slug}`)
     }
