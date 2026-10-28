@@ -140,6 +140,10 @@
     },
     "packages/shadcn/shadcn-runtime": {
       "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/better-apps": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
 }

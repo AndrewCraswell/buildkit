@@ -40,3 +40,6 @@ Configuration: [core and provider contract](../packages/core/configuration-core/
 [Generated shadcn styles and dependency aliases](shadcn/styles.md).
 
 [Shadcn localization, RTL, and class merging](shadcn/localization.md).
+
+[Better Apps](../packages/better-apps/better-apps/README.md): app features that declare their own tables and generate
+the schema for your ORM, using [vendored Better Auth source](../packages/better-apps/better-apps/docs/vendoring.md).
