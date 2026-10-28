@@ -65,6 +65,13 @@ describe.each(databases)("drizzleAdapter on $name", ({ connect, dispose, unavail
       expect(decode(row!.metadata)).toEqual({ edited: false })
     })
 
+    it("reads back a JSON string that looks like another JSON value", async () => {
+      const created = await addComment({ metadata: "123", tags: ["true"] })
+      const found = await adapter.findOne({ model: "comment", where: [{ field: "id", value: created.id as string }] })
+      // Drizzle's json and jsonb columns parse a string the Postgres driver already decoded, so "123" becomes 123.
+      expect(found).toMatchObject({ metadata: database.provider === "pg" ? 123 : "123", tags: ["true"] })
+    })
+
     it("keeps a given id and accepts dates sent as strings", async () => {
       const created = await addComment({ id: "c1", createdAt: "2026-01-02T03:04:05.678Z" })
       expect(created.id).toBe("c1")

@@ -90,26 +90,31 @@ const pgReaction = pgCore.pgTable("reaction", {
 })
 const pgSchema = { comment: pgComment, reaction: pgReaction }
 
-const mysqlComment = mysqlTable("comment", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  subjectId: mysqlText("subject_id").notNull(),
-  body: mysqlText("body").notNull(),
-  author: mysqlText("author"),
-  score: int("score").default(0).notNull(),
-  pinned: boolean("pinned").default(false).notNull(),
-  tags: mysqlText("tags"),
-  metadata: json("metadata"),
-  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { fsp: 3 }).$onUpdate(() => new Date())
-})
-const mysqlReaction = mysqlTable("reaction", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  commentId: varchar("comment_id", { length: 36 })
-    .notNull()
-    .references(() => mysqlComment.id, { onDelete: "cascade" }),
-  emoji: mysqlText("emoji").notNull()
-})
-const mysqlSchema = { comment: mysqlComment, reaction: mysqlReaction }
+function defineMysqlSchema(metadata: "json" | "text") {
+  const comment = mysqlTable("comment", {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    subjectId: mysqlText("subject_id").notNull(),
+    body: mysqlText("body").notNull(),
+    author: mysqlText("author"),
+    score: int("score").default(0).notNull(),
+    pinned: boolean("pinned").default(false).notNull(),
+    tags: mysqlText("tags"),
+    metadata: metadata === "json" ? json("metadata") : mysqlText("metadata"),
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 }).$onUpdate(() => new Date())
+  })
+  const reaction = mysqlTable("reaction", {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    commentId: varchar("comment_id", { length: 36 })
+      .notNull()
+      .references(() => comment.id, { onDelete: "cascade" }),
+    emoji: mysqlText("emoji").notNull()
+  })
+  return { comment, reaction }
+}
+const mysqlSchema = defineMysqlSchema("json")
+// MySQL drivers such as mysql2 parse a json column, and the SQLite stand-in can't, so it stores metadata as text.
+const mysqlStandInSchema = defineMysqlSchema("text")
 
 const sqliteTables = [
   `CREATE TABLE comment (
@@ -281,11 +286,11 @@ export const databases: DatabaseTarget[] = [
             params.map((value) => (typeof value === "boolean" ? Number(value) : value)),
             method
           ),
-        { schema: mysqlSchema }
+        { schema: mysqlStandInSchema }
       )
       // Drizzle's MySQL proxy driver has no transactions, so the test supplies them.
       Object.defineProperty(db, "transaction", { value: (run: (tx: unknown) => unknown) => atomic(() => run(db)) })
-      return { db, provider: "mysql", schema: mysqlSchema, close: async () => sqlite.close() }
+      return { db, provider: "mysql", schema: mysqlStandInSchema, close: async () => sqlite.close() }
     }
   },
   {

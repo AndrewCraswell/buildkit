@@ -42,7 +42,9 @@ const adapter = createDatabaseAdapter({
   can't return a created row any other way. With `generateId: false`, give the generated `id` column a default, such as
   Drizzle's `$defaultFn()` or a database default: `better-apps generate` writes a text primary key without one.
 - JSON and list fields are stored as JSON. Columns that hold JSON, such as `jsonb`, Postgres arrays and SQLite text in
-  JSON mode, get the value, and plain text columns get its JSON text, so SQL JSON functions can read either.
+  JSON mode, get the value, and plain text columns get its JSON text, so SQL JSON functions can read either. MySQL's
+  `json` column relies on the driver to parse it, as mysql2 does. On PostgreSQL, Drizzle's `json` and `jsonb` columns
+  read a JSON string that looks like another value, such as `"123"`, as that value.
 - An optional field set on update, with no default, is empty when the row is created. Drizzle's `$onUpdate()` would
   otherwise fill it on insert too.
 
