@@ -41,5 +41,6 @@ Configuration: [core and provider contract](../packages/core/configuration-core/
 
 [Shadcn localization, RTL, and class merging](shadcn/localization.md).
 
-[Better Apps](../packages/better-apps/better-apps/README.md): app features that declare their own tables and generate
-the schema for your ORM, using [vendored Better Auth source](../packages/better-apps/better-apps/docs/vendoring.md).
+[Better Apps](../packages/better-apps/better-apps/README.md): app features that declare their own tables. Its
+[CLI](../packages/better-apps/cli/README.md) generates the schema for your ORM, using
+[vendored Better Auth source](../packages/better-apps/cli/docs/vendoring.md).
