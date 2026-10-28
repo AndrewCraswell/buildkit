@@ -1,31 +1,38 @@
 import { createDatabaseAdapter, type DatabaseAdapter, type Row } from "better-apps"
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest"
 import { comments, databases, type TestDatabase } from "../test/databases.js"
 import { drizzleAdapter, type DrizzleAdapterConfig } from "./index.js"
 
-// Batches report SQLite's error as is. Drizzle wraps the error of a single query and names the query.
-const duplicateId = /UNIQUE constraint failed: comment\.id|Failed query: insert into/
+// Batches report the database's error as is. Drizzle wraps the error of a single query and names the query.
+const duplicateId =
+  /UNIQUE constraint failed: comment\.id|duplicate key value violates unique constraint "comment_pkey"|Duplicate entry '.+' for key 'comment\.PRIMARY'|Failed query: insert into/
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
-describe.each(databases)("drizzleAdapter on $name", ({ connect }) => {
+describe.each(databases)("drizzleAdapter on $name", ({ connect, dispose, unavailable }) => {
   let database: TestDatabase
   let adapter: DatabaseAdapter
 
   const createAdapter = (config: Partial<DrizzleAdapterConfig> = {}) =>
     createDatabaseAdapter({
-      database: drizzleAdapter(database.db, { provider: database.provider, ...config }),
+      database: drizzleAdapter(database.db, { provider: database.provider, ...database.config, ...config }),
       features: [comments]
     })
   const addComment = (data: Row) =>
     adapter.create({ model: "comment", data: { subjectId: "post", body: "Hi", ...data } })
   const ids = (rows: Row[]) => rows.map((row) => row.id)
 
-  beforeEach(() => {
-    database = connect()
+  beforeEach(async ({ skip }) => {
+    skip(unavailable !== undefined, unavailable)
+    database = await connect()
     adapter = createAdapter()
   })
-  afterEach(() => database.close())
+  afterEach(async () => {
+    if (unavailable === undefined) {
+      await database.close?.()
+    }
+  })
+  afterAll(async () => dispose?.())
 
   describe("create", () => {
     it("generates an id, applies defaults and reads values back as their field types", async () => {
@@ -45,6 +52,17 @@ describe.each(databases)("drizzleAdapter on $name", ({ connect }) => {
       expect(
         await adapter.findOne({ model: "comment", where: [{ field: "id", value: created.id as string }] })
       ).toEqual(created)
+    })
+
+    it("stores JSON and lists as JSON, not as a JSON string of it", async () => {
+      await addComment({ tags: ["a", "b"], metadata: { edited: false } })
+      // Drizzle's own reads return the value for a column that parses JSON, and the JSON text for one that doesn't.
+      const { comment } = database.schema as Record<string, { tags: unknown; metadata: unknown }>
+      const select = database.db.select as (fields: object) => { from(table: unknown): Promise<Row[]> }
+      const [row] = await select.call(database.db, { tags: comment!.tags, metadata: comment!.metadata }).from(comment)
+      const decode = (value: unknown) => (typeof value === "string" ? (JSON.parse(value) as unknown) : value)
+      expect(decode(row!.tags)).toEqual(["a", "b"])
+      expect(decode(row!.metadata)).toEqual({ edited: false })
     })
 
     it("keeps a given id and accepts dates sent as strings", async () => {
@@ -205,6 +223,12 @@ describe.each(databases)("drizzleAdapter on $name", ({ connect }) => {
         offset: 1
       })
       expect(ids(rows)).toEqual(["b", "c"])
+    })
+
+    it("applies an offset without a limit", async () => {
+      const rows = await adapter.findMany({ model: "comment", sortBy: { field: "id", direction: "asc" }, offset: 1 })
+      expect(ids(rows)[0]).toBe("b")
+      expect(rows).toHaveLength((await adapter.count({ model: "comment" })) - 1)
     })
 
     it("needs a sort order and every sort key's value for a cursor", async () => {
@@ -387,7 +411,7 @@ describe("drizzleAdapter", () => {
       pinned: integer("pinned", { mode: "boolean" }).notNull(),
       createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull()
     })
-    const database = databases[0]!.connect()
+    const database = await databases[0]!.connect()
     const adapter = createDatabaseAdapter({
       database: drizzleAdapter(database.db, { provider: "sqlite", generateId: false, schema: { comment } }),
       features: [comments]
@@ -395,6 +419,6 @@ describe("drizzleAdapter", () => {
     expect(await adapter.create({ model: "comment", data: { subjectId: "post", body: "Hi" } })).toMatchObject({
       id: "from-schema"
     })
-    database.close()
+    await database.close?.()
   })
 })

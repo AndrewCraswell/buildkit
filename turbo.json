@@ -41,6 +41,10 @@
       "dependsOn": ["^build", "^transit"],
       "outputs": ["coverage/**"]
     },
+    "test:servers": {
+      "dependsOn": ["^build", "^transit"],
+      "cache": false
+    },
     "test:coverage": {
       "dependsOn": ["^build", "^transit"],
       "outputs": ["coverage/**"]

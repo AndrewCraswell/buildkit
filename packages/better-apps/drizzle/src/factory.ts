@@ -213,6 +213,17 @@ export function createAdapterFactory(config: AdapterFactoryConfig, driver: Adapt
         if (action === "update" && value === undefined && field.onUpdate) {
           value = field.onUpdate()
         }
+        // An optional field set on update, with no default, starts empty. Drizzle's $onUpdate, which schema generators
+        // write for these fields, would otherwise fill it on insert too.
+        if (
+          action === "create" &&
+          value === undefined &&
+          field.onUpdate &&
+          field.defaultValue === undefined &&
+          field.required !== true
+        ) {
+          value = null
+        }
         if (value === undefined) {
           continue
         }

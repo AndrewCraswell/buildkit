@@ -26,8 +26,14 @@ those files too.
 - `countGroups`, `batch` and `createMany` are new.
 - `update` changes the first matching row only, the way `incrementOne` already did.
 - `contains`, `starts_with` and `ends_with` escape `%`, `_` and `\` in the value.
+- JSON and list values are encoded only for columns that store plain text (`src/json-columns.ts`). Upstream encoded them
+  for every database except PostgreSQL, so the JSON-mode text that generated SQLite schemas use, and MySQL's `json`
+  column, stored a JSON string of the JSON.
+- An optional field with `onUpdate` and no default starts empty on create, instead of taking the value Drizzle's
+  `$onUpdate()` writes on insert.
 - Joins, the Drizzle schema check, debug logging and the `transaction` option are gone. Better Apps doesn't use them,
-  and batches choose `batch()` or a transaction on their own.
+  and batches choose `batch()` or a transaction on their own. `batch: false` forces the transaction for sqlite-proxy
+  without a batch callback.
 
 ## Finding upstream fixes
 

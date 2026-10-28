@@ -11,6 +11,7 @@ export function drizzleAdapter(db: DrizzleDatabase, config: DrizzleAdapterConfig
 
 // @public
 export interface DrizzleAdapterConfig {
+    batch?: boolean | undefined;
     camelCase?: boolean | undefined;
     generateId?: (() => string) | false | undefined;
     provider: "pg" | "mysql" | "sqlite";

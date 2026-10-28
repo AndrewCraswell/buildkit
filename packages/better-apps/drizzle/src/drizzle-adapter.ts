@@ -32,6 +32,7 @@ import {
   type ColumnWhere,
   type ColumnWrite
 } from "./factory.js"
+import { fromDriverJson, toDriverJson } from "./json-columns.js"
 import {
   escapedLike,
   escapeLikePattern,
@@ -63,9 +64,15 @@ export interface DrizzleAdapterConfig {
   schemaName?: string | undefined
   /**
    * Generates the id of a created row that has none. The default is `crypto.randomUUID()`. `false` leaves ids to the
-   * database, which MySQL doesn't support because it can't return the created row.
+   * database or the Drizzle schema, which MySQL doesn't support because it can't return the created row.
    */
   generateId?: (() => string) | false | undefined
+  /**
+   * Whether atomic writes go through the database's `batch()`. The default uses it whenever the database has one.
+   * Drizzle's sqlite-proxy driver has `batch()` even without a batch callback, and then fails, so pass `false` there to
+   * use a transaction instead.
+   */
+  batch?: boolean | undefined
 }
 
 // Drizzle's builders differ by dialect, so queries go through this loose shape. Each method returns the next step, and
@@ -96,6 +103,8 @@ interface Database {
 // Cloudflare D1 binds at most 100 parameters per statement, so multi-row SQLite inserts stay under it.
 const maxSqliteParameters = 100
 const maxRowsPerInsert = 1000
+
+const isJsonField = (type: unknown) => type === "json" || type === "string[]" || type === "number[]"
 
 /**
  * Reads the number of affected rows from a MySQL write result: mysql2 returns a `[ResultSetHeader]` tuple with
@@ -300,7 +309,7 @@ export function drizzleAdapter(db: DrizzleDatabase, config: DrizzleAdapterConfig
       if (inTransaction || queries.length === 1) {
         return sequence(queries)
       }
-      if (typeof database.batch === "function") {
+      if (typeof database.batch === "function" && config.batch !== false) {
         return database.batch(queries)
       }
       return transaction((tx) => sequence(build(tx)))
@@ -396,6 +405,9 @@ export function drizzleAdapter(db: DrizzleDatabase, config: DrizzleAdapterConfig
         }
         if (limit !== undefined) {
           query = query.limit(limit)
+        } else if (offset !== undefined && provider !== "pg") {
+          // SQLite and MySQL accept OFFSET only after LIMIT.
+          query = query.limit(Number.MAX_SAFE_INTEGER)
         }
         if (offset !== undefined) {
           query = query.offset(offset)
@@ -484,15 +496,26 @@ export function drizzleAdapter(db: DrizzleDatabase, config: DrizzleAdapterConfig
       id: "drizzle",
       options: { ...config, adapterConfig: { usePlural: config.usePlural ?? false } },
       usePlural: config.usePlural,
-      supportsJSON: provider === "pg",
-      supportsArrays: provider === "pg",
+      // Each Drizzle column decides how JSON and lists are stored, in toDriver and fromDriver below.
+      supportsJSON: true,
+      supportsArrays: true,
       generateId: config.generateId ?? (() => crypto.randomUUID()),
-      toDriver: (value, { table, column, field }) =>
-        field.type === "date" ? toDriverDate(value, getTableColumns(getTable(table))[column], provider) : value,
-      fromDriver: (value, { field }) =>
-        field.type === "date" && (typeof value === "string" || typeof value === "number" || value instanceof Date)
-          ? fromDriverDate(value)
-          : value
+      toDriver: (value, { table, column, field }) => {
+        const drizzleColumn = getTableColumns(getTable(table))[column]
+        if (field.type === "date") {
+          return toDriverDate(value, drizzleColumn, provider)
+        }
+        return isJsonField(field.type) ? toDriverJson(value, drizzleColumn) : value
+      },
+      fromDriver: (value, { table, column, field }) => {
+        if (
+          field.type === "date" &&
+          (typeof value === "string" || typeof value === "number" || value instanceof Date)
+        ) {
+          return fromDriverDate(value)
+        }
+        return isJsonField(field.type) ? fromDriverJson(value, getTableColumns(getTable(table))[column]) : value
+      }
     },
     createDriver(root, false)
   )

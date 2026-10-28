@@ -71,7 +71,7 @@ needs a human discussion**, not a silent add.
   fails after hand edits. Change the package code around them or the sync script instead. See
   [vendored Better Auth source](../packages/better-apps/cli/docs/vendoring.md).
 - Forked upstream code, such as the Better Apps Drizzle adapter, is owned code: edit it normally. Its `upstream.json`
-  tracks the upstream files, and `pnpm upstream:changes` reports fixes to port. See
+  tracks the upstream files, and `pnpm --filter @better-apps/drizzle upstream:changes` reports fixes to port. See
   [forked Better Auth source](../packages/better-apps/drizzle/docs/fork.md).
 
 ## Principles for development
