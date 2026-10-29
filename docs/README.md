@@ -32,7 +32,8 @@ Package-specific docs live in each package’s `docs/README.md`. Start with
 [dev-domains](../packages/tooling/dev-domains/docs/README.md).
 
 [Scaffolder](../packages/tooling/scaffolder/README.md): the plan-first scaffolding engine behind product CLIs, with its
-[architecture guide](../packages/tooling/scaffolder/docs/README.md).
+[architecture guide](../packages/tooling/scaffolder/docs/README.md). Buildkit's own
+[catalog](../packages/tooling/catalog/README.md) and [`buildkit` CLI](../packages/tooling/cli/README.md) run on it.
 
 [shadcn component styles](shadcn/README.md) documents installation, styling, and maintenance of the generated Base UI
 packages.
