@@ -242,6 +242,21 @@ describe("createCommentsClient", () => {
   })
 })
 
+describe("reset", () => {
+  it("empties the store, so the next person loads their own threads", async () => {
+    const { api, as, comments } = browser()
+    const { thread } = await api.createThread({ ...onInvoice, body: "Private to Bob's view" }, as("bob"))
+    await comments.loadThreads(onInvoice)
+    await comments.loadThread(thread.id)
+    expect(comments.store.getSnapshot().threads[thread.id]).toBeDefined()
+    comments.reset()
+    const state = comments.store.getSnapshot()
+    expect(state.threads).toEqual({})
+    expect(state.lists).toEqual({})
+    expect(state.users).toEqual({})
+  })
+})
+
 describe("dehydrate and hydrate", () => {
   it("carry a server render's loads to the browser as JSON", async () => {
     const { api, as, comments } = browser()

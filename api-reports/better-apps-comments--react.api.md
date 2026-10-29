@@ -230,6 +230,7 @@ export function useComments<App = BetterApp>(): {
     suggestMentions(input: SuggestMentionsInput<AppCommentsTypes<App>["subjectType"]>): Promise<IdentityUser[]>;
     applyEvent(event: ClientEvent | Serialized<ClientEvent>): void;
     dehydrate(): DehydratedComments;
+    reset(): void;
     hydrate(snapshot: DehydratedComments): void;
 };
 
@@ -318,8 +319,8 @@ export const useUpdateThread: () => Mutation<UpdateThreadInput<TypesOf<CommentsO
 // dist/react.d.ts:41:5 - (ae-forgotten-export) The symbol "UpdateAnchorInput" needs to be exported by the entry point react.d.ts
 // dist/react.d.ts:45:5 - (ae-forgotten-export) The symbol "SuggestMentionsInput" needs to be exported by the entry point react.d.ts
 // dist/react.d.ts:46:5 - (ae-forgotten-export) The symbol "ClientEvent" needs to be exported by the entry point react.d.ts
-// dist/react.d.ts:66:5 - (ae-forgotten-export) The symbol "ThreadOf" needs to be exported by the entry point react.d.ts
-// dist/react.d.ts:67:5 - (ae-forgotten-export) The symbol "MessageOf" needs to be exported by the entry point react.d.ts
+// dist/react.d.ts:67:5 - (ae-forgotten-export) The symbol "ThreadOf" needs to be exported by the entry point react.d.ts
+// dist/react.d.ts:68:5 - (ae-forgotten-export) The symbol "MessageOf" needs to be exported by the entry point react.d.ts
 
 // (No @packageDocumentation comment for this package)
 

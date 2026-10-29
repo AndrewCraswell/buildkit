@@ -14,7 +14,7 @@ import { createStartBindings } from "@better-apps/tanstack-start"
 import { createBetterApps } from "better-apps"
 
 export const app = createBetterApps({ database, identity, features: [notes] })
-export const { api, handlers } = createStartBindings(app)
+export const { api, handlers, client } = createStartBindings(app)
 ```
 
 Serve the actions from a catch-all route at the app's base path, `/api/apps` unless you set `basePath`:

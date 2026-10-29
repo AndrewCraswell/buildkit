@@ -151,6 +151,9 @@ const clients = new WeakMap<object, CommentsClient>()
  * Creates the comments store for a Better Apps client. Pass `typeof app` as the client's type to get the app's subject
  * types, anchors, formats and additional fields. Each Better Apps client has one store, so calling this again with the
  * same client, as `useComments` does, returns the store already made, with whatever a server render hydrated into it.
+ *
+ * The store holds what the signed-in person could see. When someone else signs in without a page load, call `reset()`
+ * or create a new Better Apps client, so they never see the previous person's threads.
  */
 export function createCommentsClient<App = BetterApp>(client: BetterAppsClient<App>) {
   let comments = clients.get(client)
@@ -571,6 +574,15 @@ function createCommentsClientFor<Types extends CommentsTypes>(
       // Through JSON on purpose, so dates become the strings a server render sends.
       const json = JSON.stringify({ ...store.getSnapshot(), pending: {} })
       return JSON.parse(json) as DehydratedComments
+    },
+
+    /**
+     * Empties the store, such as when the signed-in person changes without a page load. Lists and threads that are on
+     * screen load again for the new person.
+     */
+    reset() {
+      applied.length = 0
+      store.setState(() => empty as State)
     },
 
     /** Merges a snapshot from `dehydrate`, such as one a server render loaded. */
