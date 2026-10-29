@@ -1,8 +1,19 @@
 # Change Log - @buildkitgg/scaffolder
 
-<!-- This log was last generated on Thu, 29 Oct 2026 17:55:35 GMT and should not be manually modified. -->
+<!-- This log was last generated on Thu, 29 Oct 2026 23:24:24 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.5.0
+
+Thu, 29 Oct 2026 23:24:24 GMT
+
+### Minor changes
+
+- JSON the engine writes is laid out as oxfmt and Prettier lay it out, for the new `printWidth` setting: short lists on
+  one line, objects as they are written, and `package.json` as `JSON.stringify` writes it. A keyed append takes
+  `order: { after, before }`. `match(value, cases)` branches on a render model or mode. Removing the last item of a
+  one-line array no longer leaves a stray quote. (ajcraswell@gmail.com)
 
 ## 0.4.0
 

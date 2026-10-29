@@ -2,6 +2,27 @@
   "name": "@buildkitgg/catalog",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 23:24:24 GMT",
+      "version": "0.2.0",
+      "tag": "@buildkitgg/catalog_v0.2.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/catalog",
+            "commit": "75e3fde510f3788c903aebed28d6bc5fac3ed879",
+            "comment": "Apps format `package.json`, `tsconfig.json` and `buildkit.jsonc` with oxfmt like their other files, and no longer need `allowImportingTsExtensions`: generated files and starter configs import app modules without extensions. The translations check runs in CI before the build."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/catalog",
+            "comment": "Bump @buildkitgg/scaffolder to v0.5.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 29 Oct 2026 17:55:35 GMT",
       "version": "0.1.0",
       "tag": "@buildkitgg/catalog_v0.1.0",
