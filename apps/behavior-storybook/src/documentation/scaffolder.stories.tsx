@@ -28,7 +28,7 @@ export const WritingACatalog: StoryObj<typeof meta> = {
       <h2>A template picks the add-ons</h2>
       <Code>
         {
-          'defineTemplate({\n  id: "app",\n  title: "App",\n  description: "A web app",\n  target: "web",\n  required: ["@acme/lint"],\n  optional: { "@acme/i18n": { default: false } },\n  slots: { database: { required: false, default: "@acme/db-sqlite" } }\n})'
+          'import { defineTemplate } from "@buildkitgg/scaffolder"\n\nexport const app = defineTemplate({\n  id: "app",\n  title: "App",\n  description: "A web app",\n  target: "web",\n  required: ["@acme/lint"],\n  optional: { "@acme/i18n": { default: false } },\n  slots: { database: { required: false, default: "@acme/db-sqlite" } }\n})'
         }
       </Code>
       <p>
@@ -36,10 +36,15 @@ export const WritingACatalog: StoryObj<typeof meta> = {
         question, such as the database. Every question also has a flag, so the same answers work without a terminal.
       </p>
       <h2>Check it in CI</h2>
-      <Code>{'import { checkCatalog } from "@buildkitgg/scaffolder"\n\ncheckCatalog(catalog, { matrix: true })'}</Code>
+      <Code>
+        {
+          'import { checkCatalog } from "@buildkitgg/scaffolder"\n\nconst problems = checkCatalog(catalog, { matrix: true })\nif (problems.length > 0) {\n  throw new Error(problems.join("\\n"))\n}'
+        }
+      </Code>
       <p>
-        The check reports broken references and slot defaults that aren’t the slot’s add-ons, and plans every pair of
-        answers. These examples describe code to run in Node; nothing here writes files.
+        The check returns a list of problems and doesn’t fail by itself, so throw when the list isn’t empty. It reports
+        broken references and slot defaults that aren’t the slot’s add-ons, and plans every pair of answers. These
+        examples describe code to run in Node; nothing here writes files.
       </p>
       <a href="https://github.com/AndrewCraswell/buildkit/tree/main/packages/tooling/scaffolder#readme">
         Full guide: commands, file ownership, upgrades and template packages ↗
