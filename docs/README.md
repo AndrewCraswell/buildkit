@@ -33,6 +33,8 @@ Package-specific docs live in each package’s `docs/README.md`. Start with
 
 [Scaffolder](../packages/tooling/scaffolder/README.md): the plan-first scaffolding engine behind product CLIs, with its
 [architecture guide](../packages/tooling/scaffolder/docs/README.md).
+[Template packages](platform-planning/scaffolder-template-packages.md): templates anyone can publish to npm for a
+product's catalog, installed by name.
 
 [shadcn component styles](shadcn/README.md) documents installation, styling, and maintenance of the generated Base UI
 packages.

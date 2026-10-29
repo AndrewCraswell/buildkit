@@ -1,6 +1,6 @@
 import { diffLines } from "diff"
-import { findAddon, lookupAddon } from "../manifest/catalog.js"
-import type { CatalogManifest, TargetContext } from "../manifest/types.js"
+import { catalogVersionText, findAddon, lookupAddon, sameCatalogVersion } from "../manifest/catalog.js"
+import type { CatalogManifest, PackRecord, TargetContext } from "../manifest/types.js"
 import { jsonFormat, yamlFormat } from "../merge/formats.js"
 import { planSharedDocument, planSharedEnv, planSharedLines, type SharedResult } from "../merge/shared.js"
 import { planFile } from "../ownership/files.js"
@@ -39,8 +39,11 @@ export interface PlanInput {
   request: PlanRequest
   tree: VirtualTree
   settings: ProductSettings
-  /** Earlier catalog versions, for old baselines and `--catalog-version`. Returns `undefined` when unavailable. */
-  catalogs?: (version: string) => CatalogManifest | undefined
+  /**
+   * Earlier catalog versions, with the template package versions the lock records merged in, for old baselines and
+   * `--catalog-version`. Returns `undefined` when unavailable.
+   */
+  catalogs?: (version: string, packs?: Record<string, PackRecord>) => CatalogManifest | undefined
   /** Integrity of the installed catalog, recorded in the lock. */
   catalogIntegrity?: string
 }
@@ -137,7 +140,7 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
   const lock = lockText === undefined ? undefined : readLock(lockFile, lockText)
   let catalog = input.catalog
   if (request.catalogVersion !== undefined && request.catalogVersion !== catalog.version) {
-    const pinned = input.catalogs?.(request.catalogVersion)
+    const pinned = input.catalogs?.(request.catalogVersion, lock?.catalog.packs)
     if (!pinned) {
       throw new PlanError(
         "E_BASELINE_UNAVAILABLE",
@@ -158,12 +161,12 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
     )
   }
   const command = request.intent.command
-  if (lock && command !== "upgrade" && lock.catalog.version !== catalog.version) {
+  if (lock && command !== "upgrade" && !sameCatalogVersion(lock.catalog, catalog)) {
     const recorded = lock.catalog.version
     const carried = carriedAdditions(catalog, request.intent)
     result.decisions.push({
       id: "catalog-mismatch",
-      message: `This project was planned with catalog ${recorded}, and ${catalog.version} is installed. Upgrade first, or plan with ${recorded}.`,
+      message: `This project was planned with catalog ${catalogVersionText(lock.catalog)}, and ${catalogVersionText(catalog)} is installed. Upgrade first, or plan with ${recorded}.`,
       choices: [
         {
           id: "upgrade",
@@ -173,7 +176,7 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
               : `Upgrade to ${catalog.version}`,
           request: { intent: { command: "upgrade", ...(carried.length > 0 ? { addons: carried } : {}) } }
         },
-        ...(input.catalogs?.(recorded)
+        ...(input.catalogs?.(recorded, lock.catalog.packs)
           ? [{ id: "recorded", label: `Plan with ${recorded}`, request: { ...request, catalogVersion: recorded } }]
           : [])
       ]
@@ -292,7 +295,12 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
   const nextLock: Lock = {
     schemaVersion: lockSchemaVersion,
     engine: engineVersion,
-    catalog: { id: catalog.id, version: catalog.version, ...(integrity ? { integrity } : {}) },
+    catalog: {
+      id: catalog.id,
+      version: catalog.version,
+      ...(integrity ? { integrity } : {}),
+      ...(catalog.packs && Object.keys(catalog.packs).length > 0 ? { packs: catalog.packs } : {})
+    },
     project: {
       name: resolved.name,
       template: resolved.template.id,
@@ -476,7 +484,8 @@ function oldBaseline(input: PlanInput, catalog: CatalogManifest, lock: Lock, res
   // Without the old render, seeds merge against the bases stored in the lock, when the product stores them.
   const fallback = input.settings.seedBases === "stored" ? "stored" : "two-way"
   const oldCatalog =
-    [catalog, input.catalog].find((candidate) => candidate.version === recorded) ?? input.catalogs?.(recorded)
+    [catalog, input.catalog].find((candidate) => sameCatalogVersion(candidate, lock.catalog)) ??
+    input.catalogs?.(recorded, lock.catalog.packs)
   if (!oldCatalog) {
     result.baseline = { source: fallback, catalogVersion: recorded }
     return undefined
@@ -508,7 +517,16 @@ function upgradeSummary(lock: Lock, catalog: CatalogManifest, resolved: Resolved
       return { id, ...(from === undefined ? {} : { from }), ...(to === undefined ? {} : { to }) }
     })
     .filter((addon) => addon.from !== addon.to)
-  return { catalog: { from: lock.catalog.version, to: catalog.version }, addons }
+  const names = new Set([...Object.keys(lock.catalog.packs ?? {}), ...Object.keys(catalog.packs ?? {})])
+  const packs = [...names]
+    .sort()
+    .map((name) => {
+      const from = lock.catalog.packs?.[name]?.version
+      const to = catalog.packs?.[name]?.version
+      return { name, ...(from === undefined ? {} : { from }), ...(to === undefined ? {} : { to }) }
+    })
+    .filter((pack) => pack.from !== pack.to)
+  return { catalog: { from: lock.catalog.version, to: catalog.version }, packs, addons }
 }
 
 const dependencySections = new Set(["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"])

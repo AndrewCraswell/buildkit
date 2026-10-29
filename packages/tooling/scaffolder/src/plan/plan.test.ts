@@ -642,6 +642,7 @@ describe("upgrade", () => {
     expect(planned.migrations.map((migration) => migration.kind)).toEqual(["options", "codemod", "agent"])
     expect(planned.upgrade).toEqual({
       catalog: { from: "1.0.0", to: "2.0.0" },
+      packs: [],
       addons: [{ id: "@fixture/lint", from: "1.0.0", to: "1.1.0" }]
     })
     const next = applyInMemory(edited, planned)

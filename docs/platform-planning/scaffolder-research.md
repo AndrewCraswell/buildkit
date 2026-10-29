@@ -874,7 +874,8 @@ SpawnKit columns show how other add-ons' entries land.
 
 - `remove`.
 - The `eject` command (overrides cover the need).
-- Third-party catalogs.
+- Third-party catalogs. Template packages came forward: see
+  [scaffolder-template-packages.md](scaffolder-template-packages.md).
 - Monorepo targets (but reserve `workspace` scope in the config schema now).
 - Other clouds ([better-apps-deploy.md](better-apps-deploy.md) §7).
 - Next.js add-ons beyond the base target.

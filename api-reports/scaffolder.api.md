@@ -97,6 +97,7 @@ export interface CatalogManifest {
     addons: AddonManifest[];
     facets: readonly string[];
     id: string;
+    packs?: Record<string, PackRecord>;
     // (undocumented)
     presets?: PresetManifest[];
     // (undocumented)
@@ -113,6 +114,7 @@ export interface CatalogManifest {
 // @public
 export function checkCatalog(catalog: CatalogManifest, options?: {
     matrix?: boolean;
+    templates?: readonly string[];
 }): string[];
 
 // @public (undocumented)
@@ -227,6 +229,9 @@ export function defineAddon<S extends z.ZodType = z.ZodObject<Record<string, nev
 
 // @public (undocumented)
 export function defineCatalog(manifest: CatalogManifest): CatalogManifest;
+
+// @public
+export function definePack(pack: TemplatePack): TemplatePack;
 
 // @public (undocumented)
 export function definePoint(definition: PointDefinition): PointDefinition;
@@ -356,7 +361,7 @@ export interface EnvVar {
 }
 
 // @public (undocumented)
-export type ErrorCode = "E_DRIFT" | "E_LOCKED" | "E_INTERRUPTED" | "E_BASELINE_UNAVAILABLE" | "E_UNSUPPORTED" | "E_INVALID_OPTIONS" | "E_UNKNOWN_ADDON" | "E_UNKNOWN_TEMPLATE" | "E_UNKNOWN_TARGET" | "E_CATALOG_MISMATCH" | "E_CONTRIBUTION" | "E_UNSAFE_PATH" | "E_UNSAFE_KEY" | "E_LOCK_VERSION" | "E_INVALID_STATE" | "E_NOT_INITIALIZED" | "E_ALREADY_INITIALIZED" | "E_DESTINATION" | "E_CONFLICT_MARKERS" | "E_CYCLE" | "E_USAGE" | "E_CANCELLED" | "E_INTERNAL";
+export type ErrorCode = "E_DRIFT" | "E_LOCKED" | "E_INTERRUPTED" | "E_BASELINE_UNAVAILABLE" | "E_UNSUPPORTED" | "E_INVALID_OPTIONS" | "E_UNKNOWN_ADDON" | "E_UNKNOWN_TEMPLATE" | "E_PACKAGE_UNAVAILABLE" | "E_INVALID_PACK" | "E_UNKNOWN_TARGET" | "E_CATALOG_MISMATCH" | "E_CONTRIBUTION" | "E_UNSAFE_PATH" | "E_UNSAFE_KEY" | "E_LOCK_VERSION" | "E_INVALID_STATE" | "E_NOT_INITIALIZED" | "E_ALREADY_INITIALIZED" | "E_DESTINATION" | "E_CONFLICT_MARKERS" | "E_CYCLE" | "E_USAGE" | "E_CANCELLED" | "E_INTERNAL";
 
 // @public
 export function exitCode(envelope: Pick<Envelope, "status" | "error">): number;
@@ -462,6 +467,14 @@ export type Intent = {
 export type JsonOp = "set" | "append" | "merge";
 
 // @public (undocumented)
+export interface LoadedPack extends PackRecord {
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    pack: TemplatePack;
+}
+
+// @public (undocumented)
 type Lock_2 = z.infer<typeof lockSchema>;
 export { Lock_2 as Lock }
 
@@ -517,6 +530,10 @@ export const lockSchema: z.ZodObject<{
         id: z.ZodString;
         version: z.ZodString;
         integrity: z.ZodOptional<z.ZodString>;
+        packs: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+            version: z.ZodString;
+            integrity: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>>;
     }, z.core.$strip>;
     project: z.ZodObject<{
         name: z.ZodString;
@@ -580,6 +597,9 @@ export function lookupAddon(catalog: CatalogManifest, name: string): NameLookup;
 
 // @public (undocumented)
 export function memoryTree(files: Readonly<Record<string, string>>): VirtualTree;
+
+// @public
+export function mergePacks(catalog: CatalogManifest, packs: readonly LoadedPack[]): CatalogManifest;
 
 // @public (undocumented)
 export interface Migration {
@@ -699,6 +719,13 @@ export interface PackageChange {
     section: string;
     // (undocumented)
     to?: string;
+}
+
+// @public
+export interface PackRecord {
+    integrity?: string;
+    // (undocumented)
+    version: string;
 }
 
 // @public
@@ -829,7 +856,7 @@ export interface PlanInput {
     // (undocumented)
     catalog: CatalogManifest;
     catalogIntegrity?: string;
-    catalogs?: (version: string) => CatalogManifest | undefined;
+    catalogs?: (version: string, packs?: Record<string, PackRecord>) => CatalogManifest | undefined;
     // (undocumented)
     request: PlanRequest;
     // (undocumented)
@@ -1055,6 +1082,16 @@ export interface TemplateManifest {
     title: string;
 }
 
+// @public
+export interface TemplatePack {
+    addons?: AddonManifest[];
+    extends: {
+        catalog: string;
+        versions: string;
+    };
+    templates: TemplateManifest[];
+}
+
 // @public (undocumented)
 export interface TemplateQuestions {
     // (undocumented)
@@ -1079,6 +1116,17 @@ export interface TemplateQuestions {
 // @public
 export function templateQuestions(catalog: CatalogManifest, template: TemplateManifest, modeId: string): TemplateQuestions;
 
+// @public
+export interface TemplateSource {
+    // (undocumented)
+    package: string;
+    range: string;
+    template?: string;
+}
+
+// @public
+export function templateSource(argument: string): TemplateSource | undefined;
+
 // @public (undocumented)
 export function toEnvelope(plan: Plan, options: {
     product: string;
@@ -1099,6 +1147,11 @@ export interface UpgradeSummary {
         from: string;
         to: string;
     };
+    packs: {
+        name: string;
+        from?: string;
+        to?: string;
+    }[];
 }
 
 // @public

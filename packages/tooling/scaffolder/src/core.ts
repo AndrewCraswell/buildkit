@@ -2,6 +2,7 @@
 export {
   defineAddon,
   defineCatalog,
+  definePack,
   definePoint,
   definePreset,
   defineSlot,
@@ -10,6 +11,8 @@ export {
 } from "./manifest/define.js"
 export { findAddon, findPreset, findTemplate, lookupAddon, shortName, slotAddons } from "./manifest/catalog.js"
 export type { NameLookup } from "./manifest/catalog.js"
+export { mergePacks, templateSource } from "./manifest/packs.js"
+export type { LoadedPack, TemplateSource } from "./manifest/packs.js"
 export type {
   AddonManifest,
   Answers,
@@ -24,6 +27,7 @@ export type {
   MutableTree,
   Order,
   Ownership,
+  PackRecord,
   PointDefinition,
   PointKind,
   PresetManifest,
@@ -34,7 +38,8 @@ export type {
   TargetInfo,
   TargetManifest,
   TargetMode,
-  TemplateManifest
+  TemplateManifest,
+  TemplatePack
 } from "./manifest/types.js"
 export { checkCatalog, pairwiseAnswers } from "./resolve/check.js"
 export { describeCatalog, optionQuestions, optionsSchema, templateQuestions } from "./resolve/questions.js"

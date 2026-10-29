@@ -59,7 +59,13 @@ export const lockSchemaVersion = 1
 export const lockSchema = z.object({
   schemaVersion: z.literal(lockSchemaVersion),
   engine: z.string(),
-  catalog: z.object({ id: z.string(), version: z.string(), integrity: z.string().optional() }),
+  catalog: z.object({
+    id: z.string(),
+    version: z.string(),
+    integrity: z.string().optional(),
+    /** Template packages in use, keyed by package name. Later commands load these exact versions. */
+    packs: z.record(z.string(), z.object({ version: z.string(), integrity: z.string().optional() })).optional()
+  }),
   /** The selection as applied, so the old baseline can be rendered. */
   project: z.object({ name: z.string(), template: z.string(), target: targetRef, declined: z.array(z.string()) }),
   addons: z.record(

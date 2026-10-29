@@ -1,7 +1,7 @@
 /** `@buildkitgg/scaffolder/node`: the disk snapshot, safe apply, recovery, plan artifacts and the catalog cache. */
 export { applyPlan, isStaleLock, recover } from "./node/apply.js"
 export type { ApplyHooks, ApplyLockInfo, ApplyOptions, RollbackReport } from "./node/apply.js"
-export { CatalogStore, isCatalogManifest, runCommand, userCacheDir } from "./node/catalogs.js"
+export { CatalogStore, isCatalogManifest, loadLocalPack, PackStore, runCommand, userCacheDir } from "./node/catalogs.js"
 export type { CommandRunner } from "./node/catalogs.js"
 export { applyReviewed, defaultArtifactFolder, planProject, readPlanFile, writeArtifacts } from "./node/project.js"
 export type { DiffScope, ProjectContext } from "./node/project.js"
