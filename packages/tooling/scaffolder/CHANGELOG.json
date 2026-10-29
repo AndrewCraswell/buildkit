@@ -2,6 +2,21 @@
   "name": "@buildkitgg/scaffolder",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 11:46:01 GMT",
+      "version": "0.2.0",
+      "tag": "@buildkitgg/scaffolder_v0.2.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/scaffolder",
+            "commit": "bc83a492addfcc9a6572ea6ee2f6c70c2d67b15b",
+            "comment": "Add template packages. Anyone can publish templates for a product's catalog as an npm package (`definePack`), and `init @scope/name` installs one by name. The lock records each package's version and integrity, `upgrade` moves packages to their newest compatible version, and `catalog check` checks a package before it's published."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 29 Oct 2026 04:54:16 GMT",
       "version": "0.1.0",
       "tag": "@buildkitgg/scaffolder_v0.1.0",
