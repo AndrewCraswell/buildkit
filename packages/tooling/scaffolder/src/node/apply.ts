@@ -1,6 +1,6 @@
 import { readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs"
 import { hostname } from "node:os"
-import { isAbsolute, join, relative, resolve, sep } from "node:path"
+import { isAbsolute, join, relative, sep } from "node:path"
 import { z } from "zod"
 import { setEnvValue } from "../edit/env.js"
 import { PlanError } from "../plan/errors.js"
@@ -385,7 +385,9 @@ function journalProblem(root: string, backups: string, journal: Journal): string
   return undefined
 }
 
+// Rollback reads backups and removes folders by the paths as stored, so they're compared as they'll be used: a relative
+// path is relative to the current folder, not to the parent.
 function inside(parent: string, path: string): boolean {
-  const relation = relative(parent, resolve(parent, path))
+  const relation = relative(parent, path)
   return relation !== "" && relation !== ".." && !relation.startsWith(`..${sep}`) && !isAbsolute(relation)
 }

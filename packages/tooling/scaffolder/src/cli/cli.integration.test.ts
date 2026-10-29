@@ -125,6 +125,14 @@ describe("init", () => {
     expect(envelope(again.out).status).toBe("unchanged")
     const shown = await run(["plan", "show", "plans/plan.json"])
     expect(shown.out).toContain("Planned")
+    for (const argv of [
+      ["sync", "--cwd", "demo", "--plan", "plans/plan.json", "--dry-run", "--json"],
+      ["upgrade", "--cwd", "demo", "--list", "--plan", "plans/plan.json", "--json"]
+    ]) {
+      const refused = await run(argv)
+      expect(refused.code).toBe(2)
+      expect(envelope(refused.out).error?.message).toContain("--plan applies a reviewed plan")
+    }
   })
 
   it("rejects usage errors with exit 2 and writes nothing", async () => {
@@ -138,9 +146,7 @@ describe("init", () => {
       ["init", "app", "demo", "--set", "broken", "--yes"],
       ["init", "app", "demo", "--diff", "some", "--out", "--yes"],
       ["init", "app", "demo", "--preset", "nope", "--yes"],
-      ["init", "bare", "demo", "--preset", "saas", "--yes"],
-      ["sync", "--plan", "plan.json", "--dry-run"],
-      ["upgrade", "--list", "--plan", "plan.json"]
+      ["init", "bare", "demo", "--preset", "saas", "--yes"]
     ]) {
       const result = await run(argv)
       if (result.code !== 2) {

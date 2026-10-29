@@ -324,6 +324,7 @@ describe("apply lock and recovery", () => {
       { fingerprint, entries: [{ ...entry, path: "../outside.txt" }] },
       { fingerprint: "../../outside", entries: [entry] },
       { fingerprint, entries: [{ ...entry, action: "update", backup: join(root, "outside.txt") }] },
+      { fingerprint, entries: [{ ...entry, action: "update", backup: "outside.txt" }] },
       { fingerprint, entries: [{ ...entry, createdFolders: [root] }] }
     ]) {
       mkdirSync(join(project, ".fixture"), { recursive: true })
