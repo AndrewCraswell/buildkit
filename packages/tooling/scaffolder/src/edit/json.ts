@@ -1,5 +1,6 @@
 import {
   applyEdits,
+  createScanner,
   findNodeAtLocation,
   modify,
   parseTree,
@@ -166,8 +167,11 @@ export function removeJson(text: string, path: JsonPath, layout = defaultJsonLay
     if (!item) {
       return text
     }
-    const [start, end] = itemRange(parent, last)
-    return relayoutJson(`${text.slice(0, start)}${text.slice(end)}`, parentPath, layout, unit, eol)
+    let cut = text
+    for (const [start, end] of itemRanges(text, parent, last).sort((left, right) => right[0] - left[0])) {
+      cut = `${cut.slice(0, start)}${cut.slice(end)}`
+    }
+    return relayoutJson(cut, parentPath, layout, unit, eol)
   }
   const edits = modify(text, path, undefined, { formattingOptions: formatting })
   const removed = relayoutJson(applyEdits(text, edits), undefined, layout, unit, eol, rewritten(edits))
@@ -182,19 +186,60 @@ export function removeJson(text: string, path: JsonPath, layout = defaultJsonLay
   return removed
 }
 
-/** The text an item takes in its array: up to the next item, from the one before for the last, or all of an only item. */
-function itemRange(array: Node, index: number): [number, number] {
+// jsonc-parser's SyntaxKind is a const enum, which isolated modules can't read.
+const commaToken = 5
+const skippedTokens = new Set([12, 13, 14, 15])
+
+/** The offset of the comma after `offset`, past whitespace and comments, or -1 when something else comes first. */
+function commaAfter(text: string, offset: number): number {
+  const scanner = createScanner(text, false)
+  scanner.setPosition(offset)
+  for (let token: number = scanner.scan(); skippedTokens.has(token) || token === commaToken; token = scanner.scan()) {
+    if (token === commaToken) {
+      return scanner.getTokenOffset()
+    }
+  }
+  return -1
+}
+
+/** The end of the whitespace from `offset`, or its start when `back`. */
+function pastWhitespace(text: string, offset: number, back = false): number {
+  let at = offset
+  while (back ? /\s/.test(text[at - 1] ?? "") : /\s/.test(text[at] ?? "")) {
+    at += back ? -1 : 1
+  }
+  return at
+}
+
+/**
+ * The ranges to cut to remove an item: the item and one comma beside it, with the whitespace between them. Comments
+ * between items stay, so no comment is lost, and jsonc-parser's assumption that the array is across lines doesn't
+ * apply.
+ */
+function itemRanges(text: string, array: Node, index: number): [number, number][] {
   const items = array.children ?? []
   const item = items[index]
-  const next = items[index + 1]
+  if (!item) {
+    return []
+  }
+  const end = item.offset + item.length
+  const after = commaAfter(text, end)
   const previous = items[index - 1]
-  if (!item || items.length === 1) {
-    return [array.offset + 1, array.offset + array.length - 1]
+  if (items[index + 1] && after !== -1) {
+    return [
+      [item.offset, end],
+      [after, pastWhitespace(text, after + 1)]
+    ]
   }
-  if (next) {
-    return [item.offset, next.offset]
+  const ranges: [number, number][] = [[pastWhitespace(text, item.offset, true), end]]
+  if (after !== -1) {
+    ranges.push([after, after + 1])
   }
-  return [(previous?.offset ?? 0) + (previous?.length ?? 0), item.offset + item.length]
+  const before = previous ? commaAfter(text, previous.offset + previous.length) : -1
+  if (before !== -1) {
+    ranges.push([before, before + 1])
+  }
+  return ranges
 }
 
 export function insertJsonArrayItem(

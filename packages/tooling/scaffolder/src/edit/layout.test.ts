@@ -55,6 +55,19 @@ describe("JSON layout", () => {
     )
   })
 
+  it("keeps the comments between items when it removes one", () => {
+    const list =
+      '{\n  "include": [\n    "src", // the app\n    // the tests\n    "tests",\n    /* last */ "locales"\n  ]\n}\n'
+    expect(removeJson(list, ["include", 0], tsconfig)).toBe(
+      '{\n  "include": [\n    // the app\n    // the tests\n    "tests",\n    /* last */ "locales"\n  ]\n}\n'
+    )
+    expect(removeJson(list, ["include", 2], tsconfig)).toBe(
+      '{\n  "include": [\n    "src", // the app\n    // the tests\n    "tests"\n    /* last */\n  ]\n}\n'
+    )
+    const only = '{\n  "include": [\n    // the app\n    "src"\n  ]\n}\n'
+    expect(removeJson(only, ["include", 0], tsconfig)).toBe('{\n  "include": [\n    // the app\n  ]\n}\n')
+  })
+
   it("keeps how you wrote each object, and leaves a range with a comment in it as it is", () => {
     const yours = '{\n  "refs": [{ "path": "a" }, {\n    "path": "b"\n  }]\n}\n'
     expect(insertJsonArrayItem(yours, ["refs"], 2, { path: "c" }, tsconfig)).toBe(
