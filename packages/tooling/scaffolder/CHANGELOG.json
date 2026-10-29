@@ -1,0 +1,34 @@
+{
+  "name": "@buildkitgg/scaffolder",
+  "entries": [
+    {
+      "date": "Thu, 29 Oct 2026 04:54:16 GMT",
+      "version": "0.1.0",
+      "tag": "@buildkitgg/scaffolder_v0.1.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/scaffolder",
+            "commit": "ad10740dfdc56cd9fd82f520aa445f504a9d0afa",
+            "comment": "Add `seedBases: \"stored\"` to `defineSettings`. The lock keeps each seed's generated text, so `upgrade` merges your edits three-way even when the catalog version the project started from can't be fetched."
+          },
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/scaffolder",
+            "commit": "9a930a306050197f88fbef0399fd7fb4e19fb1c9",
+            "comment": "First release: a plan-first scaffolding engine. Describe targets, templates, slots and add-ons in a catalog, and the engine plans, applies, adds to and upgrades projects without overwriting your edits. Build a product CLI with `createCli` from `@buildkitgg/scaffolder/cli`."
+          }
+        ],
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/scaffolder",
+            "commit": "9d3b8a4f910b207404b0700c04e0e47edd52f265",
+            "comment": "Type `engineVersion` as `string`."
+          }
+        ]
+      }
+    }
+  ]
+}

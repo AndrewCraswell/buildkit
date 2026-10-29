@@ -2,6 +2,21 @@
   "name": "@buildkitgg/react-modals",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 04:54:16 GMT",
+      "version": "1.0.0",
+      "tag": "@buildkitgg/react-modals_v1.0.0",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/react-modals",
+            "commit": "dc8363ff4646261216dd4f06cca3412d96c39574",
+            "comment": "Update happy-dom, used in tests, to 21.0.4."
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 23 Oct 2026 00:34:48 GMT",
       "version": "1.0.0",
       "tag": "@buildkitgg/react-modals_v1.0.0",

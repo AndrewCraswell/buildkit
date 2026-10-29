@@ -1,7 +1,0 @@
-{
-  "type": "patch",
-  "comment": "Update portless to 0.15.12.",
-  "packageName": "@buildkitgg/dev-domains",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}

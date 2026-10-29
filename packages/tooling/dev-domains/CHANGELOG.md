@@ -1,8 +1,16 @@
 # Change Log - @buildkitgg/dev-domains
 
-<!-- This log was last generated on Thu, 22 Oct 2026 20:48:42 GMT and should not be manually modified. -->
+<!-- This log was last generated on Thu, 29 Oct 2026 04:54:16 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.1.2
+
+Thu, 29 Oct 2026 04:54:16 GMT
+
+### Patches
+
+- Update portless to 0.15.12. (ajcraswell@gmail.com)
 
 ## 0.1.1
 
