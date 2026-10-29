@@ -3,7 +3,11 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import type { CatalogManifest } from "../manifest/types.js"
+import { requestArgv } from "../plan/argv.js"
 import type { Envelope } from "../plan/envelope.js"
+import { plan } from "../plan/plan.js"
+import { memoryTree } from "../plan/tree.js"
+import { pairwiseAnswers } from "../resolve/check.js"
 import { describeCatalog } from "../resolve/questions.js"
 import { fixtureCatalog, settings } from "../testing/fixture.js"
 import { scriptedPrompter, type ScriptedAnswer } from "../testing/prompter.js"
@@ -108,6 +112,39 @@ describe("init", () => {
     const applied = await run([...init, "--yes", "--json"])
     expect(envelope(applied.out)).toMatchObject({ status: "applied", required: ["@fixture/lint"] })
     expect(existsSync(join(root, "demo/fixture.jsonc"))).toBe(true)
+  })
+
+  it("puts init's folder under --cwd, as every command's project is", async () => {
+    mkdirSync(join(root, "work"))
+    const created = await run([...init, "--cwd", "work", "--yes", "--json"])
+    expect(envelope(created.out).status).toBe("applied")
+    expect(existsSync(join(root, "work/demo/fixture.jsonc"))).toBe(true)
+    expect(existsSync(join(root, "demo"))).toBe(false)
+    expect(envelope((await run(["check", "--cwd", "work/demo", "--json"])).out).status).not.toBe("error")
+  })
+
+  it("makes the project of each pairwise answer set from the command requestArgv writes for it", async () => {
+    const catalog = fixtureCatalog()
+    // The app template selects Storybook by default, so the sets that leave it out need --without.
+    const sets = pairwiseAnswers(catalog, "app", "ssr")
+    expect(sets.some((answers) => !answers.optional?.includes("@fixture/storybook"))).toBe(true)
+    for (const [index, set] of sets.entries()) {
+      const answers = { ...set, name: `pair-${index}` }
+      const argv = requestArgv({ intent: { command: "init", answers } }, { catalog })
+      expect(envelope((await run([...argv, "--yes", "--json"])).out).status).toBe("applied")
+      const planned = await plan({
+        catalog,
+        settings,
+        request: { intent: { command: "init", answers } },
+        tree: memoryTree({})
+      })
+      const lock = JSON.parse(readFileSync(join(root, answers.name, ".fixture/lock.json"), "utf8"))
+      // The command is part of what's compared, so a failure names it.
+      expect({ argv: argv.join(" "), addons: Object.keys(lock.addons).sort() }).toEqual({
+        argv: argv.join(" "),
+        addons: Object.keys(planned.lock?.addons ?? {}).sort()
+      })
+    }
   })
 
   it("never applies without --yes or a reviewed plan when it can't prompt", async () => {

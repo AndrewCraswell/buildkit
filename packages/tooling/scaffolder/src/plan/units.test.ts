@@ -267,6 +267,31 @@ describe("envelope", () => {
     upgrade: { catalog: { from: "1.0.0", to: "1.0.0" }, packs: [], addons: [] }
   }
 
+  it("writes each choice against the catalog version it plans with", () => {
+    const request = {
+      intent: { command: "init" as const, answers: { template: "app", name: "demo", optional: [] } },
+      catalogVersion: "2.0.0"
+    }
+    const envelope = toEnvelope(
+      { ...plan, decisions: [{ id: "d", message: "Pick", choices: [{ id: "c", label: "C", request }] }] },
+      {
+        product: "x",
+        catalog: fixtureCatalog(),
+        catalogs: (version) => (version === "2.0.0" ? fixtureCatalog(2) : undefined)
+      }
+    )
+    expect(envelope.decisions?.[0]?.choices[0]?.argv).toEqual([
+      "x",
+      "init",
+      "app",
+      "demo",
+      "--without",
+      "storybook",
+      "--catalog-version",
+      "2.0.0"
+    ])
+  })
+
   it("hides secret files' line counts, adds argv to choices, and points conflicts at artifacts", () => {
     const envelope = toEnvelope(plan, { product: "x", artifacts: ".x/plans/f" })
     expect(envelope.operations?.[0]).toEqual({
@@ -372,6 +397,122 @@ describe("envelope", () => {
       "set",
       "--with",
       "db"
+    ])
+  })
+
+  it("names an add-on by its full id where another shares its short name, given the catalog", () => {
+    const fixture = fixtureCatalog()
+    const i18n = fixture.addons.find((addon) => addon.id === "@fixture/i18n")!
+    const catalog = { ...fixture, addons: [...fixture.addons, { ...i18n, id: "@other/i18n" }] }
+    const answers = { template: "app", name: "demo", optional: ["@fixture/i18n", "@fixture/storybook"] }
+    expect(requestArgv({ intent: { command: "init", answers } }, { catalog })).toEqual([
+      "init",
+      "app",
+      "demo",
+      "--with",
+      "@fixture/i18n"
+    ])
+  })
+
+  it("writes an init against the defaults of the catalog version it plans with", () => {
+    const request = {
+      intent: { command: "init" as const, answers: { template: "app", name: "demo", optional: [] } },
+      catalogVersion: "2.0.0"
+    }
+    // The installed catalog is 1.0.0, so its defaults aren't the request's.
+    expect(requestArgv(request, { catalog: fixtureCatalog() })).toEqual([
+      "init",
+      "app",
+      "demo",
+      "--catalog-version",
+      "2.0.0"
+    ])
+    expect(requestArgv(request, { catalog: fixtureCatalog(2) })).toEqual([
+      "init",
+      "app",
+      "demo",
+      "--without",
+      "storybook",
+      "--catalog-version",
+      "2.0.0"
+    ])
+  })
+
+  it("writes an init for a preset as --preset plus what differs from it", () => {
+    const preset = {
+      id: "saas",
+      title: "SaaS",
+      answers: {
+        template: "app",
+        mode: "ssr",
+        slots: { database: "@x/db-postgres" },
+        optional: ["@x/i18n"],
+        options: { "@x/i18n": { locales: ["en"] } }
+      }
+    }
+    const answers = { ...preset.answers, name: "demo" }
+    expect(requestArgv({ intent: { command: "init", answers } }, { preset })).toEqual([
+      "init",
+      "--preset",
+      "saas",
+      "demo"
+    ])
+    expect(
+      requestArgv(
+        {
+          intent: {
+            command: "init",
+            answers: {
+              ...answers,
+              mode: "spa",
+              slots: { database: "@x/db-postgres", ui: "@x/ui-fancy" },
+              optional: ["@x/storybook"],
+              options: { "@x/i18n": { locales: ["en", "fr"] } }
+            }
+          }
+        },
+        { preset }
+      )
+    ).toEqual([
+      "init",
+      "--preset",
+      "saas",
+      "demo",
+      "--mode",
+      "spa",
+      "--ui",
+      "ui-fancy",
+      "--with",
+      "storybook",
+      "--without",
+      "i18n",
+      "--set",
+      'i18n.locales=["en","fr"]'
+    ])
+    // A preset for another template is ignored.
+    expect(
+      requestArgv({ intent: { command: "init", answers: { template: "bare", name: "demo" } } }, { preset })
+    ).toEqual(["init", "bare", "demo"])
+    // So is one that answers a question the request leaves to the template's default.
+    const { mode, slots, optional, options, ...rest } = answers
+    for (const partial of [
+      { ...rest, slots, optional, options },
+      { ...rest, mode, optional, options },
+      { ...rest, mode, slots, options },
+      { ...rest, mode, slots, optional }
+    ]) {
+      expect(requestArgv({ intent: { command: "init", answers: partial } }, { preset }).slice(0, 2)).toEqual([
+        "init",
+        "app"
+      ])
+    }
+    // A preset can name its add-ons by short name, and without the catalog they're compared by short name.
+    const short = { ...preset, answers: { ...preset.answers, slots: { database: "db-postgres" }, optional: ["i18n"] } }
+    expect(requestArgv({ intent: { command: "init", answers } }, { preset: short })).toEqual([
+      "init",
+      "--preset",
+      "saas",
+      "demo"
     ])
   })
 })
