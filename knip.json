@@ -160,6 +160,10 @@
     "packages/better-apps/testing": {
       "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/comments": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
 }
