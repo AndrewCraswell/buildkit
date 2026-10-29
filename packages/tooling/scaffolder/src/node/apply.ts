@@ -1,4 +1,4 @@
-import { readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs"
+import { lstatSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs"
 import { hostname } from "node:os"
 import { isAbsolute, join, relative, sep } from "node:path"
 import { z } from "zod"
@@ -375,14 +375,38 @@ function journalProblem(root: string, backups: string, journal: Journal): string
     if (problem) {
       return `${JSON.stringify(entry.path)}: ${problem}`
     }
-    if (entry.backup !== undefined && !inside(backupRoot, entry.backup)) {
-      return `The backup of ${entry.path} is outside its backup folder.`
+    const backup = entry.backup === undefined ? undefined : backupProblem(root, backupRoot, entry.backup)
+    if (backup) {
+      return `The backup of ${entry.path} ${backup}.`
     }
     if (entry.createdFolders.some((folder) => !inside(root, folder))) {
       return `${entry.path} lists a created folder outside the project.`
     }
   }
   return undefined
+}
+
+/**
+ * Rollback copies a backup into the project, so it must be a plain file in this apply's backup folder, reached without
+ * a link: every folder from the project down to it is checked, because a link inside could point anywhere.
+ */
+function backupProblem(root: string, backupRoot: string, backup: string): string | undefined {
+  if (!inside(backupRoot, backup)) {
+    return "is outside its backup folder"
+  }
+  let current = root
+  for (const part of relative(root, backup).split(sep)) {
+    current = join(current, part)
+    const stat = lstatSync(current, { throwIfNoEntry: false })
+    if (!stat) {
+      return "is missing"
+    }
+    if (stat.isSymbolicLink()) {
+      return "is reached through a link"
+    }
+  }
+  const stat = lstatSync(backup)
+  return stat.isFile() && stat.nlink === 1 ? undefined : "isn't a plain file"
 }
 
 // Rollback reads backups and removes folders by the paths as stored, so they're compared as they'll be used: a relative

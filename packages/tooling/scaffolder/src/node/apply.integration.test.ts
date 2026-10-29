@@ -313,6 +313,11 @@ describe("apply lock and recovery", () => {
   it("refuses a crafted journal that points outside the project or its backup folder", async () => {
     const fingerprint = "0123456789abcdef0123456789abcdef"
     writeFileSync(join(root, "outside.txt"), "keep\n")
+    // Links inside the backup folder that lead out of it: a folder link, and a hard link to the file itself.
+    const backupRoot = join(project, ".fixture/backup", fingerprint.slice(0, 16))
+    mkdirSync(backupRoot, { recursive: true })
+    symlinkSync(root, join(backupRoot, "linked"), "junction")
+    linkSync(join(root, "outside.txt"), join(backupRoot, "hard.txt"))
     const entry = {
       path: "a.txt",
       action: "create",
@@ -325,6 +330,9 @@ describe("apply lock and recovery", () => {
       { fingerprint: "../../outside", entries: [entry] },
       { fingerprint, entries: [{ ...entry, action: "update", backup: join(root, "outside.txt") }] },
       { fingerprint, entries: [{ ...entry, action: "update", backup: "outside.txt" }] },
+      { fingerprint, entries: [{ ...entry, action: "update", backup: join(backupRoot, "linked", "outside.txt") }] },
+      { fingerprint, entries: [{ ...entry, action: "update", backup: join(backupRoot, "hard.txt") }] },
+      { fingerprint, entries: [{ ...entry, action: "update", backup: join(backupRoot, "missing.txt") }] },
       { fingerprint, entries: [{ ...entry, createdFolders: [root] }] }
     ]) {
       mkdirSync(join(project, ".fixture"), { recursive: true })
