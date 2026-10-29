@@ -140,6 +140,7 @@ export function useThreadCounts<Types extends CommentsTypes = CommentsTypes>(
 ): Readonly<Record<string, { open: number; total: number }>> {
   const comments = useComments()
   const idsKey = subjectIds.join("\u0000")
+  // Ids with no counts at all, not even loading ones. A reset empties the store, so its ids show up here again.
   const missing = useCommentsState(
     (state) => subjectIds.filter((subjectId) => !state.counts[countKey(subjectType, subjectId)]),
     sameItems
@@ -149,7 +150,7 @@ export function useThreadCounts<Types extends CommentsTypes = CommentsTypes>(
       Object.fromEntries(
         subjectIds.flatMap((subjectId) => {
           const count = state.counts[countKey(subjectType, subjectId)]
-          return count ? [[subjectId, { open: count.open, total: count.total }] as const] : []
+          return count?.state === "ready" ? [[subjectId, { open: count.open, total: count.total }] as const] : []
         })
       ),
     (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -229,6 +230,15 @@ export function useSuggestMentions(target: { threadId: string } | Subject) {
   const [suggestions, setSuggestions] = useState<IdentityUser[]>([])
   const [error, setError] = useState<Error | null>(null)
   const targetKey = JSON.stringify(target)
+  // Suggestions are what the signed-in person could see, so they go when the store is reset for someone else.
+  useEffect(
+    () =>
+      comments.onReset(() => {
+        setSuggestions([])
+        setError(null)
+      }),
+    [comments]
+  )
   const search = useCallback(
     async (query: string) => {
       try {

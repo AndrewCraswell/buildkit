@@ -122,6 +122,29 @@ describe("comments hooks", () => {
     expect(result.current.counts["inv-2"]).toEqual({ open: 1, total: 1 })
   })
 
+  it("load counts again when a reset overtakes them", async () => {
+    const { api, as, wrapper } = rendered()
+    await api.createThread({ ...onInvoice, body: "Hi" }, as("bob"))
+    const { result } = renderHook(() => ({ counts: useThreadCounts("invoice", ["inv-1"]), comments: useComments() }), {
+      wrapper
+    })
+    act(() => result.current.comments.reset())
+    await waitFor(() => expect(result.current.counts).toEqual({ "inv-1": { open: 1, total: 1 } }))
+  })
+
+  it("clear mention suggestions when the store is reset", async () => {
+    const { wrapper } = rendered()
+    const { result } = renderHook(() => ({ mentions: useSuggestMentions(onInvoice), comments: useComments() }), {
+      wrapper
+    })
+    await act(async () => {
+      await result.current.mentions.search("ada")
+    })
+    expect(result.current.mentions.suggestions).toHaveLength(1)
+    act(() => result.current.comments.reset())
+    expect(result.current.mentions.suggestions).toEqual([])
+  })
+
   it("suggest mentions as the viewer types", async () => {
     const { wrapper } = rendered()
     const { result } = renderHook(() => useSuggestMentions(onInvoice), { wrapper })

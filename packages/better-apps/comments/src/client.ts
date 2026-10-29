@@ -173,6 +173,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
   const store: Store<State> = createStore(empty as State)
   const run = (action: string, input: unknown) => call("comments", action, input)
   const applied: string[] = []
+  const resetListeners = new Set<() => void>()
   const update = (change: (state: State) => State) => store.setState(change)
   // reset() starts a new generation. Answers to requests made before it belong to the previous person, so an
   // operation applies its changes only while its generation is current.
@@ -215,7 +216,8 @@ function createCommentsClientFor<Types extends CommentsTypes>(
   const countChange = (state: State, thread: Thread, total: number, open: number): State => {
     const key = countKey(thread.subjectType, thread.subjectId)
     const counts = state.counts[key]
-    if (!counts) {
+    // Counts still loading arrive from the server with the change in them, or without it, and replace these anyway.
+    if (counts?.state !== "ready") {
       return state
     }
     return {
@@ -362,24 +364,39 @@ function createCommentsClientFor<Types extends CommentsTypes>(
       for (let start = 0; start < unique.length; start += 50) {
         pages.push(unique.slice(start, start + 50))
       }
-      await Promise.all(
-        pages.map(async (page) => {
-          const input: CountThreadsInput = { subjectType, subjectIds: page }
-          const counts = (await run("countThreads", input)) as Record<string, ThreadCounts>
-          apply((state) => ({
-            ...state,
-            counts: {
-              ...state.counts,
-              ...Object.fromEntries(
-                page.map((subjectId) => [
-                  countKey(subjectType, subjectId),
-                  { ...(counts[subjectId] ?? { open: 0, total: 0 }), state: "ready" as const }
-                ])
-              )
-            }
-          }))
-        })
-      )
+      // Counts not loaded yet are marked as loading, so a reset meanwhile shows they're missing again.
+      const placeholders = (state: CommentsState["counts"], loadState: LoadState) =>
+        Object.fromEntries(
+          unique.flatMap((subjectId) => {
+            const key = countKey(subjectType, subjectId)
+            const current = state[key]
+            return current?.state === "ready" ? [] : [[key, { open: 0, total: 0, state: loadState }] as const]
+          })
+        )
+      apply((state) => ({ ...state, counts: { ...state.counts, ...placeholders(state.counts, "loading") } }))
+      try {
+        await Promise.all(
+          pages.map(async (page) => {
+            const input: CountThreadsInput = { subjectType, subjectIds: page }
+            const counts = (await run("countThreads", input)) as Record<string, ThreadCounts>
+            apply((state) => ({
+              ...state,
+              counts: {
+                ...state.counts,
+                ...Object.fromEntries(
+                  page.map((subjectId) => [
+                    countKey(subjectType, subjectId),
+                    { ...(counts[subjectId] ?? { open: 0, total: 0 }), state: "ready" as const }
+                  ])
+                )
+              }
+            }))
+          })
+        )
+      } catch (error) {
+        apply((state) => ({ ...state, counts: { ...state.counts, ...placeholders(state.counts, "error") } }))
+        throw error
+      }
     },
 
     /** Starts a thread. It shows at once under its final id, and is rolled back if the server refuses it. */
@@ -547,9 +564,14 @@ function createCommentsClientFor<Types extends CommentsTypes>(
       )
     },
 
-    /** Suggests users to mention in a thread, or on a subject before its thread exists. */
-    suggestMentions(input: SuggestMentionsInput<Types["subjectType"]>) {
-      return run("suggestMentions", input) as Promise<IdentityUser[]>
+    /**
+     * Suggests users to mention in a thread, or on a subject before its thread exists. A search that a `reset()`
+     * overtakes suggests nobody, since it ran as the previous person.
+     */
+    async suggestMentions(input: SuggestMentionsInput<Types["subjectType"]>): Promise<IdentityUser[]> {
+      const started = generation
+      const users = (await run("suggestMentions", input)) as IdentityUser[]
+      return started === generation ? users : []
     },
 
     /**
@@ -598,6 +620,20 @@ function createCommentsClientFor<Types extends CommentsTypes>(
       generation += 1
       applied.length = 0
       store.setState(() => empty as State)
+      for (const listener of Array.from(resetListeners)) {
+        listener()
+      }
+    },
+
+    /**
+     * Calls `listener` after each `reset()`, such as to clear state kept outside the store that the previous person could
+     * see. Returns a function that stops it.
+     */
+    onReset(listener: () => void) {
+      resetListeners.add(listener)
+      return () => {
+        resetListeners.delete(listener)
+      }
     },
 
     /** Merges a snapshot from `dehydrate`, such as one a server render loaded. */

@@ -277,6 +277,19 @@ describe("reset", () => {
       pending: {}
     })
   })
+
+  it("tells listeners, and drops mention searches it overtakes", async () => {
+    const { comments } = browser()
+    const heard: string[] = []
+    const stop = comments.onReset(() => heard.push("reset"))
+    const searching = comments.suggestMentions({ ...onInvoice, query: "ada" })
+    comments.reset()
+    expect(await searching).toEqual([])
+    expect((await comments.suggestMentions({ ...onInvoice, query: "ada" })).map((user) => user.id)).toEqual(["ada"])
+    stop()
+    comments.reset()
+    expect(heard).toEqual(["reset"])
+  })
 })
 
 describe("dehydrate and hydrate", () => {
