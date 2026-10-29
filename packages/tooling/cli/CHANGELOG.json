@@ -1,0 +1,32 @@
+{
+  "name": "@buildkitgg/cli",
+  "entries": [
+    {
+      "date": "Thu, 29 Oct 2026 17:55:35 GMT",
+      "version": "0.1.0",
+      "tag": "@buildkitgg/cli_v0.1.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/cli",
+            "commit": "fce7245c5111888be10dc598a4f3f31471fbe158",
+            "comment": "First release: the `buildkit` CLI. Run `npx @buildkitgg/cli init app my-app` to create a Buildkit app, then `buildkit add`, `config` and `upgrade` to change it."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/cli",
+            "comment": "Bump @buildkitgg/catalog to v0.1.0",
+            "commit": "not available"
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/cli",
+            "comment": "Bump @buildkitgg/scaffolder to v0.4.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    }
+  ]
+}

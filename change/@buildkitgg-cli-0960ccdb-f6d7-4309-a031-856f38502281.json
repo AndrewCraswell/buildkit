@@ -1,7 +1,0 @@
-{
-  "type": "minor",
-  "comment": "First release: the `buildkit` CLI. Run `npx @buildkitgg/cli init app my-app` to create a Buildkit app, then `buildkit add`, `config` and `upgrade` to change it.",
-  "packageName": "@buildkitgg/cli",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}

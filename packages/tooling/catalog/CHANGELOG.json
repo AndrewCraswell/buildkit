@@ -1,0 +1,26 @@
+{
+  "name": "@buildkitgg/catalog",
+  "entries": [
+    {
+      "date": "Thu, 29 Oct 2026 17:55:35 GMT",
+      "version": "0.1.0",
+      "tag": "@buildkitgg/catalog_v0.1.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/catalog",
+            "commit": "fce7245c5111888be10dc598a4f3f31471fbe158",
+            "comment": "First release: Buildkit's scaffolding catalog. A TanStack Start target with server-rendered and single-page modes, the `app` template, and add-ons for CI, a SQL database through Better Apps, Better Auth sign-in and Lingui localization, plus Better Apps deploy wiring."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/catalog",
+            "comment": "Bump @buildkitgg/scaffolder to v0.4.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    }
+  ]
+}
