@@ -235,8 +235,8 @@ The engine wasn't changed in this phase.
 
 The Buildkit packages use only `@buildkitgg/scaffolder`, `zod` and `citty`, all in [the tech stack](../tech-stack.md).
 The generated apps use TanStack Start and Router, React, Vite, Drizzle, Better Auth, oxlint and oxfmt, all in the stack,
-and `@vitejs/plugin-react` with `oxc-transform-react`, which the repo's apps already use. **Lingui is not in the tech
-stack**, which lists FormatJS for localization. D4 chose Lingui, but adding it to the stack needs the owner's approval.
+and `@vitejs/plugin-react` with `oxc-transform-react`, which the repo's apps already use. Lingui, which D4 chose, is in
+the stack for generated apps since the owner approved it on 2026-10-29; Buildkit's own packages keep FormatJS.
 
 ## Publishing
 
