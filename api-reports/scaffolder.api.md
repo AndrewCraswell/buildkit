@@ -250,7 +250,7 @@ export function defineTemplate(manifest: TemplateManifest): TemplateManifest;
 export function describeCatalog(catalog: CatalogManifest): CatalogDescription;
 
 // @public
-export const engineVersion = "0.0.0";
+export const engineVersion: string;
 
 // @public
 export type EntryValue = {
