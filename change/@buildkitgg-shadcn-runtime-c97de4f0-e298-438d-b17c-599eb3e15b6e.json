@@ -1,7 +1,0 @@
-{
-  "type": "none",
-  "comment": "Update happy-dom, used in tests, to 21.0.4.",
-  "packageName": "@buildkitgg/shadcn-runtime",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "none"
-}

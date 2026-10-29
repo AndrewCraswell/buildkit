@@ -1,7 +1,0 @@
-{
-  "type": "patch",
-  "comment": "Update lucide-react to 1.61.0 and react-resizable-panels to 4.15.0.",
-  "packageName": "@buildkitgg/shadcn-baseui-nova",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}

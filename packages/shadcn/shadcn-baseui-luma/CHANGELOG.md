@@ -1,8 +1,16 @@
 # Change Log - @buildkitgg/shadcn-baseui-luma
 
-<!-- This log was last generated on Mon, 26 Oct 2026 15:16:09 GMT and should not be manually modified. -->
+<!-- This log was last generated on Thu, 29 Oct 2026 04:54:16 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.4.2
+
+Thu, 29 Oct 2026 04:54:16 GMT
+
+### Patches
+
+- Update lucide-react to 1.61.0 and react-resizable-panels to 4.15.0. (ajcraswell@gmail.com)
 
 ## 0.4.1
 

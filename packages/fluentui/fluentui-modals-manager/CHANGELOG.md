@@ -1,8 +1,16 @@
 # Change Log - @buildkitgg/fluentui-modals-manager
 
-<!-- This log was last generated on Fri, 23 Oct 2026 00:34:48 GMT and should not be manually modified. -->
+<!-- This log was last generated on Thu, 29 Oct 2026 04:54:16 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 1.0.1
+
+Thu, 29 Oct 2026 04:54:16 GMT
+
+### Patches
+
+- Require @fluentui/react-components 9.74.11 or later. (ajcraswell@gmail.com)
 
 ## 1.0.0
 

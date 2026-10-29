@@ -1,7 +1,0 @@
-{
-  "type": "patch",
-  "comment": "Require @fluentui/react-components 9.74.11 or later.",
-  "packageName": "@buildkitgg/fluentui-theme",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}
