@@ -218,8 +218,9 @@ The phase found seven gaps in the engine. All but one are fixed.
    still has server functions and server routes, which request middleware runs for, and an SSR app's browser runs
    `app.bootstrap` before it hydrates. Points per mode wait for a target with a point only one of its modes can run.
 7. **No `match()` helper.** `match(value, cases)` runs the case for a value. A missing case is a type error when the
-   value is a union, and a plan error otherwise, which catalog CI's matrix reaches for every mode. The localization
-   add-on uses it instead of a `switch` that throws.
+   value is a union, and a plan error otherwise. Catalog CI's matrix finds that in each mode for the add-ons its answer
+   sets select; an add-on no template offers needs its own test. The localization add-on uses it instead of a `switch`
+   that throws.
 
 ## Decisions made in this phase
 

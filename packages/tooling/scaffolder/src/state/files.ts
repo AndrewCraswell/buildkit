@@ -68,11 +68,19 @@ export function lockEqual(left: Lock | undefined, right: Lock | undefined): bool
 }
 
 /** A config property, its value on one line when it fits, as the formatters keep a one-line object. */
-function configProperty(key: string, value: unknown, indent: string, unit: string, last: boolean, printWidth: number) {
+function configProperty(
+  key: string,
+  value: unknown,
+  at: { indent: string; unit: string; eol: string },
+  last: boolean,
+  printWidth: number
+) {
+  const { indent, unit, eol } = at
   const name = JSON.stringify(key)
   const printed = printJson(value, {
     layout: { style: "json", printWidth },
     unit,
+    eol,
     objects: "inline",
     column: indent.length + name.length + 2,
     indent,
@@ -92,7 +100,7 @@ function renderAddons(
     return "{}"
   }
   const lines = ids.map((id, index) =>
-    configProperty(id, addons[id] ?? {}, `${unit}${unit}`, unit, index === ids.length - 1, printWidth)
+    configProperty(id, addons[id] ?? {}, { indent: `${unit}${unit}`, unit, eol }, index === ids.length - 1, printWidth)
   )
   return `{${eol}${lines.join(`,${eol}`)}${eol}${unit}}`
 }
@@ -109,10 +117,11 @@ export function renderConfig(config: ProjectConfig, settings: ProductSettings): 
     ...rest
   }
   const hasDeclined = declined !== undefined && declined.length > 0
-  const lines = Object.entries(head).map(([key, value]) => configProperty(key, value, "  ", "  ", false, printWidth))
+  const at = { indent: "  ", unit: "  ", eol: "\n" }
+  const lines = Object.entries(head).map(([key, value]) => configProperty(key, value, at, false, printWidth))
   lines.push(`  "addons": ${renderAddons(addons, "  ", "\n", printWidth)}`)
   if (hasDeclined) {
-    lines.push(configProperty("declined", [...declined].sort(), "  ", "  ", true, printWidth))
+    lines.push(configProperty("declined", [...declined].sort(), at, true, printWidth))
   }
   return `{\n${lines.join(",\n")}\n}\n`
 }

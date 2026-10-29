@@ -105,7 +105,8 @@ A keyed append can say where a new item goes with `order: { after, before }`, by
 when it's added and never moves one that's there.
 
 An add-on that differs by render model or mode branches with `match`, which runs the case for a value. A missing case is
-a type error when the value is a union, and a plan error otherwise, which catalog CI reaches for every mode:
+a type error when the value is a union, and a plan error otherwise. Catalog CI finds it in each mode for the add-ons its
+answer sets select, so an add-on no template offers needs its own test:
 
 ```ts
 import { match, type Contribution } from "@buildkitgg/scaffolder"
