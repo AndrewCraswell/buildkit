@@ -2,7 +2,8 @@
 
 Plan for phase 1 of the migration path in [scaffolder-research.md](scaffolder-research.md) §6.4: rewrite SpawnKit's
 catalog as manifests on `@buildkitgg/scaffolder`, and switch the CLI and the dashboard to it together. Phase 0 is in
-[scaffolder-phase-0.md](scaffolder-phase-0.md). Phase 2, Buildkit's own catalog, waits for a discussion with the owner.
+[scaffolder-phase-0.md](scaffolder-phase-0.md). Phase 2, Buildkit's own catalog, is in
+[scaffolder-phase-2.md](scaffolder-phase-2.md).
 
 **Status (2026-10-28):** planned. Work happens in `D:\system\worktrees\spawn\scaffolder-catalog` on
 `feat/scaffolder-catalog`. The engine isn't on npm yet, so SpawnKit uses a packed tarball of it until the first publish.

@@ -10,5 +10,6 @@ notices, verify the packed artifact in a separate consumer, and configure releas
 independent package version changes; [GitHub release workflows](releases.md) prepare and publish reviewed releases.
 Remove `private` only when ready for release.
 
-Run `pnpm verify` before committing. CI runs full verification on Linux, and dev-domains and scaffolder integration
-tests on Linux, Windows, and macOS. UI changes require browser acceptance.
+Run `pnpm verify` before committing. CI runs full verification on Linux, and dev-domains, scaffolder and `buildkit` CLI
+integration tests on Linux, Windows, and macOS. It also generates Buildkit apps and installs, builds and type-checks
+them (`pnpm --filter @buildkitgg/cli test:smoke`). UI changes require browser acceptance.

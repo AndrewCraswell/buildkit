@@ -1033,8 +1033,9 @@ D1 applies throughout: no backwards compatibility.
 
 ### 6.4 Migration path
 
-Phase 0 is planned in detail in [scaffolder-phase-0.md](scaffolder-phase-0.md), and phase 1 in
-[scaffolder-phase-1.md](scaffolder-phase-1.md).
+Phase 0 is planned in detail in [scaffolder-phase-0.md](scaffolder-phase-0.md), phase 1 in
+[scaffolder-phase-1.md](scaffolder-phase-1.md), and phase 2 in [scaffolder-phase-2.md](scaffolder-phase-2.md). Phase 2
+defers the staging deploy until Better Apps' deploy packages exist (owner, 2026-10-29).
 
 | Phase               | Work                                                                                                                                                                                                          | Done when                                                                                                                                  |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |

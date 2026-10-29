@@ -160,6 +160,8 @@ Built on the **unified** (remark + rehype) ecosystem — the standard for parsin
 ## Localization (i18n)
 
 - **react-intl** + **@formatjs/cli** + **@formatjs/unplugin** — FormatJS message extraction + runtime.
+- **@lingui/core** + **@lingui/react** + **@lingui/cli** + **@lingui/vite-plugin** — the localization the scaffolder's
+  i18n add-on writes into generated Buildkit apps, as app code with extract and check scripts (owner, 2026-10-29).
 - **generaltranslation** — AI-assisted translation.
 
 ## SEO
