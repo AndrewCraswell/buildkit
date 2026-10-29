@@ -2,6 +2,21 @@
   "name": "@buildkitgg/scaffolder",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 17:55:35 GMT",
+      "version": "0.4.0",
+      "tag": "@buildkitgg/scaffolder_v0.4.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/scaffolder",
+            "commit": "f51570dacbd5562af5f04f29a1ab65c79f4161bd",
+            "comment": "`pairwiseAnswers` returns a greedy covering array, so catalog CI and smoke tests plan far fewer answer sets for the same pairwise coverage. `requestArgv` takes a `preset` and writes `init --preset <id>` plus what differs from it, and takes the `catalog` so it writes `--without` for a default add-on the request leaves out and a full id where a short name is ambiguous; decision choices in the JSON envelope use the catalog of the version they plan with. `init`'s folder is relative to `--cwd`. On Windows, installing a template package and fetching an earlier catalog version work: the command line no longer quotes `npm.cmd`, which made npm look for its own code in the cache folder."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 29 Oct 2026 12:16:13 GMT",
       "version": "0.3.0",
       "tag": "@buildkitgg/scaffolder_v0.3.0",
