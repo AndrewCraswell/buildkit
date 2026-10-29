@@ -1,0 +1,7 @@
+{
+  "type": "patch",
+  "comment": "Type `engineVersion` as `string`.",
+  "packageName": "@buildkitgg/scaffolder",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}
