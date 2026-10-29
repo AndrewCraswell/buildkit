@@ -1,5 +1,6 @@
 {
   "ignoreExportsUsedInFile": true,
+  "ignore": ["**/src/vendor/**"],
   "workspaces": {
     "apps/docs": {
       "entry": ["scripts/generate.ts", "content/.vitepress/config.ts", "content/.vitepress/theme/index.ts"],
@@ -150,6 +151,10 @@
     },
     "packages/better-apps/cli": {
       "entry": ["src/index.ts", "src/bin.ts", "test/fixtures/*.config.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/drizzle": {
+      "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
