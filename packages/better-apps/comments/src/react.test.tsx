@@ -75,6 +75,21 @@ describe("comments hooks", () => {
     expect(result.current).toMatchObject({ status: "idle", error: null })
   })
 
+  it("show a write a reset cancelled as never having run", async () => {
+    const { wrapper } = rendered()
+    const { result } = renderHook(() => ({ create: useCreateThread(), comments: useComments() }), { wrapper })
+    let writing: Promise<unknown> = Promise.resolve()
+    act(() => {
+      writing = result.current.create.mutate({ ...onInvoice, body: "Hi" }).catch((error: unknown) => error)
+    })
+    expect(result.current.create.status).toBe("pending")
+    await act(async () => {
+      result.current.comments.reset()
+      expect(await writing).toMatchObject({ code: "ABORTED" })
+    })
+    expect(result.current.create).toMatchObject({ status: "idle", error: null })
+  })
+
   it("load a thread with its comments, and reply", async () => {
     const { api, as, wrapper } = rendered()
     const { thread } = await api.createThread({ ...onInvoice, body: "First" }, as("ada"))

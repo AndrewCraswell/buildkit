@@ -4,6 +4,7 @@ import {
   BetterAppsClientError,
   createBetterAppsClient,
   createStore,
+  type CallOptions,
   type JsonValue,
   type Serialized
 } from "./client.js"
@@ -68,7 +69,7 @@ describe("createBetterAppsClient", () => {
     expect(await client.$call("notes", "ping")).toBe("pong")
     expectTypeOf(echoed).toEqualTypeOf<{ text: string; by: string | null; at: string; tags: string[] }>()
     expectTypeOf(client.notes).not.toHaveProperty("purge")
-    expectTypeOf(client.notes.ping).toEqualTypeOf<(input?: unknown) => Promise<string>>()
+    expectTypeOf(client.notes.ping).toEqualTypeOf<(input?: unknown, options?: CallOptions) => Promise<string>>()
   })
 
   it("throws the server's code, status and issues", async () => {
@@ -118,6 +119,49 @@ describe("createBetterAppsClient", () => {
     await createBetterAppsClient({ basePath: "/", fetch, headers: { "x-a": "b" } }).$call("f", "a")
     expect(seen[1]?.url).toBe("/f/a")
     expect(seen[1]?.init.credentials).toBe("same-origin")
+  })
+
+  it("never sends a call cancelled while its headers resolve", async () => {
+    const { app, fetch } = setup()
+    let token = (_value: string) => undefined as void
+    const client = createBetterAppsClient<typeof app>({
+      fetch,
+      headers: () =>
+        new Promise<Record<string, string>>((resolve) => (token = (value) => resolve({ authorization: value })))
+    })
+    const controller = new AbortController()
+    const calling = client.notes.echo({ text: "Hi" }, { signal: controller.signal })
+    controller.abort(new Error("Signed out"))
+    token("Bearer next-person")
+    const error = await calling.catch((caught: unknown) => caught)
+    expect(error).toBeInstanceOf(BetterAppsClientError)
+    expect(error).toMatchObject({ code: "ABORTED", status: 0, cause: { message: "Signed out" } })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it("rejects a call cancelled under way, whether or not its fetch stops", async () => {
+    const controller = new AbortController()
+    const stops = createBetterAppsClient({
+      fetch: (_, init) =>
+        new Promise((_resolve, reject) => init.signal?.addEventListener("abort", () => reject(init.signal?.reason)))
+    })
+    const stopped = stops.$call("notes", "ping", undefined, { signal: controller.signal })
+    controller.abort()
+    await expect(stopped).rejects.toMatchObject({ code: "ABORTED" })
+
+    const { fetch } = setup()
+    const later = new AbortController()
+    const ignores = createBetterAppsClient({
+      baseURL: "https://app.test",
+      fetch: async (url, init) => {
+        later.abort()
+        return fetch(url, init)
+      }
+    })
+    await expect(ignores.$call("notes", "ping", undefined, { signal: later.signal })).rejects.toMatchObject({
+      code: "ABORTED"
+    })
+    expect(await ignores.$call("notes", "ping")).toBe("pong")
   })
 
   it("isn't mistaken for a promise or a React element", async () => {

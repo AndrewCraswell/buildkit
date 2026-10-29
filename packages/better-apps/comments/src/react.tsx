@@ -1,7 +1,7 @@
 // React hooks over the comments store, with no UI: apps bring their own composer, thread list and pin styles.
 import { useBetterApps, useStore } from "@better-apps/react"
 import type { BetterApp, IdentityUser } from "better-apps"
-import type { BetterAppsClient } from "better-apps/client"
+import { BetterAppsClientError, type BetterAppsClient } from "better-apps/client"
 import { useCallback, useEffect, useMemo, useState, type RefObject } from "react"
 import { resolveAnchor, type AnchorResolution } from "./anchor-dom.js"
 import {
@@ -194,8 +194,10 @@ function useMutation<Input, Output>(run: (input: Input) => Promise<Output>): Mut
         setStatus("success")
         return output
       } catch (caught) {
-        setStatus("error")
-        setError(caught as Error)
+        // A write that reset() cancelled belonged to the previous person, so it shows as never having run.
+        const cancelled = caught instanceof BetterAppsClientError && caught.code === "ABORTED"
+        setStatus(cancelled ? "idle" : "error")
+        setError(cancelled ? null : (caught as Error))
         throw caught
       }
     },
