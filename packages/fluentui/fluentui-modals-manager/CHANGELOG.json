@@ -2,6 +2,21 @@
   "name": "@buildkitgg/fluentui-modals-manager",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 04:39:41 GMT",
+      "version": "1.0.1",
+      "tag": "@buildkitgg/fluentui-modals-manager_v1.0.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/fluentui-modals-manager",
+            "commit": "dc8363ff4646261216dd4f06cca3412d96c39574",
+            "comment": "Require @fluentui/react-components 9.74.11 or later."
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 23 Oct 2026 00:34:48 GMT",
       "version": "1.0.0",
       "tag": "@buildkitgg/fluentui-modals-manager_v1.0.0",

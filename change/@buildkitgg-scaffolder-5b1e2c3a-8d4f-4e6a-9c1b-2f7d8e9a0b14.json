@@ -1,7 +1,0 @@
-{
-  "type": "minor",
-  "comment": "Add `seedBases: \"stored\"` to `defineSettings`. The lock keeps each seed's generated text, so `upgrade` merges your edits three-way even when the catalog version the project started from can't be fetched.",
-  "packageName": "@buildkitgg/scaffolder",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}

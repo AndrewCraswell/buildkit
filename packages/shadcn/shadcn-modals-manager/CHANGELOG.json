@@ -2,6 +2,29 @@
   "name": "@buildkitgg/shadcn-modals-manager",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 04:39:41 GMT",
+      "version": "1.1.1",
+      "tag": "@buildkitgg/shadcn-modals-manager_v1.1.1",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "commit": "dc8363ff4646261216dd4f06cca3412d96c39574",
+            "comment": "Update happy-dom, used in tests, to 21.0.4."
+          }
+        ],
+        "patch": [
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/shadcn-modals-manager",
+            "comment": "Bump @buildkitgg/fluentui-modals-manager to v1.0.1",
+            "commit": "not available"
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 23 Oct 2026 04:27:43 GMT",
       "version": "1.1.0",
       "tag": "@buildkitgg/shadcn-modals-manager_v1.1.0",

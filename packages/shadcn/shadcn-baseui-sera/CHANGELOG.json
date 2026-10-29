@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-baseui-sera",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 04:39:41 GMT",
+      "version": "0.4.2",
+      "tag": "@buildkitgg/shadcn-baseui-sera_v0.4.2",
+      "comments": {
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-baseui-sera",
+            "commit": "dc8363ff4646261216dd4f06cca3412d96c39574",
+            "comment": "Update lucide-react to 1.61.0 and react-resizable-panels to 4.15.0."
+          }
+        ]
+      }
+    },
+    {
       "date": "Mon, 26 Oct 2026 15:16:09 GMT",
       "version": "0.4.1",
       "tag": "@buildkitgg/shadcn-baseui-sera_v0.4.1",

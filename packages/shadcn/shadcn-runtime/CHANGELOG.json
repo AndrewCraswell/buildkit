@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-runtime",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 04:39:41 GMT",
+      "version": "0.1.1",
+      "tag": "@buildkitgg/shadcn-runtime_v0.1.1",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-runtime",
+            "commit": "dc8363ff4646261216dd4f06cca3412d96c39574",
+            "comment": "Update happy-dom, used in tests, to 21.0.4."
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 23 Oct 2026 05:37:32 GMT",
       "version": "0.1.1",
       "tag": "@buildkitgg/shadcn-runtime_v0.1.1",

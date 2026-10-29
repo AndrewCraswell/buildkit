@@ -1,6 +1,6 @@
 {
   "name": "@buildkitgg/shadcn-baseui-maia",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "license": "MIT",
   "description": "Upstream shadcn Base UI components in the maia style, with compiled CSS and TypeScript declarations.",

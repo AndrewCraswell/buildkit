@@ -2,6 +2,21 @@
   "name": "@buildkitgg/react-preferences",
   "entries": [
     {
+      "date": "Thu, 29 Oct 2026 04:39:41 GMT",
+      "version": "0.1.2",
+      "tag": "@buildkitgg/react-preferences_v0.1.2",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/react-preferences",
+            "commit": "dc8363ff4646261216dd4f06cca3412d96c39574",
+            "comment": "Update happy-dom, used in tests, to 21.0.4."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 22 Oct 2026 20:48:41 GMT",
       "version": "0.1.2",
       "tag": "@buildkitgg/react-preferences_v0.1.2",
