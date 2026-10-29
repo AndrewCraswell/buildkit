@@ -88,26 +88,28 @@ function Notes() {
           </button>
         </form>
       ) : (
-        <SignInPrompt>to add notes.</SignInPrompt>
+        <SignInPrompt>to read and add notes.</SignInPrompt>
       )}
-      <section aria-labelledby="notes-title">
-        <h2 id="notes-title">Recent notes</h2>
-        {notes.length === 0 ? (
-          <p>No notes yet. Add the first one above.</p>
-        ) : (
-          <ul className="notes">
-            {notes.map((note) => (
-              <li key={note.id}>
-                <p className="note-text">{note.text}</p>
-                <p className="meta">
-                  <span>{note.authorName ?? "Unknown author"}</span>
-                  <time dateTime={note.createdAt.toISOString()}>{formatTime(note.createdAt)}</time>
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {notes && (
+        <section aria-labelledby="notes-title">
+          <h2 id="notes-title">Recent notes</h2>
+          {notes.length === 0 ? (
+            <p>No notes yet. Add the first one above.</p>
+          ) : (
+            <ul className="notes">
+              {notes.map((note) => (
+                <li key={note.id}>
+                  <p className="note-text">{note.text}</p>
+                  <p className="meta">
+                    <span>{note.authorName ?? "Unknown author"}</span>
+                    <time dateTime={note.createdAt.toISOString()}>{formatTime(note.createdAt)}</time>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </>
   )
 }

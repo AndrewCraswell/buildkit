@@ -197,14 +197,23 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
   return chunks
 }
 
-/** Maps items to calls, running at most `limit` at a time, and returns the results in order. */
+/**
+ * Maps items to calls, running at most `limit` at a time, and returns the results in order. Once a call fails, such as
+ * on a rate limit, no more calls start.
+ */
 async function mapConcurrently<T, R>(items: readonly T[], limit: number, call: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = []
   let next = 0
+  let failed = false
   const run = async () => {
-    while (next < items.length) {
+    while (!failed && next < items.length) {
       const index = next++
-      results[index] = await call(items[index]!)
+      try {
+        results[index] = await call(items[index]!)
+      } catch (error) {
+        failed = true
+        throw error
+      }
     }
   }
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run))

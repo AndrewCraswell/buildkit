@@ -291,6 +291,21 @@ describe("workosIdentity", () => {
       expect(actors).toHaveLength(35)
       expect(most).toBe(10)
     })
+
+    it("starts no more calls after one fails", async () => {
+      const directory = many(35, { org_acme: member })
+      const client = mockWorkOS(directory)
+      client.userManagement.listOrganizationMemberships.mockRejectedValueOnce(new Error("Rate limited"))
+      const identity = workosIdentity({ workos: client, cookiePassword })
+      await expect(
+        identity.getActorsFor(
+          directory.map((user) => user.id),
+          "org_acme"
+        )
+      ).rejects.toThrow("Rate limited")
+      // The ten calls already under way finish; none of the other 25 users is asked for.
+      expect(client.userManagement.listOrganizationMemberships).toHaveBeenCalledTimes(10)
+    })
   })
 
   describe("getUsers", () => {

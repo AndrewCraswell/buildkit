@@ -255,6 +255,21 @@ describe("clerkIdentity", () => {
       expect(await identity.getActorsFor(ids, null)).toHaveLength(250)
       expect(clerk.users.getUserList.mock.calls.map(([params]) => params.userId?.length)).toEqual([100, 100, 50])
     })
+
+    it("starts no more calls after one fails", async () => {
+      const directory = many(1200)
+      const clerk = mockClerk(directory)
+      clerk.users.getUserList.mockRejectedValueOnce(Object.assign(new Error("Too many requests"), { status: 429 }))
+      const identity = clerkIdentity({ clerkClient: clerk })
+      await expect(
+        identity.getActorsFor(
+          directory.map((user) => user.id),
+          null
+        )
+      ).rejects.toThrow("Too many requests")
+      // The five calls already under way finish; none of the other seven chunks is asked for.
+      expect(clerk.users.getUserList).toHaveBeenCalledTimes(5)
+    })
   })
 
   describe("getUsers", () => {

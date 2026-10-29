@@ -1,16 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useState, type FormEvent } from "react"
-import { z } from "zod"
 import { demoPassword, demoUsers } from "../demo-users"
 
+/**
+ * A path on this site to return to after signing in, or `undefined` for anything that would leave it, such as
+ * `//evil.example` or `/\evil.example`, which browsers read as other sites.
+ */
+function sitePath(value: unknown): string | undefined {
+  if (typeof value !== "string" || !value.startsWith("/")) {
+    return undefined
+  }
+  const base = "http://site.invalid"
+  try {
+    const url = new URL(value, base)
+    return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export const Route = createFileRoute("/sign-in")({
-  // Only a path on this site, so the form never sends anyone elsewhere.
-  validateSearch: z.object({
-    redirect: z
-      .string()
-      .regex(/^\/(?!\/)/)
-      .optional()
-      .catch(undefined)
+  validateSearch: (search: Record<string, unknown>): { redirect?: string | undefined } => ({
+    redirect: sitePath(search.redirect)
   }),
   head: () => ({ meta: [{ title: "Sign in – Better Apps example" }] }),
   component: SignIn
