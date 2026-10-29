@@ -1,8 +1,22 @@
 # Change Log - @buildkitgg/scaffolder
 
-<!-- This log was last generated on Thu, 29 Oct 2026 12:16:13 GMT and should not be manually modified. -->
+<!-- This log was last generated on Thu, 29 Oct 2026 17:47:08 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.4.0
+
+Thu, 29 Oct 2026 17:47:08 GMT
+
+### Minor changes
+
+- `pairwiseAnswers` returns a greedy covering array, so catalog CI and smoke tests plan far fewer answer sets for the
+  same pairwise coverage. `requestArgv` takes a `preset` and writes `init --preset <id>` plus what differs from it, and
+  takes the `catalog` so it writes `--without` for a default add-on the request leaves out and a full id where a short
+  name is ambiguous; decision choices in the JSON envelope use the catalog of the version they plan with. `init`'s
+  folder is relative to `--cwd`. On Windows, installing a template package and fetching an earlier catalog version work:
+  the command line no longer quotes `npm.cmd`, which made npm look for its own code in the cache folder.
+  (ajcraswell@gmail.com)
 
 ## 0.3.0
 
