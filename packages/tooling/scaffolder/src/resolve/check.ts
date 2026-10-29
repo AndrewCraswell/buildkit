@@ -255,20 +255,63 @@ export function pairwiseAnswers(catalog: CatalogManifest, templateId: string, mo
     const [only] = factors
     return only ? Array.from({ length: only.values }, (_, value) => only.apply(base, value)) : [base]
   }
-  const result: Answers[] = []
-  for (let left = 0; left < factors.length; left++) {
-    for (let right = left + 1; right < factors.length; right++) {
-      const a = factors[left]
-      const b = factors[right]
-      if (!a || !b) {
-        continue
-      }
-      for (let x = 0; x < a.values; x++) {
-        for (let y = 0; y < b.values; y++) {
-          result.push(b.apply(a.apply(base, x), y))
+  return coveringRows(factors.map((factor) => factor.values)).map((row) =>
+    row.reduce((answers, value, index) => factors[index]?.apply(answers, value) ?? answers, base)
+  )
+}
+
+/**
+ * Rows of values, one per factor, in which every pair of values of every two factors appears at least once: a greedy
+ * covering array. Each row starts from the first pair no row has covered, then gives every other factor the value that
+ * covers the most pairs still missing, the lowest value on a tie, so the result is the same every time.
+ */
+function coveringRows(sizes: readonly number[]): number[][] {
+  const key = (left: number, a: number, right: number, b: number) => `${left}:${a}:${right}:${b}`
+  const missing = new Set<string>()
+  for (let left = 0; left < sizes.length; left++) {
+    for (let right = left + 1; right < sizes.length; right++) {
+      for (let a = 0; a < (sizes[left] ?? 0); a++) {
+        for (let b = 0; b < (sizes[right] ?? 0); b++) {
+          missing.add(key(left, a, right, b))
         }
       }
     }
   }
-  return result
+  const rows: number[][] = []
+  while (missing.size > 0) {
+    const [first = ""] = missing
+    const [left = 0, a = 0, right = 0, b = 0] = first.split(":").map(Number)
+    const row: (number | undefined)[] = sizes.map(() => undefined)
+    row[left] = a
+    row[right] = b
+    for (let factor = 0; factor < sizes.length; factor++) {
+      if (row[factor] !== undefined) {
+        continue
+      }
+      let best = 0
+      let bestGain = -1
+      for (let value = 0; value < (sizes[factor] ?? 0); value++) {
+        let gain = 0
+        row.forEach((other, index) => {
+          if (other !== undefined && index !== factor) {
+            const pair = index < factor ? key(index, other, factor, value) : key(factor, value, index, other)
+            gain += missing.has(pair) ? 1 : 0
+          }
+        })
+        if (gain > bestGain) {
+          best = value
+          bestGain = gain
+        }
+      }
+      row[factor] = best
+    }
+    const values = row.map((value) => value ?? 0)
+    for (let i = 0; i < values.length; i++) {
+      for (let j = i + 1; j < values.length; j++) {
+        missing.delete(key(i, values[i] ?? 0, j, values[j] ?? 0))
+      }
+    }
+    rows.push(values)
+  }
+  return rows
 }

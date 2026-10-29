@@ -374,4 +374,61 @@ describe("envelope", () => {
       "db"
     ])
   })
+
+  it("writes an init for a preset as --preset plus what differs from it", () => {
+    const preset = {
+      id: "saas",
+      title: "SaaS",
+      answers: {
+        template: "app",
+        mode: "ssr",
+        slots: { database: "@x/db-postgres" },
+        optional: ["@x/i18n"],
+        options: { "@x/i18n": { locales: ["en"] } }
+      }
+    }
+    const answers = { ...preset.answers, name: "demo" }
+    expect(requestArgv({ intent: { command: "init", answers } }, { preset })).toEqual([
+      "init",
+      "--preset",
+      "saas",
+      "demo"
+    ])
+    expect(
+      requestArgv(
+        {
+          intent: {
+            command: "init",
+            answers: {
+              ...answers,
+              mode: "spa",
+              slots: { database: "@x/db-postgres", ui: "@x/ui-fancy" },
+              optional: ["@x/storybook"],
+              options: { "@x/i18n": { locales: ["en", "fr"] } }
+            }
+          }
+        },
+        { preset }
+      )
+    ).toEqual([
+      "init",
+      "--preset",
+      "saas",
+      "demo",
+      "--mode",
+      "spa",
+      "--ui",
+      "ui-fancy",
+      "--with",
+      "storybook",
+      "--without",
+      "i18n",
+      "--set",
+      'i18n.locales=["en","fr"]'
+    ])
+    // A preset for another template is ignored.
+    expect(
+      requestArgv({ intent: { command: "init", answers: { template: "bare", name: "demo" } } }, { preset })
+    ).toEqual(["init", "bare", "demo"])
+  })
 })

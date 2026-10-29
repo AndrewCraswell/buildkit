@@ -110,6 +110,15 @@ describe("init", () => {
     expect(existsSync(join(root, "demo/fixture.jsonc"))).toBe(true)
   })
 
+  it("puts init's folder under --cwd, as every command's project is", async () => {
+    mkdirSync(join(root, "work"))
+    const created = await run([...init, "--cwd", "work", "--yes", "--json"])
+    expect(envelope(created.out).status).toBe("applied")
+    expect(existsSync(join(root, "work/demo/fixture.jsonc"))).toBe(true)
+    expect(existsSync(join(root, "demo"))).toBe(false)
+    expect(envelope((await run(["check", "--cwd", "work/demo", "--json"])).out).status).not.toBe("error")
+  })
+
   it("never applies without --yes or a reviewed plan when it can't prompt", async () => {
     const result = await run([...init, "--json", "--out", "plans"])
     expect(envelope(result.out)).toMatchObject({

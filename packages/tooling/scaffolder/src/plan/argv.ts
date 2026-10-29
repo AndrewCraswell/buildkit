@@ -1,4 +1,5 @@
 import { shortName } from "../manifest/catalog.js"
+import type { PresetManifest } from "../manifest/types.js"
 import { compareText } from "./json.js"
 import type { PlanRequest } from "./types.js"
 
@@ -14,24 +15,57 @@ function setFlags(options: Record<string, Record<string, unknown>>): string[] {
     )
 }
 
-/** The CLI arguments that make the same request, without the product's own name. */
-export function requestArgv(request: PlanRequest): string[] {
+/** Options that differ from a preset's, by add-on and key. */
+function changedOptions(
+  options: Record<string, Record<string, unknown>>,
+  preset: Record<string, Record<string, unknown>>
+): Record<string, Record<string, unknown>> {
+  return Object.fromEntries(
+    Object.entries(options)
+      .map(([id, values]): [string, Record<string, unknown>] => [
+        id,
+        Object.fromEntries(
+          Object.entries(values).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(preset[id]?.[key]))
+        )
+      ])
+      .filter(([, values]) => Object.keys(values).length > 0)
+  )
+}
+
+/**
+ * The CLI arguments that make the same request, without the product's own name. With `preset`, an `init` for that
+ * preset's template is written as `init --preset <id>` plus flags for the answers that differ from the preset's.
+ */
+export function requestArgv(request: PlanRequest, options: { preset?: PresetManifest } = {}): string[] {
   const { intent } = request
   const argv: string[] = []
   switch (intent.command) {
     case "init": {
       const { answers } = intent
-      argv.push("init", answers.template, ...(answers.name === undefined ? [] : [answers.name]))
-      if (answers.mode !== undefined) {
+      const preset = options.preset?.answers.template === answers.template ? options.preset : undefined
+      const name = answers.name === undefined ? [] : [answers.name]
+      argv.push("init", ...(preset ? ["--preset", preset.id] : [answers.template]), ...name)
+      if (answers.mode !== undefined && answers.mode !== preset?.answers.mode) {
         argv.push("--mode", answers.mode)
       }
       for (const [slot, answer] of Object.entries(answers.slots ?? {})) {
+        if (preset && preset.answers.slots?.[slot] === answer) {
+          continue
+        }
         argv.push(...(answer === null ? [`--no-${slot}`] : [`--${slot}`, shortName(answer)]))
       }
+      const inPreset = new Set(preset?.answers.optional ?? [])
       for (const id of answers.optional ?? []) {
-        argv.push("--with", shortName(id))
+        if (!inPreset.has(id)) {
+          argv.push("--with", shortName(id))
+        }
       }
-      argv.push(...setFlags(answers.options ?? {}))
+      for (const id of inPreset) {
+        if (!(answers.optional ?? []).includes(id)) {
+          argv.push("--without", shortName(id))
+        }
+      }
+      argv.push(...setFlags(changedOptions(answers.options ?? {}, preset?.answers.options ?? {})))
       if (answers.adopt) {
         argv.push("--adopt")
       }

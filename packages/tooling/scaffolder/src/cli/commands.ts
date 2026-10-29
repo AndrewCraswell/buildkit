@@ -596,7 +596,7 @@ export class CliRuntime {
       if (name !== undefined && nameProblem) {
         throw new PlanError("E_INVALID_OPTIONS", `"${name}" in the plan can't be a project name. ${nameProblem}`)
       }
-      return this.#planAndApply(resolve(this.io.cwd, folderArg ?? name ?? "."), reviewed.request, flags)
+      return this.#planAndApply(resolve(this.#root(flags), folderArg ?? name ?? "."), reviewed.request, flags)
     }
     let partial: PartialAnswers = emptyAnswers()
     const presetId = flags.strings.get("preset")
@@ -641,7 +641,7 @@ export class CliRuntime {
     if (nameFlag !== undefined) {
       partial.name = nameFlag
     } else if (folderArg !== undefined) {
-      partial.name = basename(resolve(this.io.cwd, folderArg))
+      partial.name = basename(resolve(this.#root(flags), folderArg))
     }
     const interactive = this.#interactive(flags)
     if (folderArg === undefined && !interactive) {
@@ -653,7 +653,8 @@ export class CliRuntime {
     if (answers === cancelled) {
       return this.#cancel(json)
     }
-    const folder = resolve(this.io.cwd, folderArg ?? answers.name ?? ".")
+    // The folder is relative to --cwd, as every command's project is.
+    const folder = resolve(this.#root(flags), folderArg ?? answers.name ?? ".")
     const name = answers.name ?? basename(folder)
     const nameProblem = projectNameProblem(name)
     if (nameProblem) {

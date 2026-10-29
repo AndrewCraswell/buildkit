@@ -166,7 +166,8 @@ Every planning command takes `--dry-run`, `--json`, `--out [folder]`, `--plan <f
 `--resolve <id>=keep-current|take-incoming|file:<path>` and `--conflict markers`. Without a terminal, a command plans
 and writes nothing unless you pass `--yes` or apply a reviewed plan with `--plan`. A reviewed plan applies only if the
 project hasn't changed since; applying it twice is a no-op. It records the template packages it was made with, and
-applying it loads those exact versions, so a newer release never runs first.
+applying it loads those exact versions, so a newer release never runs first. `--cwd` sets where the project is for every
+command, and `init`'s folder is relative to it.
 
 ## The JSON envelope and exit codes
 
@@ -246,5 +247,10 @@ product, because applying it runs the package author's code.
 
 `checkCatalog(catalog, { matrix: true })` reports broken references, slot defaults that aren't the slot's add-ons,
 required add-ons with options that lack defaults, unregistered facets, and any pair of answers that fails to plan.
+
+`pairwiseAnswers(catalog, template, mode)` gives the answer sets it plans: a covering array, in which every pair of
+values of every two questions appears in at least one set, built greedily and the same every time. A product's smoke
+tests can generate and build those sets. `requestArgv(request, { preset })` turns one into the CLI command, as
+`init --preset <id>` plus what differs from the preset when one is given.
 
 See [the architecture guide](docs/README.md) to work on the engine itself.

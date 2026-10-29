@@ -950,7 +950,9 @@ export function readConfig(path: string, text: string): ProjectConfig;
 export function readLock(path: string, text: string): Lock_2;
 
 // @public
-export function requestArgv(request: PlanRequest): string[];
+export function requestArgv(request: PlanRequest, options?: {
+    preset?: PresetManifest;
+}): string[];
 
 // @public (undocumented)
 export type Resolution = "keep-current" | "take-incoming" | {

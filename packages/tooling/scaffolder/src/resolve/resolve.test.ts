@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
 import { defineAddon } from "../manifest/define.js"
-import type { CatalogManifest } from "../manifest/types.js"
+import type { Answers, CatalogManifest } from "../manifest/types.js"
 import { PlanError } from "../plan/errors.js"
 import { addRequest, applyFixture, fixtureCatalog, initRequest, planFixture } from "../testing/fixture.js"
 import { selectionFromAnswers } from "./answers.js"
@@ -372,8 +372,44 @@ describe("questions and catalog CI", () => {
 
   it("passes for the fixture catalog, including every pair of answers", () => {
     expect(checkCatalog(catalog, { matrix: true })).toEqual([])
-    expect(pairwiseAnswers(catalog, "app", "ssr").length).toBeGreaterThan(10)
     expect(pairwiseAnswers(catalog, "nope", "ssr")).toEqual([])
+  })
+
+  it("covers every pair of values of every two questions, in few answer sets", () => {
+    const template = catalog.templates.find((entry) => entry.id === "app")!
+    const questions = [
+      ...Object.keys(template.slots ?? {}).map(
+        (slot) => (answers: Answers) => `slot ${slot}=${answers.slots?.[slot] ?? "none"}`
+      ),
+      ...Object.keys(template.optional ?? {}).map(
+        (id) => (answers: Answers) => `${id}=${answers.optional?.includes(id) ?? false}`
+      )
+    ]
+    const sets = pairwiseAnswers(catalog, "app", "ssr")
+    const values = questions.map((question) => [...new Set(sets.map(question))])
+    expect(values.filter((choices) => choices.length < 2)).toEqual([])
+    const uncovered: string[] = []
+    for (let left = 0; left < questions.length; left++) {
+      for (let right = left + 1; right < questions.length; right++) {
+        const seen = new Set(sets.map((answers) => `${questions[left]!(answers)} & ${questions[right]!(answers)}`))
+        for (const a of values[left]!) {
+          for (const b of values[right]!) {
+            if (!seen.has(`${a} & ${b}`)) {
+              uncovered.push(`${a} & ${b}`)
+            }
+          }
+        }
+      }
+    }
+    expect(uncovered).toEqual([])
+    // Every pair with the rest at their defaults would need a set per pair of values; a covering array needs far fewer.
+    const pairs = values.reduce(
+      (total, left, index) =>
+        total + values.slice(index + 1).reduce((sum, right) => sum + left.length * right.length, 0),
+      0
+    )
+    expect(sets.length).toBeLessThan(pairs / 2)
+    expect(pairwiseAnswers(catalog, "app", "ssr")).toEqual(sets)
   })
 
   it("reports broken references, defaults and options", () => {

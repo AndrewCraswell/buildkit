@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "`pairwiseAnswers` returns a greedy covering array, so catalog CI and smoke tests plan far fewer answer sets for the same pairwise coverage. `requestArgv` takes a `preset` and writes `init --preset <id>` plus what differs from it. `init`'s folder is relative to `--cwd`.",
+  "packageName": "@buildkitgg/scaffolder",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}
