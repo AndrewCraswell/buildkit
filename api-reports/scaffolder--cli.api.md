@@ -10,7 +10,7 @@ import { z } from 'zod';
 // Warning: (ae-forgotten-export) The symbol "EnvVar" needs to be exported by the entry point cli.d.ts
 //
 // @public
-export function askSecrets(env: EnvVar[], prompter: Prompter): Promise<Record<string, string> | Cancelled>;
+export function askEnv(env: EnvVar[], prompter: Prompter): Promise<Record<string, string> | Cancelled>;
 
 // @public (undocumented)
 export type Cancelled = typeof cancelled;

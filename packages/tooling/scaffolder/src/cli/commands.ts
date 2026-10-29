@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { basename, dirname, resolve } from "node:path"
 import { z } from "zod"
+import { readEnv } from "../edit/env.js"
 import { catalogVersionText, findPreset, packOf } from "../manifest/catalog.js"
 import { mergePacks, templateSource, type LoadedPack, type TemplateSource } from "../manifest/packs.js"
 import type { CatalogManifest, PackRecord } from "../manifest/types.js"
@@ -34,7 +35,7 @@ import { compareVersions, satisfiesRange } from "../upgrade/semver.js"
 import { parseFlags, parseSet, type FlagSpec, type ParsedFlags } from "./flags.js"
 import { describeEnvelope } from "./output.js"
 import { cancelled, clackPrompter, type Cancelled, type Prompter } from "./prompter.js"
-import { askSecrets, completeAnswers, emptyAnswers, runWizard, type PartialAnswers } from "./wizard.js"
+import { askEnv, completeAnswers, emptyAnswers, runWizard, type PartialAnswers } from "./wizard.js"
 
 export interface CliIo {
   stdout(text: string): void
@@ -474,22 +475,30 @@ export class CliRuntime {
     if (current.status !== "planned" || flags.booleans.has("dry-run") || options.applies === false) {
       return this.#emit(envelope(current), json)
     }
-    const secretsNeeded = current.env.filter((variable) => variable.secret && variable.required)
+    // init asks for every variable; later commands only for required secrets, so an add doesn't ask about the rest of
+    // the project. Variables the secrets file already has aren't asked again: a required one needs a value, and an
+    // optional one was answered once, even if blank.
+    const state = readSafely(root, this.#settings.secretsFile)
+    const present = readEnv(state.kind === "file" ? state.content : undefined)
+    const everything = current.request.intent.command === "init"
+    const unset = current.env.filter(
+      (variable) =>
+        (everything || (variable.secret && variable.required)) &&
+        (variable.required ? !present.get(variable.name) : !present.has(variable.name))
+    )
     let secrets: Record<string, string> | undefined
-    if (secretsNeeded.length > 0) {
-      if (interactive) {
-        const answer = await askSecrets(secretsNeeded, this.io.prompter)
-        if (answer === cancelled) {
-          return this.#cancel(json)
-        }
-        secrets = answer
-      } else {
-        current.nextSteps.push(
-          ...secretsNeeded.map(
-            (variable) => `Set ${variable.name} in ${this.#settings.secretsFile}: ${variable.description}`
-          )
-        )
+    if (interactive && unset.length > 0) {
+      const answer = await askEnv(unset, this.io.prompter)
+      if (answer === cancelled) {
+        return this.#cancel(json)
       }
+      secrets = answer
+    } else if (!interactive) {
+      current.nextSteps.push(
+        ...unset
+          .filter((variable) => variable.secret && variable.required)
+          .map((variable) => `Set ${variable.name} in ${this.#settings.secretsFile}: ${variable.description}`)
+      )
     }
     if (!interactive && !flags.booleans.has("yes")) {
       current.notices.push({

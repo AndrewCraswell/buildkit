@@ -104,8 +104,10 @@ Contribution kinds: `dependency`, `script`, `env`, `file` (`owned`, `seed` or `s
 
 The wizard is generated from the catalog, so a new add-on or a new choice in a slot needs no CLI code. It asks, in
 order: the template, the project name, the mode, each slot (yes or no first for an optional slot, then which one), the
-optional add-ons in one multi-select, the options each chosen add-on lists in `ask`, and required secrets with a masked
-prompt. Then it shows the plan and asks for one confirmation, which defaults to no.
+optional add-ons in one multi-select, the options each chosen add-on lists in `ask`, and the plan's environment
+variables, with a masked prompt for secrets. A required variable's example is its default, and an optional one can be
+left blank. Then it shows the plan and asks for one confirmation, which defaults to no. The answers go to the secrets
+file. Later commands ask only for required secrets that file doesn't have yet.
 
 A slot's choices are the add-ons whose `supports()` accepts the target, and a slot with one fitting choice isn't asked.
 Required add-ons are never asked about, so their options must all have defaults.
