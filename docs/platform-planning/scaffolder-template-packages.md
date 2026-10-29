@@ -74,16 +74,16 @@ export default definePack({
 
 ## Installing and later commands
 
-- **Installing.** Packs install like earlier catalog versions (`CatalogStore`). npm puts each one into the user's cache
-  folder, never into the project, without running its scripts. The engine records the package's integrity and checks it
-  on every load.
-- **The lock.** It records each pack: `packs: { "@acme/tower-defense": { version, integrity } }`. `add`, `sync`,
-  `check`, `status` and `explain` load that exact version from the cache, fetching it when it's missing. They refuse a
-  copy whose integrity doesn't match.
+- **Installing.** `PackStore` installs packs the way `CatalogStore` installs earlier catalog versions. npm puts each one
+  into the user's cache folder, never into the project, without running its scripts. The engine records the package's
+  integrity and checks it on every load.
+- **The lock.** It records each pack: `packs: { "@acme/tower-defense": { version, integrity } }`. `add`, `config`,
+  `sync`, `check`, `explain` and `schema` load that exact version from the cache, fetching it when it's missing. They
+  refuse a copy whose integrity doesn't match. `status` reads only the lock and the files, so it never loads a pack.
 - **Upgrades.** `upgrade` moves each pack to its newest version whose `extends` range includes the installed catalog.
   `upgrade --list` shows that move. Seeds merge three-way as they do for built-in templates. With stored seed bases, the
   old pack version isn't needed. With regenerated bases, it comes from the cache.
-- **Offline.** A cached pack works offline. A missing one fails with `E_BASELINE_UNAVAILABLE`, and the error names the
+- **Offline.** A cached pack works offline. A missing one fails with `E_PACKAGE_UNAVAILABLE`, and the error names the
   package.
 
 ## Trust

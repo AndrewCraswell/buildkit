@@ -210,6 +210,8 @@ describe("template packages", () => {
     const result = await run(["sync", "--cwd", "demo", "--json"], npm)
     expect(envelope(result.out).error).toMatchObject({ code: "E_PACKAGE_UNAVAILABLE" })
     expect(envelope(result.out).error?.message).toContain("failed its integrity check")
+    // No command fetches the same version again, so the error says to delete the cached copy.
+    expect(envelope(result.out).error?.message).toContain(`Delete ${join(root, "cache/packs/@acme/tower/1.0.0")}`)
 
     // A cache file that isn't JSON is the cache's problem, not an internal error.
     for (const file of ["integrity.json", "node_modules/@acme/tower/package.json"]) {
@@ -354,6 +356,16 @@ describe("template packages", () => {
     writeFileSync(join(folder, "nested.js"), packSource("0.1.4"))
     expect(envelope((await run(["catalog", "check", "tower", "--json"], npm)).out).notices?.[0]?.text).toContain(
       "@acme/tower@0.1.4 works with @fixture/catalog@1.0.0"
+    )
+
+    // Node matches module-sync for import() too.
+    writeFileSync(
+      join(folder, "package.json"),
+      JSON.stringify({ name: "@acme/tower", version: "0.1.5", type: "module", exports: { "module-sync": "./sync.js" } })
+    )
+    writeFileSync(join(folder, "sync.js"), packSource("0.1.5"))
+    expect(envelope((await run(["catalog", "check", "tower", "--json"], npm)).out).notices?.[0]?.text).toContain(
+      "@acme/tower@0.1.5 works with @fixture/catalog@1.0.0"
     )
   })
 })

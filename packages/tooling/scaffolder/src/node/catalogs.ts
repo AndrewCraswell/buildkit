@@ -148,7 +148,7 @@ export class CatalogStore {
     this.#check(version)
     const folder = this.folder(version)
     const name = this.#installed.id
-    if (cachedIntegrity(folder, name, expectedIntegrity, "E_BASELINE_UNAVAILABLE") === undefined) {
+    if (cachedIntegrity(folder, name, expectedIntegrity, "E_BASELINE_UNAVAILABLE", "Fetch it again.") === undefined) {
       return undefined
     }
     const module = await importPackage(folder, name, "E_BASELINE_UNAVAILABLE")
@@ -232,8 +232,14 @@ export class PackStore {
     }
     const folder = this.folder(name, version)
     const integrity =
-      cachedIntegrity(folder, name, expectedIntegrity, "E_PACKAGE_UNAVAILABLE") ??
-      (await installPackage(this.#run, folder, name, version, expectedIntegrity, "E_PACKAGE_UNAVAILABLE"))
+      cachedIntegrity(
+        folder,
+        name,
+        expectedIntegrity,
+        "E_PACKAGE_UNAVAILABLE",
+        // No command fetches the same version again, so the cached copy has to go.
+        `Delete ${folder} and run the command again.`
+      ) ?? (await installPackage(this.#run, folder, name, version, expectedIntegrity, "E_PACKAGE_UNAVAILABLE"))
     const module = await importPackage(folder, name, "E_PACKAGE_UNAVAILABLE")
     const pack = isRecord(module) ? module.default : undefined
     if (!isTemplatePack(pack)) {
@@ -322,12 +328,13 @@ function lockedIntegrity(folder: string, name: string, code: ErrorCode): string 
   return entry.integrity
 }
 
-/** A cached package's integrity, after checking it. `undefined` when it isn't cached. */
+/** A cached package's integrity, after checking it. `undefined` when it isn't cached. `remedy` says what to do on a mismatch. */
 function cachedIntegrity(
   folder: string,
   name: string,
   expectedIntegrity: string | undefined,
-  code: ErrorCode
+  code: ErrorCode,
+  remedy: string
 ): string | undefined {
   if (!statSync(join(folder, "integrity.json"), { throwIfNoEntry: false })) {
     return undefined
@@ -339,7 +346,7 @@ function cachedIntegrity(
     recorded.data.integrity !== integrity ||
     (expectedIntegrity !== undefined && integrity !== expectedIntegrity)
   ) {
-    throw new PlanError(code, `The cached ${name}@${basename(folder)} failed its integrity check. Fetch it again.`)
+    throw new PlanError(code, `The cached ${name}@${basename(folder)} failed its integrity check. ${remedy}`)
   }
   return integrity
 }
@@ -384,7 +391,7 @@ function entryFile(packageFolder: string, code: ErrorCode): string {
   return exportTarget(root) ?? (typeof manifest.main === "string" ? manifest.main : "index.js")
 }
 
-const importConditions = new Set(["node", "import", "default"])
+const importConditions = new Set(["node", "import", "module-sync", "default"])
 
 /** The file an export resolves to for `import()` in Node: the first condition that matches, in the order written. */
 function exportTarget(value: unknown): string | undefined {
