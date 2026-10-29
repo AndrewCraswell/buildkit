@@ -7,26 +7,28 @@ on:
 permissions:
   contents: read
 jobs:
+  ci-verify:
+    uses: betterapps-hq/pipelines/.github/workflows/ci-verify.yml@978c87e0f9676edfb85ea5ca735e3cea656c8475 # v1.1.0
+    with:
+      # The release notes check diffs a pull request against its base branch, so it needs the whole history.
+      fetch-depth: 0
+      command: |
+        if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+          BASE_BRANCH="$GITHUB_BASE_REF" pnpm --filter @repo/api-tools release:check
+        fi
+        pnpm validate
+  # Branch protection and merge-release.yml expect a check named verify, and a reusable workflow's checks are named after
+  # the calling job, such as "ci-verify / Verify (ubuntu-latest)". This job reports ci-verify's result as verify.
   verify:
+    needs: ci-verify
+    if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Require release notes for public package changes
-        if: github.event_name == 'pull_request'
+      - name: Require ci-verify to pass
         env:
-          BASE_BRANCH: ${{ github.base_ref }}
-        run: pnpm --filter @repo/api-tools release:check
-      - name: Verify code, public API baselines, and builds
-        run: pnpm validate
+          RESULT: ${{ needs.ci-verify.result }}
+        run: test "$RESULT" = success
   integration:
     strategy:
       fail-fast: false
@@ -35,15 +37,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: betterapps-hq/pipelines/github/actions/setup@978c87e0f9676edfb85ea5ca735e3cea656c8475 # v1.1.0
       - run: pnpm --filter @buildkitgg/dev-domains test:integration
       - run: pnpm --filter @buildkitgg/scaffolder test:integration
       - run: pnpm turbo run build --filter=@buildkitgg/cli^...
@@ -52,30 +46,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: betterapps-hq/pipelines/github/actions/setup@978c87e0f9676edfb85ea5ca735e3cea656c8475 # v1.1.0
       - name: Test the Drizzle adapter on PostgreSQL, Neon and MySQL servers
         run: pnpm turbo run test:servers --filter=@better-apps/drizzle
   templates:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: betterapps-hq/pipelines/github/actions/setup@978c87e0f9676edfb85ea5ca735e3cea656c8475 # v1.1.0
       - run: pnpm turbo run build --filter=@buildkitgg/cli...
       - name: Generate Buildkit apps, then install, check, lint, build and type-check each one
         run: pnpm --filter @buildkitgg/cli test:smoke
