@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { browserI18n } from "./browser"
 import { createI18n } from "./instance"
 import { sourceLocale } from "./locales"
+import { followLocale } from "./navigation"
 import { LocaleProvider } from "./provider"
 
 interface LocaleWrapProps {
@@ -18,5 +19,8 @@ export function withI18n(router: AnyRouter) {
   const { Wrap: Inner } = router.options
   router.options.Wrap = function LocaleWrap({ children }: LocaleWrapProps) {
     return <LocaleProvider i18n={i18n}>{Inner ? <Inner>{children}</Inner> : children}</LocaleProvider>
+  }
+  if (!router.isServer) {
+    followLocale(router, i18n)
   }
 }

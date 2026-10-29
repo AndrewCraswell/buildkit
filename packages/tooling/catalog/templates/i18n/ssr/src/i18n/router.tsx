@@ -5,6 +5,7 @@ import type { ReactNode } from "react"
 import { createI18n } from "./instance"
 import { sourceLocale } from "./locales"
 import { isLocale } from "./match"
+import { followLocale } from "./navigation"
 import { LocaleProvider } from "./provider"
 
 /** The instance the locale middleware created for this request. Only the server has one. */
@@ -73,5 +74,6 @@ export function withI18n(router: AnyRouter) {
         i18n.loadAndActivate({ locale: state.locale, messages: state.messages })
       }
     }
+    followLocale(router, i18n)
   }
 }

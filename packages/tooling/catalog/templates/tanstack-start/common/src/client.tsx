@@ -10,7 +10,13 @@ const steps: BootstrapStep[] = [...appBootstrap.pre, ...appBootstrap.framework, 
 
 async function start() {
   for (const step of steps) {
-    await step()
+    // A failed step is reported and the app still hydrates: a page with no handlers is worse than one without what the
+    // step sets up.
+    try {
+      await step()
+    } catch (error) {
+      console.error("A bootstrap step failed.", error)
+    }
   }
   startTransition(() => {
     hydrateRoot(

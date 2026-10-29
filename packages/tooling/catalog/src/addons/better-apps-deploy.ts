@@ -37,7 +37,7 @@ export const betterAppsDeploy = defineAddon({
   version: "1.0.0",
   title: "Better Apps deploys",
   description:
-    "Deploys to staging with Better Apps' deploy service on every push to main. Waits on Better Apps' deploy packages.",
+    "Deploys to staging with Better Apps' deploy service once CI passes on main. Waits on Better Apps' deploy packages.",
   requires: ["@buildkit/ci"],
   supports: ({ target }) => (target.has("vite") ? true : "The Better Apps plugin is a Vite plugin."),
   contribute(ctx): Contribution[] {
@@ -57,7 +57,14 @@ export const betterAppsDeploy = defineAddon({
       },
       file("better-apps.environments.jsonc", environments(used)),
       { kind: "yaml", path: deployWorkflow, pointer: "/name", op: "set", value: "Deploy" },
-      { kind: "yaml", path: deployWorkflow, pointer: "/on", op: "set", value: { push: { branches: ["main"] } } },
+      // Runs when CI finishes on main, so a commit deploys only once its checks pass.
+      {
+        kind: "yaml",
+        path: deployWorkflow,
+        pointer: "/on",
+        op: "set",
+        value: { workflow_run: { workflows: ["CI"], types: ["completed"], branches: ["main"] } }
+      },
       { kind: "yaml", path: deployWorkflow, pointer: "/permissions", op: "set", value: { contents: "read" } },
       {
         kind: "yaml",
@@ -66,10 +73,22 @@ export const betterAppsDeploy = defineAddon({
         op: "set",
         value: { group: "deploy-staging", "cancel-in-progress": false }
       },
+      {
+        kind: "yaml",
+        path: deployWorkflow,
+        pointer: "/jobs/staging/if",
+        op: "set",
+        value: "github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'"
+      },
       { kind: "yaml", path: deployWorkflow, pointer: "/jobs/staging/runs-on", op: "set", value: "ubuntu-latest" },
       { kind: "yaml", path: deployWorkflow, pointer: "/jobs/staging/environment", op: "set", value: "staging" },
       ...[
-        ...setupSteps(),
+        // The commit CI checked, not whatever main is now.
+        ...setupSteps().map((step) =>
+          step.id === "checkout"
+            ? { ...step, with: { ...step.with, ref: "${{ github.event.workflow_run.head_sha }}" } }
+            : step
+        ),
         { id: "deploy", name: "Deploy to staging with Better Apps", run: "pnpm exec better-apps deploy --env staging" }
       ].map((step) => ciStep(step, deployWorkflow, "staging"))
     ]

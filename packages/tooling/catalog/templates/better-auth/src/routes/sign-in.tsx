@@ -28,17 +28,22 @@ function SignIn() {
     }
     setBusy(true)
     setError(null)
-    const result =
-      mode === "sign-in"
-        ? await authClient.signIn.email({ email, password })
-        : await authClient.signUp.email({ name, email, password })
-    setBusy(false)
-    if (result.error) {
-      setError(result.error.message ?? "That didn’t work. Check your details and try again.")
-      return
+    try {
+      const result =
+        mode === "sign-in"
+          ? await authClient.signIn.email({ email, password })
+          : await authClient.signUp.email({ name, email, password })
+      if (result.error) {
+        setError(result.error.message ?? "That didn’t work. Check your details and try again.")
+        return
+      }
+      // Loaders run again, so every route sees the new session.
+      await router.invalidate()
+    } catch {
+      setError("That didn’t work. Check your connection and try again.")
+    } finally {
+      setBusy(false)
     }
-    // Loaders run again, so every route sees the new session.
-    await router.invalidate()
   }
 
   async function handleSignOut() {

@@ -198,6 +198,25 @@ describe("the localization add-on", () => {
       initRequest({ optional: ["@buildkit/i18n"], options: { "@buildkit/i18n": { locales: ["../x"] } } })
     )
     expect(unsafe.error?.code).toBe("E_INVALID_OPTIONS")
+    // A localized URL has to set the locale, so URL detection can't be left out while URLs are localized.
+    const ignored = await planProject(
+      {},
+      initRequest({ optional: ["@buildkit/i18n"], options: { "@buildkit/i18n": { detection: ["cookie"] } } })
+    )
+    expect(ignored.error).toMatchObject({ code: "E_INVALID_OPTIONS", message: expect.stringContaining('"url"') })
+    const cookieOnly = await init({
+      optional: ["@buildkit/i18n"],
+      options: { "@buildkit/i18n": { detection: ["cookie"], localizedUrls: false } }
+    })
+    expect(cookieOnly.status).toBe("planned")
+  })
+
+  it("activates the locale a client-side navigation lands on, in both render models", async () => {
+    for (const mode of ["ssr", "spa"]) {
+      const planned = await init({ mode, optional: ["@buildkit/i18n"] })
+      expect(paths(planned)).toContain("src/i18n/navigation.ts")
+      expect(written(planned, "src/i18n/router.tsx")).toContain("followLocale(router, i18n)")
+    }
   })
 
   it("adds to an app later without touching its starter files", async () => {
@@ -221,9 +240,13 @@ describe("the Better Apps deploys add-on", () => {
     const config = written(planned, generated.config)
     expect(config).toContain('import { betterApps } from "@better-apps/tanstack-start/vite"')
     expect(config).toContain('framework: [vitePluginsById["@buildkit/better-apps-deploy/better-apps"]]')
-    expect(written(planned, ".github/workflows/deploy.yml")).toContain(
-      "run: pnpm exec better-apps deploy --env staging"
-    )
+    const deploy = written(planned, ".github/workflows/deploy.yml")
+    expect(deploy).toContain("run: pnpm exec better-apps deploy --env staging")
+    // A commit deploys once CI passed on it, and the job checks out that commit.
+    expect(deploy).toContain("workflow_run:")
+    expect(deploy).toContain("github.event.workflow_run.conclusion == 'success'")
+    expect(deploy).toContain("ref: ${{ github.event.workflow_run.head_sha }}")
+    expect(deploy).not.toContain("push:")
     const environments = written(planned, "better-apps.environments.jsonc")
     expect(environments).toContain('"sql": "per-pr"')
     expect(environments).not.toMatch(/cloudflare|wrangler/i)

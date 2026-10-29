@@ -6,17 +6,23 @@ import { ciStep } from "./ci.js"
 // Tags become file names in src/locales, so they're limited to letters, digits and hyphens.
 const localeTag = z.string().regex(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/, "Use a language tag such as en, fr or pt-BR.")
 
-const options = z.object({
-  sourceLocale: localeTag.default("en").describe("The locale your messages are written in"),
-  locales: z.array(localeTag).min(1).default(["en"]).describe("Locales the app is translated into"),
-  detection: z
-    .array(z.enum(["url", "cookie", "header"]))
-    .default(["url", "cookie", "header"])
-    .describe(
-      "Where a visitor's locale comes from, in order: the URL prefix, the locale cookie, the browser's languages"
-    ),
-  localizedUrls: z.boolean().default(true).describe("Put the locale in URLs, such as /fr/about")
-})
+const options = z
+  .object({
+    sourceLocale: localeTag.default("en").describe("The locale your messages are written in"),
+    locales: z.array(localeTag).min(1).default(["en"]).describe("Locales the app is translated into"),
+    detection: z
+      .array(z.enum(["url", "cookie", "header"]))
+      .default(["url", "cookie", "header"])
+      .describe(
+        "Where a visitor's locale comes from, in order: the URL prefix, the locale cookie, the browser's languages"
+      ),
+    localizedUrls: z.boolean().default(true).describe("Put the locale in URLs, such as /fr/about")
+  })
+  // A URL such as /fr/about has to show French, so the URL has to be one of the places the locale comes from.
+  .refine((value) => !value.localizedUrls || value.detection.includes("url"), {
+    message: 'Localized URLs need "url" in detection. Add it, or set localizedUrls to false.',
+    path: ["detection"]
+  })
 
 type I18nOptions = z.infer<typeof options>
 
@@ -100,6 +106,7 @@ export const i18n = defineAddon({
       common("lingui.config.ts"),
       common("src/i18n/match.ts"),
       common("src/i18n/instance.ts"),
+      common("src/i18n/navigation.ts"),
       common("src/i18n/provider.tsx"),
       ...allLocales(options).map((locale) => file(`src/locales/${locale}.po`, emptyCatalog(locale), "sample")),
       {
