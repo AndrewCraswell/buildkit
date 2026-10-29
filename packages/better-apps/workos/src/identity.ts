@@ -68,8 +68,10 @@ export type WorkOSIdentityOptions = (
   searchOutsideOrgs?: boolean | undefined
 }
 
-// WorkOS returns at most 100 results per page. Users are cached for a minute, at most 1,000 of them.
+// WorkOS returns at most 100 results per page, and a search reads at most 10 of them. Users are cached for a minute, at
+// most 1,000 of them.
 const pageSize = 100
+const pagesSearched = 10
 const concurrentCalls = 10
 const cacheTime = 60_000
 const cacheSize = 1000
@@ -174,11 +176,14 @@ export function workosIdentity(options: WorkOSIdentityOptions): Identity {
         return []
       }
       // WorkOS has no text search, so this reads the users a page at a time and keeps those whose name or email
-      // matches, until it has enough.
+      // matches, until it has enough. It stops after the first 1,000 users, so a keystroke never reads a large
+      // organization end to end.
       const text = query.trim().toLowerCase()
       const found: IdentityUser[] = []
       let after: string | undefined
+      let pages = 0
       do {
+        pages += 1
         const page = await workos.userManagement.listUsers({
           ...(orgId === null ? {} : { organizationId: orgId }),
           limit: pageSize,
@@ -194,7 +199,7 @@ export function workosIdentity(options: WorkOSIdentityOptions): Identity {
           }
         }
         after = page.listMetadata.after ?? undefined
-      } while (after)
+      } while (after && pages < pagesSearched)
       return found
     }
   }

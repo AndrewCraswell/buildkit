@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite"
 import { betterAuth, type BetterAuthOptions } from "better-auth"
 import { getMigrations } from "better-auth/db/migration"
 import { organization } from "better-auth/plugins/organization"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { betterAuthIdentity } from "./index.js"
 
 const baseURL = "https://app.test"
@@ -53,14 +53,18 @@ function helpers(handler: (request: Request) => Promise<Response>, database: Dat
   }
 
   /** Adds users straight to the database, faster than signing each one up. */
-  const addUsers = (count: number, name: (index: number) => string = (index) => `User ${index}`) => {
+  const addUsers = (
+    count: number,
+    name: (index: number) => string = (index) => `User ${index}`,
+    email: (index: number) => string = (index) => `user${index}@example.com`
+  ) => {
     const insert = database.prepare(
       "INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt) VALUES (?, ?, ?, 1, ?, ?)"
     )
     return Array.from({ length: count }, (_, index) => {
       const id = crypto.randomUUID()
       const now = new Date().toISOString()
-      insert.run(id, name(index), `user${index}@example.com`, now, now)
+      insert.run(id, name(index), email(index), now, now)
       return id
     })
   }
@@ -261,6 +265,29 @@ describe("betterAuthIdentity", () => {
       const names = (await identity.searchUsers?.("user 19", { orgId: acme.id, limit: 20 }))?.map((user) => user.name)
       expect(names?.sort()).toEqual(Array.from({ length: 10 }, (_, index) => `User 19${index}`))
       expect(await identity.searchUsers?.("", { orgId: acme.id, limit: 500 })).toHaveLength(202)
+    })
+
+    it("searches users by name and email in organizations of over 1,000 members", async () => {
+      const { auth, addUsers, addMembers, acme } = await createOrganizationApp()
+      addMembers(
+        acme.id,
+        addUsers(1100, (index) => `Member ${String(index).padStart(4, "0")}`)
+      )
+      addUsers(
+        50,
+        (index) => `Member outside ${index}`,
+        (index) => `outside${index}@example.com`
+      )
+      const findMany = vi.spyOn((await auth.$context).adapter, "findMany")
+      const identity = betterAuthIdentity(auth)
+      const names = (await identity.searchUsers?.("member 10", { orgId: acme.id, limit: 200 }))?.map(
+        (user) => user.name
+      )
+      expect(names).toEqual(Array.from({ length: 100 }, (_, index) => `Member ${1000 + index}`))
+      // Two pages of matching users, and the members among each.
+      expect(findMany).toHaveBeenCalledTimes(4)
+      expect(await identity.searchUsers?.("outside", { orgId: acme.id })).toEqual([])
+      expect(await identity.searchUsers?.("", { orgId: acme.id, limit: 5 })).toHaveLength(5)
     })
 
     it("suggests nobody outside an organization unless the app allows it", async () => {

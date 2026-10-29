@@ -9,6 +9,11 @@ import type { Identity } from 'better-apps';
 // @public
 export interface BetterAuthDatabase {
     // (undocumented)
+    count(data: {
+        model: string;
+        where?: BetterAuthWhere[] | undefined;
+    }): Promise<number>;
+    // (undocumented)
     findMany<T>(data: {
         model: string;
         where?: BetterAuthWhere[] | undefined;

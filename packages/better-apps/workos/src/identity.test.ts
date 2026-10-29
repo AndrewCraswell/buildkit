@@ -395,6 +395,15 @@ describe("workosIdentity", () => {
       ])
     })
 
+    it("reads at most the first 1,000 users", async () => {
+      const client = mockWorkOS(many(1200, { org_acme: member }))
+      const identity = workosIdentity({ workos: client, cookiePassword })
+      expect(await identity.searchUsers?.("user 999", { orgId: "org_acme" })).toHaveLength(1)
+      client.userManagement.listUsers.mockClear()
+      expect(await identity.searchUsers?.("user 1100", { orgId: "org_acme" })).toEqual([])
+      expect(client.userManagement.listUsers).toHaveBeenCalledTimes(10)
+    })
+
     it("suggests nobody outside an organization unless the app allows it", async () => {
       const client = mockWorkOS(people)
       expect(await workosIdentity({ workos: client, cookiePassword }).searchUsers?.("a", { orgId: null })).toEqual([])

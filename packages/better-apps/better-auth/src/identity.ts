@@ -20,6 +20,7 @@ export interface BetterAuthDatabase {
     limit?: number | undefined
     offset?: number | undefined
   }): Promise<T[]>
+  count(data: { model: string; where?: BetterAuthWhere[] | undefined }): Promise<number>
 }
 
 /** The parts of a Better Auth instance, the one `betterAuth()` returns, that the identity reads. */
@@ -69,6 +70,8 @@ interface MemberRow {
 // Cloudflare D1 binds at most 100 parameters per statement, so ids are queried 90 at a time, leaving room for the rest.
 const idsPerQuery = 90
 const userFields = ["id", "name", "email", "image"]
+// A search reads an organization of up to this many members in full, and reads at most this many users in a larger one.
+const searchedInFull = 1000
 
 /**
  * An identity that reads users from a Better Auth instance: the signed-in user from the request's session, and, with
@@ -167,8 +170,8 @@ export function betterAuthIdentity(auth: BetterAuthInstance, options: BetterAuth
       }
       const text = query.trim().toLowerCase()
       const db = await database()
-      if (orgId === null) {
-        const users = await db.findMany<UserRow>({
+      const byText = (offset: number, pageLimit: number) =>
+        db.findMany<UserRow>({
           model: "user",
           where: text
             ? [
@@ -178,33 +181,57 @@ export function betterAuthIdentity(auth: BetterAuthInstance, options: BetterAuth
             : [],
           select: userFields,
           sortBy: { field: "name", direction: "asc" },
-          limit
-        })
-        return users.map(toProfile)
-      }
-      // Reads the organization's members a page at a time and keeps those whose name or email matches, until it has
-      // enough. Most organizations fit in one page. The match runs here rather than in the query, because Better Auth's
-      // adapters don't all group an AND with ORs the same way.
-      const found: IdentityUser[] = []
-      for (let offset = 0; found.length < limit; offset += idsPerQuery) {
-        const members = await db.findMany<{ userId: string }>({
-          model: "member",
-          where: [{ field: "organizationId", value: orgId }],
-          // Sorting by a column that isn't selected fails on some adapters.
-          select: ["id", "userId"],
-          sortBy: { field: "id", direction: "asc" },
-          limit: idsPerQuery,
+          limit: pageLimit,
           offset
         })
-        const users = await findUsers(
+      if (orgId === null) {
+        return (await byText(0, limit)).map(toProfile)
+      }
+      // The organization's members and the name match can't go in one query, because Better Auth's adapters don't all
+      // group an AND with ORs the same way. So a search reads one side a page at a time and checks the other.
+      const inOrg = [{ field: "organizationId", value: orgId }]
+      const found: IdentityUser[] = []
+      const members = await db.count({ model: "member", where: inOrg })
+      if (!text || members <= searchedInFull) {
+        // Reads the members and keeps those whose name or email matches, until it has enough.
+        for (let offset = 0; offset < members && found.length < limit; offset += idsPerQuery) {
+          const page = await db.findMany<{ userId: string }>({
+            model: "member",
+            where: inOrg,
+            // Sorting by a column that isn't selected fails on some adapters.
+            select: ["id", "userId"],
+            sortBy: { field: "id", direction: "asc" },
+            limit: idsPerQuery,
+            offset
+          })
+          const users = await findUsers(
+            db,
+            page.map((member) => member.userId)
+          )
+          const matches = [...users.values()]
+            .filter((user) => [user.name, user.email].some((value) => value.toLowerCase().includes(text)))
+            .sort((a, b) => a.name.localeCompare(b.name))
+          found.push(...matches.slice(0, limit - found.length).map(toProfile))
+        }
+        return found
+      }
+      // A larger organization would take too many reads, so the database finds the users whose name or email matches,
+      // and the members among them are kept. A short query that matches over 1,000 users can miss some members; a
+      // longer one narrows it.
+      for (let offset = 0; offset < searchedInFull && found.length < limit; offset += idsPerQuery) {
+        const users = await byText(offset, idsPerQuery)
+        const inThisOrg = await findMembers(
           db,
-          members.map((member) => member.userId)
+          orgId,
+          users.map((user) => user.id)
         )
-        const matches = [...users.values()]
-          .filter((user) => [user.name, user.email].some((value) => value.toLowerCase().includes(text)))
-          .sort((a, b) => a.name.localeCompare(b.name))
-        found.push(...matches.slice(0, limit - found.length).map(toProfile))
-        if (members.length < idsPerQuery) {
+        found.push(
+          ...users
+            .filter((user) => inThisOrg.has(user.id))
+            .slice(0, limit - found.length)
+            .map(toProfile)
+        )
+        if (users.length < idsPerQuery) {
           break
         }
       }

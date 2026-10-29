@@ -32,8 +32,10 @@ Pass the instance `betterAuth()` returns. Sign-in, sessions and the UI stay with
 - `getActorsFor` reads the users and their `member` rows with one query each, and leaves out users who aren't members.
   With no organization, it builds an actor for every user that exists.
 - `getUsers` reads names, emails and images from the `user` table.
-- `searchUsers` matches names and emails, ignoring case, among the organization's members, reading them 90 at a time
-  until it has enough.
+- `searchUsers` matches names and emails, ignoring case, among the organization's members. In an organization of up to
+  1,000 members it reads them 90 at a time until it has enough. In a larger one it asks the database for users whose
+  name or email matches and keeps the members, reading at most 1,000 users, so a query that matches more than that can
+  miss members until it's longer.
 - Outside an organization, `searchUsers` searches every user only when `searchOutsideOrgs` is true. That's the default
   without the organization plugin, for apps without organizations. With the plugin it's false, so nobody outside an
   organization can look through every user's name and email.

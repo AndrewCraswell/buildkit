@@ -39,7 +39,8 @@ to check sessions. Sign-in, sessions and the UI stay with AuthKit.
 - `getUsers` asks for each user and remembers the answer for a minute, users that don't exist too. It remembers up to
   1,000 users and forgets the least recently used first. A user's name is their name, or their first and last name.
 - WorkOS has no text search, so `searchUsers` lists the organization's users 100 at a time and keeps those whose name or
-  email matches, ignoring case, until it has enough. A search with few matches in a large organization reads every page.
+  email matches, ignoring case, until it has enough. It reads at most the first 1,000 users, so in a larger organization
+  people further down the list aren't suggested.
 - Outside an organization, `searchUsers` searches every user only when `searchOutsideOrgs` is true, for apps without
   organizations. It's false by default, so nobody outside an organization can look through every user's name and email.
 - At most 10 calls run at a time. Errors from WorkOS, such as rate limits, are thrown.
