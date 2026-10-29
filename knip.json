@@ -149,6 +149,14 @@
       "entry": ["src/index.ts", "src/client.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
+    "packages/better-apps/better-auth": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/clerk": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
     "packages/better-apps/cli": {
       "entry": ["src/index.ts", "src/bin.ts", "test/fixtures/*.config.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
@@ -170,6 +178,10 @@
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
     "packages/better-apps/tanstack-start": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/workos": {
       "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
