@@ -250,7 +250,7 @@ export function defineTemplate(manifest: TemplateManifest): TemplateManifest;
 export function describeCatalog(catalog: CatalogManifest): CatalogDescription;
 
 // @public
-export const engineVersion = "0.0.0";
+export const engineVersion: string;
 
 // @public
 export type EntryValue = {
@@ -478,6 +478,7 @@ export const lockFileEntrySchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     class: z.ZodLiteral<"seed">;
     genHash: z.ZodString;
     diskHash: z.ZodString;
+    base: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, z.ZodObject<{
     class: z.ZodLiteral<"sample">;
     genHash: z.ZodString;
@@ -541,6 +542,7 @@ export const lockSchema: z.ZodObject<{
         class: z.ZodLiteral<"seed">;
         genHash: z.ZodString;
         diskHash: z.ZodString;
+        base: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>, z.ZodObject<{
         class: z.ZodLiteral<"sample">;
         genHash: z.ZodString;
@@ -709,7 +711,7 @@ export function pathProblem(path: string): string | undefined;
 export interface Plan {
     // (undocumented)
     baseline?: {
-        source: "installed" | "cache" | "two-way";
+        source: "installed" | "cache" | "stored" | "two-way";
         catalogVersion: string;
     };
     // (undocumented)
@@ -882,6 +884,7 @@ export interface ProductSettings {
     product: string;
     schemaUrl?: string;
     secretsFile: string;
+    seedBases?: "regenerate" | "stored";
     stateDir: string;
 }
 

@@ -199,8 +199,10 @@ When any command fails, it prints the envelope with `status: "error"`.
 `upgrade` renders the old baseline with the catalog version the lock records, renders the new one, and merges: seeds
 three-way, shared files by key, generated files by hash. Run `catalog fetch <version>` to cache an old version for
 offline use; without it, edited seeds need a decision. The cache is in your user cache folder, never in the project, so
-a cloned repository can't supply catalog code for the CLI to run. Migrations run when an add-on's version moves past
-theirs: option rewrites, codemods, package bumps, and agent tasks that are only listed.
+a cloned repository can't supply catalog code for the CLI to run. A product whose catalog isn't published sets
+`seedBases: "stored"` in `defineSettings`, which keeps each seed's generated text in the lock to merge against instead.
+Migrations run when an add-on's version moves past theirs: option rewrites, codemods, package bumps, and agent tasks
+that are only listed.
 
 ## Catalog CI
 

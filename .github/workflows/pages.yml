@@ -26,7 +26,7 @@ jobs:
         run: pnpm verify
       - name: Read Pages configuration
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Build the website for its configured URL
         env:
           PAGES_BASE: ${{ steps.pages.outputs.base_path }}/
@@ -39,7 +39,7 @@ jobs:
           cp -r apps/behavior-storybook/storybook-static apps/site/dist/storybook
           cp -r apps/docs/dist/site apps/site/dist/docs
           touch apps/site/dist/.nojekyll
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/site/dist
   deploy:
@@ -55,4 +55,4 @@ jobs:
     steps:
       - name: Deploy the verified website
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

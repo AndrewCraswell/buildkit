@@ -10,6 +10,12 @@ export interface ProductSettings {
   schemaUrl?: string
   /** Where the wizard writes required secrets. It's never part of a plan or the lock. */
   secretsFile: string
+  /**
+   * Where an upgrade finds the seed text it last wrote, to merge your edits three-way. `regenerate` (the default) renders
+   * it with the catalog version the lock records. `stored` keeps it in the lock, for a catalog that isn't published, so
+   * an old version can't be fetched.
+   */
+  seedBases?: "regenerate" | "stored"
 }
 
 export function defineSettings(settings: Pick<ProductSettings, "product"> & Partial<ProductSettings>): ProductSettings {

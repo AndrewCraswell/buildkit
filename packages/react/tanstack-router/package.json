@@ -10,7 +10,7 @@
   "license": "MIT",
   "peerDependencies": {
     "react": "^19.2.0",
-    "@tanstack/react-router": "^1.170.45"
+    "@tanstack/react-router": "^1.170.46"
   },
   "sideEffects": false,
   "dependencies": {
@@ -46,9 +46,9 @@
     "@types/react": "^19.3.0",
     "@types/node": "^24.13.2",
     "react": "19.3.1",
-    "happy-dom": "^21.0.3",
+    "happy-dom": "^21.0.4",
     "@types/react-dom": "^19.3.0",
-    "@tanstack/react-router": "^1.170.45"
+    "@tanstack/react-router": "^1.170.46"
   },
   "types": "./dist/index.d.ts",
   "repository": {

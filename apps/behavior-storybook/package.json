@@ -18,7 +18,7 @@
     "@buildkitgg/preferences-core": "workspace:*",
     "@buildkitgg/react-preferences": "workspace:*",
     "@buildkitgg/fluentui-theme": "workspace:*",
-    "@fluentui/react-components": "^9.74.9",
+    "@fluentui/react-components": "^9.74.11",
     "@buildkitgg/modal-core": "workspace:*",
     "@buildkitgg/react-modals": "workspace:*",
     "@buildkitgg/fluentui-modals-manager": "workspace:*",
@@ -30,8 +30,8 @@
     "@buildkitgg/react-routing": "workspace:*",
     "@buildkitgg/react-router": "workspace:*",
     "@buildkitgg/tanstack-router": "workspace:*",
-    "react-router": "^8.4.0",
-    "@tanstack/react-router": "^1.170.45",
+    "react-router": "^8.5.0",
+    "@tanstack/react-router": "^1.170.46",
     "@buildkitgg/react-configuration": "workspace:*"
   },
   "devDependencies": {
@@ -39,17 +39,17 @@
     "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "typescript": "catalog:",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "@vitejs/plugin-react": "^6.1.2",
-    "oxc-transform-react": "0.152.0",
+    "oxc-transform-react": "0.155.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/node": "^24.13.2",
     "@repo/storybook-config": "workspace:*",
-    "@storybook/react-vite": "10.6.2",
-    "storybook": "10.6.2",
-    "@chromatic-com/storybook": "^5.2.1",
-    "@storybook/addon-a11y": "10.6.2",
-    "@storybook/addon-vitest": "10.6.2"
+    "@storybook/react-vite": "10.6.3",
+    "storybook": "10.6.3",
+    "@chromatic-com/storybook": "^5.6.0",
+    "@storybook/addon-a11y": "10.6.3",
+    "@storybook/addon-vitest": "10.6.3"
   }
 }

@@ -20,13 +20,14 @@ module.exports = {
     }
   ],
   hooks: {
-    // The scaffolder records its own version in every project's lock, so its source copy follows each bump.
+    // The scaffolder records its own version in every project's lock, so its source copy follows each bump. The
+    // constant is widened to string so its public API report doesn't change with each release.
     postbump(packagePath, name, version) {
       if (name === "@buildkitgg/scaffolder") {
         const comment = "/** The engine's version, recorded in every lock. A test keeps it equal to package.json. */"
         writeFileSync(
           join(packagePath, "src/version.ts"),
-          `${comment}\nexport const engineVersion = ${JSON.stringify(version)}\n`
+          `${comment}\nexport const engineVersion = ${JSON.stringify(version)} as string\n`
         )
       }
     }

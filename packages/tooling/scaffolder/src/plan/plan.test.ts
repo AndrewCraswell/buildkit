@@ -686,6 +686,42 @@ describe("upgrade", () => {
     expect(unedited.status).toBe("planned")
   })
 
+  it("with stored seed bases, an edited seed merges without the old catalog", async () => {
+    const stored = { ...settings, seedBases: "stored" as const }
+    const files = await applyFixture({}, initRequest(), { settings: stored })
+    expect(lockOf(files).files["src/main.ts"]).toEqual(expect.objectContaining({ base: files["src/main.ts"] }))
+    const edited = { ...files, "src/main.ts": `// note\n${files["src/main.ts"]}` }
+    const planned = await planFixture(
+      edited,
+      { intent: { command: "upgrade" } },
+      { catalog: fixtureCatalog(2), settings: stored }
+    )
+    expect(planned.baseline).toEqual({ source: "stored", catalogVersion: "1.0.0" })
+    expect(planned.conflicts).toEqual([])
+    expect(planned.merged).toEqual([{ path: "src/main.ts", hunks: 1 }])
+    const next = applyInMemory(edited, planned)
+    expect(next["src/main.ts"]).toMatch(/^\/\/ note\n[\s\S]*export const ready = true\n$/)
+    const generated = await applyFixture({}, initRequest(), { catalog: fixtureCatalog(2), settings: stored })
+    expect(lockOf(next).files["src/main.ts"]).toEqual(expect.objectContaining({ base: generated["src/main.ts"] }))
+  })
+
+  it("records seed bases on the next sync once the product stores them, and never trusts a base that doesn't hash", async () => {
+    const stored = { ...settings, seedBases: "stored" as const }
+    const files = await project()
+    expect(lockOf(files).files["src/main.ts"]).not.toHaveProperty("base")
+    const synced = applyInMemory(files, await planFixture(files, { intent: { command: "sync" } }, { settings: stored }))
+    expect(lockOf(synced).files["src/main.ts"]).toEqual(expect.objectContaining({ base: files["src/main.ts"] }))
+    const lock = JSON.parse(synced[lockFile] ?? "{}")
+    lock.files["src/main.ts"].base = "export const forged = true\n"
+    const forged = { ...synced, [lockFile]: JSON.stringify(lock), "src/main.ts": `// note\n${files["src/main.ts"]}` }
+    const planned = await planFixture(
+      forged,
+      { intent: { command: "upgrade" } },
+      { catalog: fixtureCatalog(2), settings: stored }
+    )
+    expect(planned.conflicts).toEqual([expect.objectContaining({ id: "src/main.ts", kind: "baseline-unverified" })])
+  })
+
   it("add with a newer installed catalog asks to upgrade first, or to plan with the recorded version", async () => {
     const files = await project()
     const planned = await planFixture(files, addRequest(["i18n"]), { catalog: fixtureCatalog(2), catalogs })

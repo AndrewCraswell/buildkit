@@ -174,7 +174,7 @@ export interface Plan {
   request: PlanRequest
   fingerprint: string
   catalog: { id: string; version: string }
-  baseline?: { source: "installed" | "cache" | "two-way"; catalogVersion: string }
+  baseline?: { source: "installed" | "cache" | "stored" | "two-way"; catalogVersion: string }
   operations: Operation[]
   decisions: PlanDecision[]
   conflicts: PlanConflict[]

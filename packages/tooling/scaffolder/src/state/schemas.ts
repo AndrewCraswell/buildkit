@@ -32,7 +32,13 @@ const ownedEntry = z.object({
   diskHash: z.string(),
   contributors: z.array(z.string())
 })
-const seedEntry = z.object({ class: z.literal("seed"), genHash: z.string(), diskHash: z.string() })
+const seedEntry = z.object({
+  class: z.literal("seed"),
+  genHash: z.string(),
+  diskHash: z.string(),
+  /** What the engine generated, when the product stores seed bases. It hashes to `genHash`. */
+  base: z.string().optional()
+})
 const sampleEntry = z.object({ class: z.literal("sample"), genHash: z.string() })
 const sharedEntry = z.object({
   class: z.literal("shared"),
