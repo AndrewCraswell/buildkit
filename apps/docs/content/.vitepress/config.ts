@@ -15,6 +15,8 @@ export default defineConfig({
   outDir: fileURLToPath(new URL("../../dist/site", import.meta.url)),
   cleanUrls: true,
   lastUpdated: false,
+  // The API reference has thousands of pages. Rendering 64 at once (the default) exhausts memory on Windows.
+  buildConcurrency: 4,
   themeConfig: {
     logo: "/mark.svg",
     siteTitle: "Buildkit docs",

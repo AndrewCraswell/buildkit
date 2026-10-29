@@ -53,10 +53,6 @@ needs a human discussion**, not a silent add.
 
 ## Product copy and UX acceptance
 
-- Review every new or changed customer-facing string with the Fluent Agent MCP when it is available. Use the Microsoft
-  Content Style Guide knowledge base for wording and the relevant Fluent design knowledge base for the interaction.
-  Apply the guidance before considering the copy complete. If the MCP is unavailable, state that in the final result and
-  do not claim that the copy was Fluent-validated.
 - Never use a dot glyph, including `·` or `•`, as a visual separator. Use layout, separate text elements, or a clearly
   worded phrase instead.
 - Verify every new or changed UX feature in the integrated browser before considering it complete. Exercise the customer
