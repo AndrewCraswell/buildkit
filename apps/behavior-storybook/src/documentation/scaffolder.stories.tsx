@@ -38,13 +38,13 @@ export const WritingACatalog: StoryObj<typeof meta> = {
       <h2>Check it in CI</h2>
       <Code>
         {
-          'import { checkCatalog } from "@buildkitgg/scaffolder"\n\nconst problems = checkCatalog(catalog, { matrix: true })\nif (problems.length > 0) {\n  throw new Error(problems.join("\\n"))\n}'
+          'import catalog from "@acme/catalog"\nimport { checkCatalog } from "@buildkitgg/scaffolder"\n\nconst problems = checkCatalog(catalog, { matrix: true })\nif (problems.length > 0) {\n  throw new Error(problems.join("\\n"))\n}'
         }
       </Code>
       <p>
         The check returns a list of problems and doesn’t fail by itself, so throw when the list isn’t empty. It reports
-        broken references and slot defaults that aren’t the slot’s add-ons, and plans every pair of answers. These
-        examples describe code to run in Node; nothing here writes files.
+        broken references and slot defaults that aren’t the slot’s add-ons. Once those checks pass, it plans every pair
+        of answers. These examples describe code to run in Node; nothing here writes files.
       </p>
       <a href="https://github.com/AndrewCraswell/buildkit/tree/main/packages/tooling/scaffolder#readme">
         Full guide: commands, file ownership, upgrades and template packages ↗
