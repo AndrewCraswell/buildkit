@@ -68,8 +68,11 @@ const sharedFlags = {
   repeats: ["resolve"]
 } satisfies FlagSpec
 
-/** Commands on an existing project. They load the template packages its lock records first. */
-const projectCommands = new Set(["add", "config", "upgrade", "sync", "check", "status", "explain"])
+/**
+ * Commands on an existing project that use the catalog. They load the template packages its lock records first.
+ * `status` reads only the lock and the files, so it never runs a package's code.
+ */
+const projectCommands = new Set(["add", "config", "upgrade", "sync", "check", "explain"])
 
 function spec(extra: FlagSpec): FlagSpec {
   return {
@@ -222,14 +225,25 @@ export class CliRuntime {
       loaded.push(
         command === "upgrade"
           ? await this.#newestCompatible(store, name, recorded)
-          : await store.load(name, recorded.version, recorded.integrity)
+          : await this.#loadRecorded(name, recorded)
       )
     }
     this.#catalog = mergePacks(this.options.catalog, loaded)
   }
 
+  /** A template package version the lock records. Installs always record its integrity, so a record without one is refused. */
+  async #loadRecorded(name: string, recorded: PackRecord): Promise<LoadedPack> {
+    if (recorded.integrity === undefined) {
+      throw new PlanError(
+        "E_PACKAGE_UNAVAILABLE",
+        `The lock records ${name}@${recorded.version} without its integrity, so it can't be checked. Restore the lock from version control.`
+      )
+    }
+    return this.#packStore().load(name, recorded.version, recorded.integrity)
+  }
+
   async #newestCompatible(store: PackStore, name: string, recorded: PackRecord): Promise<LoadedPack> {
-    const current = await store.load(name, recorded.version, recorded.integrity)
+    const current = await this.#loadRecorded(name, recorded)
     let versions: string[]
     try {
       versions = await store.versions(name)
@@ -258,8 +272,13 @@ export class CliRuntime {
         ) {
           return candidate
         }
-      } catch {
-        // A version that won't install, isn't a pack or has an unreadable range isn't a candidate. Try the next one.
+      } catch (error) {
+        // A version that won't install, isn't a pack or has an unreadable range isn't a candidate. The plan says why, and
+        // the next one is tried.
+        this.#sourceNotices.push({
+          code: "template-package-skipped",
+          text: `${name}@${version} was skipped: ${errorInfo(error).message}`
+        })
       }
     }
     return current
@@ -327,7 +346,7 @@ export class CliRuntime {
           await store.load(lock.catalog.version, lock.catalog.integrity)
         }
         for (const [name, recorded] of Object.entries(lock.catalog.packs ?? {})) {
-          recordedPacks.push(await this.#packStore().load(name, recorded.version, recorded.integrity))
+          recordedPacks.push(await this.#loadRecorded(name, recorded))
         }
       } catch {
         // Without the old catalog, the planner plans two-way, or merges against stored seed bases.

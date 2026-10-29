@@ -153,6 +153,19 @@ describe("template packages", () => {
       "1.2.0-rc.1": packSource("1.2.0-rc.1"),
       "1.3.0": "export default {}\n"
     })
+    // Some npm versions nest the version list in another array.
+    const nested: CommandRunner = async (command, args, cwd) => {
+      const result = await newer.run(command, args, cwd)
+      return args[0] === "view" && args[2] === "versions" ? { ...result, output: `[${result.output}]` } : result
+    }
+    for (const npm of [newer, { run: nested }]) {
+      const listed = await run(["upgrade", "--cwd", "demo", "--list", "--json"], npm)
+      expect(envelope(listed.out).upgrade?.packs).toEqual([{ name: "@acme/tower", from: "1.0.0", to: "1.1.0" }])
+      expect(envelope(listed.out).notices).toContainEqual({
+        code: "template-package-skipped",
+        text: expect.stringContaining("@acme/tower@1.3.0 was skipped: @acme/tower@1.3.0 isn't a template package")
+      })
+    }
     const upgraded = await run(["upgrade", "--cwd", "demo", "--yes", "--json"], newer)
     expect(envelope(upgraded.out).upgrade?.packs).toEqual([{ name: "@acme/tower", from: "1.0.0", to: "1.1.0" }])
   })
@@ -193,6 +206,22 @@ describe("template packages", () => {
     const result = await run(["sync", "--cwd", "demo", "--json"], npm)
     expect(envelope(result.out).error).toMatchObject({ code: "E_PACKAGE_UNAVAILABLE" })
     expect(envelope(result.out).error?.message).toContain("failed its integrity check")
+
+    // status reads only the lock and the files, so it never loads the package.
+    npm.calls.length = 0
+    expect(JSON.parse((await run(["status", "--cwd", "demo", "--json"], npm)).out)).toMatchObject({
+      catalog: { id: "@fixture/catalog" }
+    })
+    expect(npm.calls).toEqual([])
+
+    // A lock record without its integrity can't be checked, so it isn't loaded.
+    const path = join(root, "demo/.fixture/lock.json")
+    const edited = lock()
+    delete edited.catalog.packs["@acme/tower"].integrity
+    writeFileSync(path, JSON.stringify(edited))
+    const unchecked = await run(["add", "i18n", "--cwd", "demo", "--yes", "--json"], npm)
+    expect(envelope(unchecked.out).error).toMatchObject({ code: "E_PACKAGE_UNAVAILABLE" })
+    expect(envelope(unchecked.out).error?.message).toContain("without its integrity")
   })
 
   it("explains packages it can't use, and never fetches a built-in name", async () => {

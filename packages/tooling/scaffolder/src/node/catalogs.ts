@@ -191,7 +191,8 @@ export class PackStore {
 
   async #versionsOf(name: string, spec: string, field: string): Promise<string[]> {
     const value = await this.#view(name, spec, field)
-    const list = (Array.isArray(value) ? value : [value]).filter(
+    // Some npm versions nest the list in another array.
+    const list = (Array.isArray(value) ? value.flat() : [value]).filter(
       (entry): entry is string => typeof entry === "string" && isValidVersion(entry)
     )
     return list.sort((left, right) => compareVersions(right, left))
