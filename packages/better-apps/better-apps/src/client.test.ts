@@ -139,6 +139,23 @@ describe("createBetterAppsClient", () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  it("stops waiting on headers that never resolve once the call is cancelled", async () => {
+    const fetch = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(() =>
+      Promise.resolve(Response.json(null))
+    )
+    const client = createBetterAppsClient({
+      fetch,
+      headers: () => new Promise<Record<string, string>>(() => undefined)
+    })
+    const controller = new AbortController()
+    const calling = client.$call("notes", "ping", undefined, { signal: controller.signal })
+    controller.abort()
+    await expect(calling).rejects.toMatchObject({ code: "ABORTED" })
+    const already = client.$call("notes", "ping", undefined, { signal: controller.signal })
+    await expect(already).rejects.toMatchObject({ code: "ABORTED" })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it("rejects with ABORTED when headers fail after a cancel, and with their own error otherwise", async () => {
     const fetch = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(() =>
       Promise.resolve(Response.json(null))

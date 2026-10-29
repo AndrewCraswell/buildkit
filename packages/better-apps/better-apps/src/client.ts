@@ -105,6 +105,24 @@ export class BetterAppsClientError extends Error {
 // Names a proxy must not answer, so the client isn't mistaken for a promise or a React element.
 const reserved = new Set(["then", "toJSON", "$$typeof", "constructor"])
 
+// Settles as `value` does, or rejects as soon as `signal` aborts, so a cancelled call stops waiting on slow headers.
+function unlessAborted<Value>(value: Value | Promise<Value>, signal: AbortSignal | undefined): Promise<Value> {
+  if (!signal) {
+    return Promise.resolve(value)
+  }
+  return new Promise<Value>((resolve, reject) => {
+    const stop = () => reject(signal.reason)
+    if (signal.aborted) {
+      stop()
+      return
+    }
+    signal.addEventListener("abort", stop, { once: true })
+    Promise.resolve(value)
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", stop))
+  })
+}
+
 function readError(status: number, body: unknown): BetterAppsClientError {
   const error = (body as { error?: { code?: unknown; message?: unknown; issues?: unknown } } | null)?.error
   if (error && typeof error.code === "string") {
@@ -127,7 +145,9 @@ export function createBetterAppsClient<App = BetterApp>(options: ClientOptions =
       new BetterAppsClientError("ABORTED", "The call was cancelled.", { status: 0, cause: signal?.reason })
     let headers: Headers
     try {
-      headers = new Headers(typeof options.headers === "function" ? await options.headers() : options.headers)
+      headers = new Headers(
+        typeof options.headers === "function" ? await unlessAborted(options.headers(), signal) : options.headers
+      )
     } catch (error) {
       // Headers that fail once the call is cancelled, such as a token refresh cut short by a sign-out, are part of it.
       if (signal?.aborted) {
