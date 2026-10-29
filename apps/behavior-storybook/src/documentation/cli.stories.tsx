@@ -13,7 +13,7 @@ export const CreateAnApp: StoryObj<typeof meta> = {
   render: () => (
     <Documentation
       title="Create a Buildkit app"
-      summary="Run these commands in a terminal. Nothing is written until you confirm the plan."
+      summary="In a terminal, the CLI shows the plan and asks before it writes. --yes or a reviewed --plan applies without asking; other runs without a terminal write nothing."
     >
       <p>
         <strong>Not available yet:</strong> <code>@buildkitgg/cli</code> and <code>@buildkitgg/catalog</code> aren’t on

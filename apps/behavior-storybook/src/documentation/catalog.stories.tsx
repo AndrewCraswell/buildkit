@@ -10,7 +10,11 @@ export default meta
 export const Overview: StoryObj<typeof meta> = { render: () => <OverviewPage /> }
 const addons = [
   ["ci", "Always included", "A GitHub Actions workflow: buildkit check, lint, format, build and type-check"],
-  ["sql", "Add a database?", "The main database with Drizzle, its schema and migrations"],
+  [
+    "sql",
+    "Add a database?",
+    "The main database with Drizzle, its schema and drizzle.config.ts. Run pnpm db:generate to write migrations"
+  ],
   ["better-auth", "Add sign-in?", "Better Auth on the main database, its routes and a sign-in page"],
   ["i18n", "Optional add-on", "Lingui catalogs, localized URLs and the html lang and dir attributes"],
   ["better-apps-deploy", "buildkit add only", "The Better Apps Vite plugin and a staging deploy workflow"]
@@ -52,7 +56,8 @@ export const TheAppTemplate: StoryObj<typeof meta> = {
       <h2>No cloud in the app</h2>
       <p>
         Apps have no Wrangler config, bindings or cloud names. Starter files import generated glue from{" "}
-        <code>src/generated/buildkit/</code> once, so adding an add-on only changes generated files. The database,
+        <code>src/generated/buildkit/</code> once, so adding an add-on never rewrites them. It changes the generated
+        files and adds what it needs, such as dependencies, settings, its own source files and workflows. The database,
         sign-in and deploy add-ons use Better Apps packages that aren’t on npm yet.
       </p>
       <a href="https://github.com/AndrewCraswell/buildkit/tree/main/packages/tooling/catalog#readme">
