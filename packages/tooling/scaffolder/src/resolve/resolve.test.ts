@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
 import { defineAddon } from "../manifest/define.js"
-import type { CatalogManifest } from "../manifest/types.js"
+import type { Answers, CatalogManifest } from "../manifest/types.js"
 import { PlanError } from "../plan/errors.js"
 import { addRequest, applyFixture, fixtureCatalog, initRequest, planFixture } from "../testing/fixture.js"
 import { selectionFromAnswers } from "./answers.js"
@@ -25,6 +25,44 @@ function thrown(run: () => unknown): PlanError {
 
 function withAddons(catalog: CatalogManifest, ...addons: ReturnType<typeof defineAddon>[]): CatalogManifest {
   return { ...catalog, addons: [...catalog.addons, ...addons] }
+}
+
+/**
+ * Each value of each question the fixture's app template asks in ssr mode, and the pairs of values of two questions that
+ * no answer set has. The values come from what the template asks, so a value no set uses is reported.
+ */
+function appPairs(catalog: CatalogManifest, sets: Answers[]): { values: string[][]; uncovered: string[] } {
+  const asked = templateQuestions(
+    catalog,
+    catalog.templates.find((entry) => entry.id === "app")!,
+    "ssr"
+  )
+  const questions = [
+    ...asked.slots.map((slot) => ({
+      values: [...(slot.required ? [] : ["none"]), ...slot.choices.map((choice) => choice.id)].map(
+        (value) => `slot ${slot.slot}=${value}`
+      ),
+      of: (answers: Answers) => `slot ${slot.slot}=${answers.slots?.[slot.slot] ?? "none"}`
+    })),
+    ...asked.optional.map((tool) => ({
+      values: [`${tool.id}=false`, `${tool.id}=true`],
+      of: (answers: Answers) => `${tool.id}=${answers.optional?.includes(tool.id) ?? false}`
+    }))
+  ]
+  const uncovered: string[] = []
+  for (let left = 0; left < questions.length; left++) {
+    for (let right = left + 1; right < questions.length; right++) {
+      const seen = new Set(sets.map((answers) => `${questions[left]!.of(answers)} & ${questions[right]!.of(answers)}`))
+      for (const a of questions[left]!.values) {
+        for (const b of questions[right]!.values) {
+          if (!seen.has(`${a} & ${b}`)) {
+            uncovered.push(`${a} & ${b}`)
+          }
+        }
+      }
+    }
+  }
+  return { values: questions.map((question) => question.values), uncovered }
 }
 
 describe("resolveSelection", () => {
@@ -372,8 +410,59 @@ describe("questions and catalog CI", () => {
 
   it("passes for the fixture catalog, including every pair of answers", () => {
     expect(checkCatalog(catalog, { matrix: true })).toEqual([])
-    expect(pairwiseAnswers(catalog, "app", "ssr").length).toBeGreaterThan(10)
     expect(pairwiseAnswers(catalog, "nope", "ssr")).toEqual([])
+  })
+
+  it("covers every pair of values of every two questions, in few answer sets", () => {
+    const sets = pairwiseAnswers(catalog, "app", "ssr")
+    const { values, uncovered } = appPairs(catalog, sets)
+    expect(values.filter((choices) => choices.length < 2)).toEqual([])
+    expect(uncovered).toEqual([])
+    // Every pair with the rest at their defaults would need a set per pair of values; a covering array needs far fewer.
+    const pairs = values.reduce(
+      (total, left, index) =>
+        total + values.slice(index + 1).reduce((sum, right) => sum + left.length * right.length, 0),
+      0
+    )
+    expect(sets.length).toBeLessThan(pairs / 2)
+    expect(pairwiseAnswers(catalog, "app", "ssr")).toEqual(sets)
+  })
+
+  it("leaves out answer sets the engine turns down, and still covers every pair that can be planned", () => {
+    const conflicting: CatalogManifest = {
+      ...catalog,
+      addons: catalog.addons.map((addon) =>
+        addon.id === "@fixture/i18n" ? { ...addon, conflicts: ["@fixture/sentry"] } : addon
+      )
+    }
+    const sets = pairwiseAnswers(conflicting, "app", "ssr")
+    const turnedDown = sets.filter((answers) => {
+      const selection = selectionFromAnswers(conflicting, answers, "demo")
+      return !selection.ok || !resolveSelection(conflicting, selection.selection).ok
+    })
+    expect(turnedDown).toEqual([])
+    expect(appPairs(conflicting, sets).uncovered).toEqual(["@fixture/i18n=true & @fixture/sentry=true"])
+  })
+
+  it("plans the other questions when a required slot has no add-on for the mode", () => {
+    const lonely: CatalogManifest = {
+      ...catalog,
+      templates: [
+        ...catalog.templates,
+        {
+          id: "lonely",
+          title: "Lonely",
+          description: "A template whose slot has nothing to offer",
+          target: "web",
+          optional: { "@fixture/i18n": { default: false } },
+          slots: { nothing: { required: true } }
+        }
+      ]
+    }
+    expect(pairwiseAnswers(lonely, "lonely", "ssr").map(({ slots, optional }) => ({ slots, optional }))).toEqual([
+      { slots: { nothing: null }, optional: [] },
+      { slots: { nothing: null }, optional: ["@fixture/i18n"] }
+    ])
   })
 
   it("reports broken references, defaults and options", () => {

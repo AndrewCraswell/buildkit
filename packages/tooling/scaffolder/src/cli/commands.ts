@@ -418,13 +418,27 @@ export class CliRuntime {
     return diff
   }
 
-  #artifacts(root: string, plan: Plan, flags: ParsedFlags): string | undefined {
+  #artifacts(root: string, plan: Plan, flags: ParsedFlags, context?: ProjectContext): string | undefined {
     const out = flags.strings.get("out")
     if (out === undefined) {
       return undefined
     }
     const folder = out === "" ? defaultArtifactFolder(root, this.#settings, plan) : resolve(this.io.cwd, out)
-    return writeArtifacts(plan, folder, { product: this.#product, diff: this.#diff(flags) })
+    return writeArtifacts(plan, folder, { ...this.#catalogs(context), diff: this.#diff(flags) })
+  }
+
+  /** The product's name and the catalogs a plan's decisions are written against, for its envelope. */
+  #catalogs(context?: ProjectContext): {
+    product: string
+    catalog: CatalogManifest
+    catalogs?: (version: string) => CatalogManifest | undefined
+  } {
+    const lookup = context?.catalogs
+    return {
+      product: this.#product,
+      catalog: this.#catalog,
+      ...(lookup ? { catalogs: (version: string) => lookup(version) } : {})
+    }
   }
 
   /** Plan, ask the open decisions, show the plan, confirm once, then apply what was reviewed. */
@@ -451,7 +465,7 @@ export class CliRuntime {
         this.options.hooks ? { hooks: this.options.hooks } : {}
       )
       plan.notices.unshift(...this.#sourceNotices)
-      return this.#emit(toEnvelope(plan, { product: this.#product, status }), json)
+      return this.#emit(toEnvelope(plan, { ...this.#catalogs(context), status }), json)
     }
     const interactive = this.#interactive(flags)
     let current = await planProject(context, request)
@@ -474,9 +488,13 @@ export class CliRuntime {
       current = await planProject(context, choice.request)
     }
     current.notices.unshift(...this.#sourceNotices)
-    const artifacts = this.#artifacts(root, current, flags)
+    const artifacts = this.#artifacts(root, current, flags, context)
     const envelope = (plan: Plan, status?: EnvelopeStatus) =>
-      toEnvelope(plan, { product: this.#product, ...(status ? { status } : {}), ...(artifacts ? { artifacts } : {}) })
+      toEnvelope(plan, {
+        ...this.#catalogs(context),
+        ...(status ? { status } : {}),
+        ...(artifacts ? { artifacts } : {})
+      })
     if (current.status !== "planned" || flags.booleans.has("dry-run") || options.applies === false) {
       return this.#emit(envelope(current), json)
     }
@@ -596,7 +614,7 @@ export class CliRuntime {
       if (name !== undefined && nameProblem) {
         throw new PlanError("E_INVALID_OPTIONS", `"${name}" in the plan can't be a project name. ${nameProblem}`)
       }
-      return this.#planAndApply(resolve(this.io.cwd, folderArg ?? name ?? "."), reviewed.request, flags)
+      return this.#planAndApply(resolve(this.#root(flags), folderArg ?? name ?? "."), reviewed.request, flags)
     }
     let partial: PartialAnswers = emptyAnswers()
     const presetId = flags.strings.get("preset")
@@ -641,7 +659,7 @@ export class CliRuntime {
     if (nameFlag !== undefined) {
       partial.name = nameFlag
     } else if (folderArg !== undefined) {
-      partial.name = basename(resolve(this.io.cwd, folderArg))
+      partial.name = basename(resolve(this.#root(flags), folderArg))
     }
     const interactive = this.#interactive(flags)
     if (folderArg === undefined && !interactive) {
@@ -653,7 +671,8 @@ export class CliRuntime {
     if (answers === cancelled) {
       return this.#cancel(json)
     }
-    const folder = resolve(this.io.cwd, folderArg ?? answers.name ?? ".")
+    // The folder is relative to --cwd, as every command's project is.
+    const folder = resolve(this.#root(flags), folderArg ?? answers.name ?? ".")
     const name = answers.name ?? basename(folder)
     const nameProblem = projectNameProblem(name)
     if (nameProblem) {
@@ -802,7 +821,7 @@ export class CliRuntime {
     const root = this.#root(flags)
     const plan = await planProject(await this.#context(root), { intent: { command: "sync" } })
     if (plan.status === "error" || plan.status === "needs-decision") {
-      return this.#emit(toEnvelope(plan, { product: this.#product }), json)
+      return this.#emit(toEnvelope(plan, { product: this.#product, catalog: this.#catalog }), json)
     }
     const stale = new Set([
       ...plan.operations.map((operation) => operation.path),
@@ -830,7 +849,7 @@ export class CliRuntime {
     const paths = [...stale].sort()
     return this.#emit(
       {
-        ...toEnvelope(plan, { product: this.#product }),
+        ...toEnvelope(plan, { product: this.#product, catalog: this.#catalog }),
         status: "error",
         error: {
           code: "E_DRIFT",

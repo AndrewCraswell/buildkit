@@ -236,7 +236,9 @@ export function pairwiseAnswers(catalog: CatalogManifest, templateId: string, mo
       .map((addon) => addon.id)
     const values: (string | null)[] = [...(policy.required ? [] : [null]), ...candidates]
     factors.push({
-      values: values.length,
+      // A required slot with no add-on for the mode still gets one value, unanswered, so the other questions are
+      // planned and the plan reports the slot.
+      values: Math.max(values.length, 1),
       apply: (answers, value) => ({ ...answers, slots: { ...answers.slots, [slot]: values[value] ?? null } })
     })
   }
@@ -255,20 +257,107 @@ export function pairwiseAnswers(catalog: CatalogManifest, templateId: string, mo
     const [only] = factors
     return only ? Array.from({ length: only.values }, (_, value) => only.apply(base, value)) : [base]
   }
-  const result: Answers[] = []
-  for (let left = 0; left < factors.length; left++) {
-    for (let right = left + 1; right < factors.length; right++) {
-      const a = factors[left]
-      const b = factors[right]
-      if (!a || !b) {
-        continue
-      }
-      for (let x = 0; x < a.values; x++) {
-        for (let y = 0; y < b.values; y++) {
-          result.push(b.apply(a.apply(base, x), y))
+  const sizes = factors.map((factor) => factor.values)
+  const answersOf = (row: number[]) =>
+    row.reduce((answers, value, index) => factors[index]?.apply(answers, value) ?? answers, base)
+  // A row the engine turns down, such as one with two add-ons that conflict, plans nothing. Its pairs that no other row
+  // has each get a row of their own, with the other questions at their first value, unless that's turned down too.
+  const rows = coveringRows(sizes).filter((row) => !turnedDown(catalog, answersOf(row)))
+  const covered = new Set(rows.flatMap(rowPairs))
+  for (let left = 0; left < sizes.length; left++) {
+    for (let right = left + 1; right < sizes.length; right++) {
+      for (let a = 0; a < (sizes[left] ?? 0); a++) {
+        for (let b = 0; b < (sizes[right] ?? 0); b++) {
+          if (covered.has(pairKey(left, a, right, b))) {
+            continue
+          }
+          const row = sizes.map(() => 0)
+          row[left] = a
+          row[right] = b
+          if (!turnedDown(catalog, answersOf(row))) {
+            rows.push(row)
+            rowPairs(row).forEach((pair) => covered.add(pair))
+          }
         }
       }
     }
   }
-  return result
+  return rows.map(answersOf)
+}
+
+/**
+ * Whether the engine turns the answers down without an error, as it does two add-ons that conflict. An error is a
+ * catalog problem, so answers that throw aren't turned down: the matrix check plans them to report it.
+ */
+function turnedDown(catalog: CatalogManifest, answers: Answers): boolean {
+  try {
+    const selection = selectionFromAnswers(catalog, answers, answers.name ?? "catalog-check")
+    return !selection.ok || !resolveSelection(catalog, selection.selection).ok
+  } catch {
+    return false
+  }
+}
+
+function pairKey(left: number, a: number, right: number, b: number): string {
+  return `${left}:${a}:${right}:${b}`
+}
+
+/** The pairs of values a row covers. */
+function rowPairs(row: readonly number[]): string[] {
+  return row.flatMap((a, left) => row.slice(left + 1).map((b, offset) => pairKey(left, a, left + 1 + offset, b)))
+}
+
+/**
+ * Rows of values, one per factor, in which every pair of values of every two factors appears at least once: a greedy
+ * covering array. Each row starts from the first pair no row has covered, then gives every other factor the value that
+ * covers the most pairs still missing, the lowest value on a tie, so the result is the same every time.
+ */
+function coveringRows(sizes: readonly number[]): number[][] {
+  const missing = new Set<string>()
+  for (let left = 0; left < sizes.length; left++) {
+    for (let right = left + 1; right < sizes.length; right++) {
+      for (let a = 0; a < (sizes[left] ?? 0); a++) {
+        for (let b = 0; b < (sizes[right] ?? 0); b++) {
+          missing.add(pairKey(left, a, right, b))
+        }
+      }
+    }
+  }
+  const rows: number[][] = []
+  while (missing.size > 0) {
+    const [first = ""] = missing
+    const [left = 0, a = 0, right = 0, b = 0] = first.split(":").map(Number)
+    const row: (number | undefined)[] = sizes.map(() => undefined)
+    row[left] = a
+    row[right] = b
+    for (let factor = 0; factor < sizes.length; factor++) {
+      if (row[factor] !== undefined) {
+        continue
+      }
+      let best = 0
+      let bestGain = -1
+      for (let value = 0; value < (sizes[factor] ?? 0); value++) {
+        let gain = 0
+        row.forEach((other, index) => {
+          if (other !== undefined && index !== factor) {
+            const pair = index < factor ? pairKey(index, other, factor, value) : pairKey(factor, value, index, other)
+            gain += missing.has(pair) ? 1 : 0
+          }
+        })
+        if (gain > bestGain) {
+          best = value
+          bestGain = gain
+        }
+      }
+      row[factor] = best
+    }
+    const values = row.map((value) => value ?? 0)
+    for (let i = 0; i < values.length; i++) {
+      for (let j = i + 1; j < values.length; j++) {
+        missing.delete(pairKey(i, values[i] ?? 0, j, values[j] ?? 0))
+      }
+    }
+    rows.push(values)
+  }
+  return rows
 }
