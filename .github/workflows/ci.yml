@@ -45,6 +45,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @buildkitgg/dev-domains test:integration
+      - run: pnpm --filter @buildkitgg/scaffolder test:integration
   release:
     needs: [verify, integration]
     if: >-

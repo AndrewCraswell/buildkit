@@ -1,0 +1,77 @@
+{
+  "name": "@buildkitgg/scaffolder",
+  "version": "0.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "description": "Plan-first project scaffolding engine: catalogs of targets, templates and add-ons, with safe upgrades",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "docs/*.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./edit": {
+      "types": "./dist/edit.d.ts",
+      "import": "./dist/edit.js"
+    },
+    "./edit/code": {
+      "types": "./dist/edit-code.d.ts",
+      "import": "./dist/edit-code.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndrewCraswell/buildkit.git",
+    "directory": "packages/tooling/scaffolder"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check:types": "pnpm build && tsc --noEmit",
+    "lint": "oxlint --max-warnings=0",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "prepack": "pnpm build"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.8.1",
+    "citty": "0.2.2",
+    "diff": "9.0.0",
+    "jsonc-parser": "3.3.1",
+    "magic-string": "1.4.5",
+    "node-diff3": "3.2.1",
+    "oxc-parser": "0.156.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@repo/oxlint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "24.13.2",
+    "@vitest/coverage-v8": "5.0.5",
+    "typescript": "catalog:",
+    "vitest": "5.0.5"
+  }
+}
