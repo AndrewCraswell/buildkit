@@ -1,7 +1,0 @@
-{
-  "type": "minor",
-  "comment": "Apps format `package.json`, `tsconfig.json` and `buildkit.jsonc` with oxfmt like their other files, and no longer need `allowImportingTsExtensions`: generated files and starter configs import app modules without extensions. The translations check runs in CI before the build.",
-  "packageName": "@buildkitgg/catalog",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "patch"
-}
