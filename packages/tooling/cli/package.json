@@ -51,7 +51,7 @@
   "devDependencies": {
     "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "24.13.2",
+    "@types/node": "26.6.5",
     "@vitest/coverage-v8": "5.0.5",
     "typescript": "catalog:",
     "vitest": "5.0.5"
