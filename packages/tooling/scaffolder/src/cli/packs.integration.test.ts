@@ -123,6 +123,10 @@ describe("template packages", () => {
 
     // Later commands load the recorded version from the cache, without asking npm.
     npm.calls.length = 0
+    const schema = JSON.parse((await run(["schema", "--cwd", "demo", "--json"], npm)).out) as {
+      config: { properties: { addons: { properties: Record<string, unknown> } } }
+    }
+    expect(Object.keys(schema.config.properties.addons.properties)).toContain("@acme/tower/turrets")
     const added = await run(["add", "i18n", "--cwd", "demo", "--yes", "--json"], npm)
     expect(envelope(added.out).status).toBe("applied")
     expect(npm.calls).toEqual([])
@@ -206,6 +210,20 @@ describe("template packages", () => {
     const result = await run(["sync", "--cwd", "demo", "--json"], npm)
     expect(envelope(result.out).error).toMatchObject({ code: "E_PACKAGE_UNAVAILABLE" })
     expect(envelope(result.out).error?.message).toContain("failed its integrity check")
+
+    // A cache file that isn't JSON is the cache's problem, not an internal error.
+    for (const file of ["integrity.json", "node_modules/@acme/tower/package.json"]) {
+      const cached = join(root, "cache/packs/@acme/tower/1.0.0", file)
+      const original = readFileSync(cached, "utf8")
+      writeFileSync(record, JSON.stringify({ name: "@acme/tower", version: "1.0.0", integrity: "sha512-1.0.0" }))
+      writeFileSync(cached, "{")
+      const corrupt = await run(["sync", "--cwd", "demo", "--json"], npm)
+      expect({ file, error: envelope(corrupt.out).error }).toMatchObject({
+        file,
+        error: { code: "E_PACKAGE_UNAVAILABLE", message: expect.stringContaining("can't be read") }
+      })
+      writeFileSync(cached, original)
+    }
 
     // status reads only the lock and the files, so it never loads the package.
     npm.calls.length = 0
@@ -306,5 +324,20 @@ describe("template packages", () => {
       "isn't a template package"
     )
     expect(envelope((await run(["catalog", "frob", "--json"], npm)).out).error?.code).toBe("E_USAGE")
+
+    // A folder without a package.json, or with a module that won't import, isn't a template package.
+    expect(envelope((await run(["catalog", "check", "nowhere", "--json"], npm)).out).error).toMatchObject({
+      code: "E_INVALID_PACK",
+      message: expect.stringContaining("can't be read")
+    })
+    writeFileSync(
+      join(folder, "package.json"),
+      JSON.stringify({ name: "@acme/tower", version: "0.1.3", type: "module", exports: "./unfinished.js" })
+    )
+    writeFileSync(join(folder, "unfinished.js"), "export default {\n")
+    expect(envelope((await run(["catalog", "check", "tower", "--json"], npm)).out).error).toMatchObject({
+      code: "E_INVALID_PACK",
+      message: expect.stringContaining("can't be imported")
+    })
   })
 })

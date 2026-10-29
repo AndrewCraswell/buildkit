@@ -20,18 +20,37 @@ const integritySchema = z.object({ name: z.string(), version: z.string(), integr
 
 export const runCommand: CommandRunner = (command, args, cwd) =>
   new Promise((resolve, reject) => {
-    const windows = process.platform === "win32"
-    const child = spawn(windows ? `${command}.cmd` : command, args, {
-      cwd,
-      shell: windows,
-      stdio: ["ignore", "pipe", "pipe"]
-    })
+    const stdio: ["ignore", "pipe", "pipe"] = ["ignore", "pipe", "pipe"]
+    // npm is a .cmd file on Windows, which only cmd.exe runs. cmd.exe reads `^`, `&`, `|`, `<` and `>` in an unquoted
+    // argument, and version ranges use them, so the command line quotes each argument.
+    const child =
+      process.platform === "win32"
+        ? spawn([`${command}.cmd`, ...args].map(cmdArgument).join(" "), { cwd, shell: true, stdio })
+        : spawn(command, args, { cwd, stdio })
     let output = ""
     child.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()))
     child.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()))
     child.on("error", reject)
     child.on("close", (code) => resolve({ code: code ?? 1, output }))
   })
+
+/** An argument quoted for cmd.exe. A quote or a `%` would still be read inside the quotes, so neither is allowed. */
+function cmdArgument(argument: string): string {
+  if (/["%\r\n]/.test(argument)) {
+    throw new PlanError("E_USAGE", `${argument} can't be passed to npm on Windows. Remove its quotes and % signs.`)
+  }
+  // A backslash before the closing quote would escape it, so trailing backslashes are doubled.
+  return `"${argument.replace(/(\\+)$/, "$1$1")}"`
+}
+
+/** A JSON file in the cache or a package folder. One that can't be read or parsed is reported with `code`. */
+function readJson(path: string, code: ErrorCode): unknown {
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as unknown
+  } catch (error) {
+    throw new PlanError(code, `${path} can't be read: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
 
 export function isCatalogManifest(value: unknown): value is CatalogManifest {
   return (
@@ -132,7 +151,7 @@ export class CatalogStore {
     if (cachedIntegrity(folder, name, expectedIntegrity, "E_BASELINE_UNAVAILABLE") === undefined) {
       return undefined
     }
-    const module = await importPackage(folder, name)
+    const module = await importPackage(folder, name, "E_BASELINE_UNAVAILABLE")
     const catalog = isRecord(module) ? (module.default ?? module.catalog) : undefined
     if (!isCatalogManifest(catalog) || catalog.version !== version) {
       throw new PlanError("E_BASELINE_UNAVAILABLE", `${name}@${version} doesn't export a catalog for that version.`)
@@ -215,7 +234,7 @@ export class PackStore {
     const integrity =
       cachedIntegrity(folder, name, expectedIntegrity, "E_PACKAGE_UNAVAILABLE") ??
       (await installPackage(this.#run, folder, name, version, expectedIntegrity, "E_PACKAGE_UNAVAILABLE"))
-    const module = await importPackage(folder, name)
+    const module = await importPackage(folder, name, "E_PACKAGE_UNAVAILABLE")
     const pack = isRecord(module) ? module.default : undefined
     if (!isTemplatePack(pack)) {
       throw new PlanError(
@@ -294,7 +313,7 @@ async function installPackage(
 }
 
 function lockedIntegrity(folder: string, name: string, code: ErrorCode): string {
-  const lock: unknown = JSON.parse(readFileSync(join(folder, "package-lock.json"), "utf8"))
+  const lock = readJson(join(folder, "package-lock.json"), code)
   const packages = isRecord(lock) && isRecord(lock.packages) ? lock.packages : {}
   const entry = packages[`node_modules/${name}`]
   if (!isRecord(entry) || typeof entry.integrity !== "string") {
@@ -313,7 +332,7 @@ function cachedIntegrity(
   if (!statSync(join(folder, "integrity.json"), { throwIfNoEntry: false })) {
     return undefined
   }
-  const recorded = integritySchema.safeParse(JSON.parse(readFileSync(join(folder, "integrity.json"), "utf8")))
+  const recorded = integritySchema.safeParse(readJson(join(folder, "integrity.json"), code))
   const integrity = lockedIntegrity(folder, name, code)
   if (
     !recorded.success ||
@@ -327,11 +346,11 @@ function cachedIntegrity(
 
 /** A template package in a folder on disk, as its author checks it before publishing. Build it first. */
 export async function loadLocalPack(folder: string): Promise<LoadedPack> {
-  const manifest: unknown = JSON.parse(readFileSync(join(folder, "package.json"), "utf8"))
+  const manifest = readJson(join(folder, "package.json"), "E_INVALID_PACK")
   if (!isRecord(manifest) || typeof manifest.name !== "string" || typeof manifest.version !== "string") {
     throw new PlanError("E_INVALID_PACK", `${join(folder, "package.json")} needs a name and a version.`)
   }
-  const module: unknown = await import(pathToFileURL(join(folder, entryFile(folder))).href)
+  const module = await importEntry(folder, "E_INVALID_PACK")
   const pack = isRecord(module) ? module.default : undefined
   if (!isTemplatePack(pack)) {
     throw new PlanError(
@@ -342,13 +361,22 @@ export async function loadLocalPack(folder: string): Promise<LoadedPack> {
   return { name: manifest.name, version: manifest.version, pack }
 }
 
-async function importPackage(folder: string, name: string): Promise<unknown> {
-  const packageFolder = join(folder, "node_modules", ...name.split("/"))
-  return import(pathToFileURL(join(packageFolder, entryFile(packageFolder))).href) as Promise<unknown>
+function importPackage(folder: string, name: string, code: ErrorCode): Promise<unknown> {
+  return importEntry(join(folder, "node_modules", ...name.split("/")), code)
 }
 
-function entryFile(packageFolder: string): string {
-  const manifest: unknown = JSON.parse(readFileSync(join(packageFolder, "package.json"), "utf8"))
+/** A package folder's entry module. A package.json or a module that can't be read is reported with `code`. */
+async function importEntry(packageFolder: string, code: ErrorCode): Promise<unknown> {
+  const entry = join(packageFolder, entryFile(packageFolder, code))
+  try {
+    return (await import(pathToFileURL(entry).href)) as unknown
+  } catch (error) {
+    throw new PlanError(code, `${entry} can't be imported: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+function entryFile(packageFolder: string, code: ErrorCode): string {
+  const manifest = readJson(join(packageFolder, "package.json"), code)
   if (!isRecord(manifest)) {
     return "index.js"
   }

@@ -69,10 +69,11 @@ const sharedFlags = {
 } satisfies FlagSpec
 
 /**
- * Commands on an existing project that use the catalog. They load the template packages its lock records first.
- * `status` reads only the lock and the files, so it never runs a package's code.
+ * Commands on an existing project that use the catalog. They load the template packages its lock records first, so
+ * `schema --cwd` describes a package's add-on options too. `status` reads only the lock and the files, so it never runs
+ * a package's code.
  */
-const projectCommands = new Set(["add", "config", "upgrade", "sync", "check", "explain"])
+const projectCommands = new Set(["add", "config", "upgrade", "sync", "check", "explain", "schema"])
 
 function spec(extra: FlagSpec): FlagSpec {
   return {
