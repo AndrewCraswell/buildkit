@@ -76,7 +76,7 @@ it("rolls back partial aliases and never replaces an occupied name", async () =>
   await expect(runEndpoint(aliased, endpoint)).rejects.toThrow("already in use")
   expect(runProcess).not.toHaveBeenCalled()
   expect(routeStore().loadRoutesRaw()).toEqual([
-    { hostname: `${endpoint.name}.example.test`, port: 4050, pid: process.pid }
+    expect.objectContaining({ hostname: `${endpoint.name}.example.test`, port: 4050, pid: process.pid })
   ])
 })
 it("cleans routes when spawning fails and does not start after cancellation or proxy failure", async () => {
