@@ -1,7 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { useState, type FormEvent } from "react"
+import { SignInPrompt } from "../account"
 import { formatTime } from "../format"
 import { listNotes } from "../notes.functions"
+import { useViewer } from "../viewer"
 
 export const Route = createFileRoute("/")({
   loader: () => listNotes(),
@@ -31,6 +33,7 @@ async function addNote(text: string): Promise<string | null> {
 
 function Notes() {
   const notes = Route.useLoaderData()
+  const viewer = useViewer()
   const router = useRouter()
   const [text, setText] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -60,29 +63,33 @@ function Notes() {
         Notes are a small Better Apps feature. The list loads through a server function, and the form posts to the
         feature’s HTTP route.
       </p>
-      <form className="note-form" onSubmit={handleSubmit}>
-        <label htmlFor="note-text">New note</label>
-        <textarea
-          id="note-text"
-          name="text"
-          rows={3}
-          maxLength={500}
-          required
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? "note-error" : undefined}
-        />
-        {error && (
-          <p id="note-error" className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        {/* aria-disabled rather than disabled, so the button keeps focus while the note saves. */}
-        <button type="submit" aria-disabled={saving}>
-          {saving ? "Adding note" : "Add note"}
-        </button>
-      </form>
+      {viewer ? (
+        <form className="note-form" onSubmit={handleSubmit}>
+          <label htmlFor="note-text">New note</label>
+          <textarea
+            id="note-text"
+            name="text"
+            rows={3}
+            maxLength={500}
+            required
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "note-error" : undefined}
+          />
+          {error && (
+            <p id="note-error" className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          {/* aria-disabled rather than disabled, so the button keeps focus while the note saves. */}
+          <button type="submit" aria-disabled={saving}>
+            {saving ? "Adding note" : "Add note"}
+          </button>
+        </form>
+      ) : (
+        <SignInPrompt>to add notes.</SignInPrompt>
+      )}
       <section aria-labelledby="notes-title">
         <h2 id="notes-title">Recent notes</h2>
         {notes.length === 0 ? (

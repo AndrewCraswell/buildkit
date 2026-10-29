@@ -324,6 +324,9 @@ importers:
 
   apps/better-apps-example:
     dependencies:
+      '@better-apps/better-auth':
+        specifier: workspace:*
+        version: link:../../packages/better-apps/better-auth
       '@better-apps/comments':
         specifier: workspace:*
         version: link:../../packages/better-apps/comments
@@ -345,6 +348,9 @@ importers:
       better-apps:
         specifier: workspace:*
         version: link:../../packages/better-apps/better-apps
+      better-auth:
+        specifier: 1.7.9
+        version: 1.7.9(@tanstack/react-start@1.169.4(esbuild@0.28.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.2.15)(rollup@4.64.10)(supports-color@8.1.1)(vite@8.3.5(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(drizzle-kit@0.31.11)(drizzle-orm@0.45.4(@neondatabase/serverless@1.2.0)(@types/pg@8.23.1)(kysely@0.29.7)(mysql2@3.24.6(@types/node@24.13.2))(pg@8.23.1))(mysql2@3.24.6(@types/node@24.13.2))(pg@8.23.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.0.5)(vue@3.5.44(typescript@7.0.2))
       drizzle-orm:
         specifier: 0.45.4
         version: 0.45.4(@neondatabase/serverless@1.2.0)(@types/pg@8.23.1)(kysely@0.29.7)(mysql2@3.24.6(@types/node@24.13.2))(pg@8.23.1)
