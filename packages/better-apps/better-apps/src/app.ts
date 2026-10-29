@@ -177,11 +177,19 @@ export function createBetterApps<const Features extends readonly BetterAppsFeatu
   // A reporter that fails, such as one using a context that has ended, mustn't stop delivery or replace a result.
   const reportFailed = (reportError: unknown) =>
     console.error("Better Apps: onError failed while reporting an error.", reportError)
-  const onError = (error: unknown, context: ErrorContext) => {
+  const onError = (error: unknown, context: ErrorContext, waitUntil?: (promise: Promise<unknown>) => void) => {
+    let reporting: Promise<void>
     try {
-      Promise.resolve(report(error, context)).catch(reportFailed)
+      reporting = Promise.resolve(report(error, context)).catch(reportFailed)
     } catch (reportError) {
       reportFailed(reportError)
+      return
+    }
+    // A report still running after the response is sent would be cut off on Workers, so it's handed to waitUntil.
+    try {
+      waitUntil?.(reporting)
+    } catch {
+      // The runtime refused it, such as after its context ended, so the report runs on without it.
     }
   }
   const outbox = createOutbox({ db, features, identity, onError })
@@ -307,7 +315,7 @@ export function createBetterApps<const Features extends readonly BetterAppsFeatu
       if (error instanceof BetterAppsError) {
         return errorResponse(error)
       }
-      onError(error, { feature: featureId, action: name })
+      onError(error, { feature: featureId, action: name }, context.waitUntil?.bind(context))
       return internalError()
     }
   }

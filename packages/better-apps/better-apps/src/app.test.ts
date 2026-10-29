@@ -293,6 +293,26 @@ describe("app.handler", () => {
     })
   })
 
+  it("hands an async report to waitUntil, so it isn't cut off after the response", async () => {
+    const { app, onError } = setup()
+    let finish = () => undefined as void
+    onError.mockImplementation(() => new Promise<void>((resolve) => (finish = resolve)))
+    const pending: Promise<unknown>[] = []
+    const response = await app.handler(post("/api/apps/notes/crash"), {
+      waitUntil: (promise) => void pending.push(promise)
+    })
+    expect(response.status).toBe(500)
+    expect(pending).toHaveLength(1)
+    finish()
+    await expect(pending[0]).resolves.toBeUndefined()
+    const refused = await app.handler(post("/api/apps/notes/crash"), {
+      waitUntil: () => {
+        throw new Error("Context ended")
+      }
+    })
+    expect(refused.status).toBe(500)
+  })
+
   it("logs unexpected errors with console.error by default", async () => {
     const memory = memoryDatabase()
     const app = createBetterApps({ database: memory.database, identity, features: [notes] })
