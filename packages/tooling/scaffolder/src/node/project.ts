@@ -84,10 +84,18 @@ export async function applyReviewed(
   return { plan: current, status: result.status }
 }
 
-const planFileSchema = z.object({ fingerprint: z.string(), request: planRequestSchema })
+const planFileSchema = z.object({
+  fingerprint: z.string(),
+  request: planRequestSchema,
+  /** The template packages the plan was made with, so applying it loads those exact versions. */
+  packs: z.record(z.string(), z.object({ version: z.string(), integrity: z.string() })).optional()
+})
 
-/** Reads a plan artifact. It's untrusted: only its request and fingerprint are used, and the request is planned again. */
-export function readPlanFile(path: string): { request: PlanRequest; fingerprint: string } {
+/**
+ * Reads a plan artifact. It's untrusted: only its request, fingerprint and package versions are used, and the request is
+ * planned again.
+ */
+export function readPlanFile(path: string): z.infer<typeof planFileSchema> {
   let value: unknown
   try {
     value = JSON.parse(readFileSync(path, "utf8"))
@@ -112,7 +120,16 @@ export function writeArtifacts(plan: Plan, folder: string, options: { product: s
   const envelope = toEnvelope(plan, { product: options.product, artifacts: folder })
   writeFileSync(
     join(folder, "plan.json"),
-    `${JSON.stringify({ fingerprint: plan.fingerprint, request: plan.request, envelope }, null, 2)}\n`
+    `${JSON.stringify(
+      {
+        fingerprint: plan.fingerprint,
+        request: plan.request,
+        ...(plan.lock?.catalog.packs ? { packs: plan.lock.catalog.packs } : {}),
+        envelope
+      },
+      null,
+      2
+    )}\n`
   )
   const scope = options.diff ?? "user"
   for (const operation of plan.operations) {

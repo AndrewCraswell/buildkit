@@ -178,9 +178,24 @@ describe("template packages", () => {
     const npm = fakeNpm({ "1.0.0": packSource("1.0.0", { templates: ["tower", "siege"] }) })
     const saved = await run(["init", "@acme/tower#siege", "demo", "--json", "--out", "plans"], npm)
     expect(envelope(saved.out).status).toBe("planned")
-    const applied = await run(["init", "--plan", "plans/plan.json", "--json"], npm)
+    const planFile = JSON.parse(readFileSync(join(root, "plans/plan.json"), "utf8"))
+    expect(planFile.packs).toEqual({ "@acme/tower": { version: "1.0.0", integrity: "sha512-1.0.0" } })
+
+    // A newer release doesn't run: applying loads the version the plan was made with.
+    const newer = fakeNpm({
+      "1.0.0": packSource("1.0.0", { templates: ["tower", "siege"] }),
+      "1.1.0": 'throw new Error("1.1.0 ran")\n'
+    })
+    const applied = await run(["init", "--plan", "plans/plan.json", "--json"], newer)
     expect(envelope(applied.out).status).toBe("applied")
+    expect(envelope(applied.out).notices?.[0]?.text).toContain("@acme/tower@1.0.0 on npm")
+    expect(newer.calls).toEqual([])
     expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain('"template": "@acme/tower#siege"')
+
+    delete planFile.packs
+    writeFileSync(join(root, "plans/plan.json"), JSON.stringify(planFile))
+    const unpinned = await run(["init", "--plan", "plans/plan.json", "other", "--json"], newer)
+    expect(envelope(unpinned.out).error?.message).toContain("doesn't record which version of @acme/tower")
   })
 
   it("reads npm's JSON past the warnings around it", async () => {

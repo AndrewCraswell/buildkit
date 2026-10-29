@@ -165,7 +165,8 @@ await runMain(createCli({ name: "acme", version: "1.0.0", catalog, settings: def
 Every planning command takes `--dry-run`, `--json`, `--out [folder]`, `--plan <file>`, `--yes`, `--diff`,
 `--resolve <id>=keep-current|take-incoming|file:<path>` and `--conflict markers`. Without a terminal, a command plans
 and writes nothing unless you pass `--yes` or apply a reviewed plan with `--plan`. A reviewed plan applies only if the
-project hasn't changed since; applying it twice is a no-op.
+project hasn't changed since; applying it twice is a no-op. It records the template packages it was made with, and
+applying it loads those exact versions, so a newer release never runs first.
 
 ## The JSON envelope and exit codes
 

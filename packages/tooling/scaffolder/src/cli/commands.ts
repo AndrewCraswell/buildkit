@@ -329,11 +329,15 @@ export class CliRuntime {
       }
       id = answer
     }
+    this.#noteSource(label)
+    return `${loaded.name}#${id}`
+  }
+
+  #noteSource(label: string): void {
     this.#sourceNotices.push({
       code: "template-package",
       text: `The template comes from ${label} on npm, not from ${this.#product}. Applying it runs code from its author.`
     })
-    return `${loaded.name}#${id}`
   }
 
   /** Loads the catalog version the lock records when it differs from the installed one, so old baselines render. */
@@ -446,6 +450,7 @@ export class CliRuntime {
         reviewed,
         this.options.hooks ? { hooks: this.options.hooks } : {}
       )
+      plan.notices.unshift(...this.#sourceNotices)
       return this.#emit(toEnvelope(plan, { product: this.#product, status }), json)
     }
     const interactive = this.#interactive(flags)
@@ -572,9 +577,18 @@ export class CliRuntime {
       const reviewed = readPlanFile(resolve(this.io.cwd, flags.strings.get("plan") ?? ""))
       const planned = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.template : undefined
       const pack = planned === undefined ? undefined : packOf(planned)
-      // A saved plan names the package but not its version. The plan's fingerprint stops it if the package changed.
+      // The plan records the package version and integrity it was made with. Loading exactly that copy means no other
+      // version's code runs before the fingerprint is checked.
       if (planned !== undefined && pack !== undefined && source === undefined) {
-        await this.#usePackage({ package: pack, range: "latest", template: planned.slice(pack.length + 1) }, false)
+        const recorded = reviewed.packs?.[pack]
+        if (!recorded) {
+          throw new PlanError(
+            "E_USAGE",
+            `The plan doesn't record which version of ${pack} it was made with. Make it again with --out.`
+          )
+        }
+        this.#catalog = mergePacks(this.options.catalog, [await this.#loadRecorded(pack, recorded)])
+        this.#noteSource(`${pack}@${recorded.version}`)
       }
       const name = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.name : undefined
       // The name picks the folder, and a lock is read there before planning, so check it first.
