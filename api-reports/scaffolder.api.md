@@ -950,7 +950,10 @@ export function readConfig(path: string, text: string): ProjectConfig;
 export function readLock(path: string, text: string): Lock_2;
 
 // @public
-export function requestArgv(request: PlanRequest): string[];
+export function requestArgv(request: PlanRequest, options?: {
+    preset?: PresetManifest;
+    catalog?: CatalogManifest;
+}): string[];
 
 // @public (undocumented)
 export type Resolution = "keep-current" | "take-incoming" | {
@@ -1132,6 +1135,8 @@ export function toEnvelope(plan: Plan, options: {
     product: string;
     status?: EnvelopeStatus;
     artifacts?: string;
+    catalog?: CatalogManifest;
+    catalogs?: (version: string) => CatalogManifest | undefined;
 }): Envelope;
 
 // @public (undocumented)

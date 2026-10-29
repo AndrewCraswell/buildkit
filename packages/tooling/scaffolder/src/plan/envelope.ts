@@ -1,3 +1,4 @@
+import type { CatalogManifest } from "../manifest/types.js"
 import { requestArgv } from "./argv.js"
 import type { Plan, PlanErrorInfo, PlanRequest } from "./types.js"
 
@@ -43,8 +44,21 @@ function nonEmpty<T>(key: string, values: T[] | undefined): Record<string, T[]> 
 
 export function toEnvelope(
   plan: Plan,
-  options: { product: string; status?: EnvelopeStatus; artifacts?: string }
+  options: {
+    product: string
+    status?: EnvelopeStatus
+    artifacts?: string
+    /** The installed catalog, so each choice's command writes `--without` for a declined default. */
+    catalog?: CatalogManifest
+    /** Earlier catalog versions, for a choice that plans with one. */
+    catalogs?: (version: string) => CatalogManifest | undefined
+  }
 ): Envelope {
+  // A choice that plans with another catalog version is written against that version's defaults.
+  const catalogFor = (request: PlanRequest) =>
+    request.catalogVersion === undefined || request.catalogVersion === options.catalog?.version
+      ? options.catalog
+      : options.catalogs?.(request.catalogVersion)
   return {
     status: options.status ?? plan.status,
     ...(plan.fingerprint ? { fingerprint: plan.fingerprint } : {}),
@@ -55,10 +69,10 @@ export function toEnvelope(
       plan.decisions.map((decision) => ({
         id: decision.id,
         message: decision.message,
-        choices: decision.choices.map((choice) => ({
-          ...choice,
-          argv: [options.product, ...requestArgv(choice.request)]
-        }))
+        choices: decision.choices.map((choice) => {
+          const catalog = catalogFor(choice.request)
+          return { ...choice, argv: [options.product, ...requestArgv(choice.request, catalog ? { catalog } : {})] }
+        })
       }))
     ),
     ...nonEmpty(
