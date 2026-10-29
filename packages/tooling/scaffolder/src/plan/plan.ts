@@ -388,7 +388,8 @@ async function planPath(context: {
     deleted: lock?.deleted.includes(path) ?? false,
     resolution: resolve[path],
     conflictStyle: context.input.request.conflictStyle ?? "stop",
-    adopt: context.adopt
+    adopt: context.adopt,
+    storeBases: context.input.settings.seedBases === "stored"
   })
   return {
     content: outcome.remove ? null : styled(outcome.write),
@@ -472,16 +473,18 @@ function pushOperation(
 
 function oldBaseline(input: PlanInput, catalog: CatalogManifest, lock: Lock, result: Plan): Rendered | undefined {
   const recorded = lock.catalog.version
+  // Without the old render, seeds merge against the bases stored in the lock, when the product stores them.
+  const fallback = input.settings.seedBases === "stored" ? "stored" : "two-way"
   const oldCatalog =
     [catalog, input.catalog].find((candidate) => candidate.version === recorded) ?? input.catalogs?.(recorded)
   if (!oldCatalog) {
-    result.baseline = { source: "two-way", catalogVersion: recorded }
+    result.baseline = { source: fallback, catalogVersion: recorded }
     return undefined
   }
   try {
     const resolution = resolveSelection(oldCatalog, selectionFromLock(lock))
     if (!resolution.ok) {
-      result.baseline = { source: "two-way", catalogVersion: recorded }
+      result.baseline = { source: fallback, catalogVersion: recorded }
       return undefined
     }
     result.baseline = {
@@ -490,7 +493,7 @@ function oldBaseline(input: PlanInput, catalog: CatalogManifest, lock: Lock, res
     }
     return render(oldCatalog, resolution.value, input.settings)
   } catch {
-    result.baseline = { source: "two-way", catalogVersion: recorded }
+    result.baseline = { source: fallback, catalogVersion: recorded }
     return undefined
   }
 }
