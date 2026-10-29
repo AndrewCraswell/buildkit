@@ -231,16 +231,18 @@ describe("apply lock and recovery", () => {
   })
 
   it("an interrupted apply blocks the next one until recover rolls it back", async () => {
-    mkdirSync(join(project, ".fixture/backup"), { recursive: true })
+    const fingerprint = "0123456789abcdef0123456789abcdef"
+    const backups = ".fixture/backup/0123456789abcdef"
+    mkdirSync(join(project, backups), { recursive: true })
     mkdirSync(join(project, "src/new"), { recursive: true })
     writeFileSync(join(project, "created.txt"), "ours\n")
     writeFileSync(join(project, "updated.txt"), "after\n")
-    writeFileSync(join(project, ".fixture/backup/updated.txt"), "before\n")
+    writeFileSync(join(project, backups, "updated.txt"), "before\n")
     writeFileSync(join(project, "untouched.txt"), "before\n")
     writeFileSync(join(project, "elsewhere.txt"), "someone else\n")
-    writeFileSync(join(project, ".fixture/backup/deleted.txt"), "deleted\n")
+    writeFileSync(join(project, backups, "deleted.txt"), "deleted\n")
     const journal = {
-      fingerprint: "f",
+      fingerprint,
       started: new Date().toISOString(),
       entries: [
         {
@@ -255,7 +257,7 @@ describe("apply lock and recovery", () => {
           action: "update",
           beforeHash: rawHash("before\n"),
           afterHash: rawHash("after\n"),
-          backup: join(project, ".fixture/backup/updated.txt"),
+          backup: join(project, backups, "updated.txt"),
           createdFolders: []
         },
         {
@@ -263,7 +265,7 @@ describe("apply lock and recovery", () => {
           action: "update",
           beforeHash: rawHash("before\n"),
           afterHash: rawHash("after\n"),
-          backup: join(project, ".fixture/backup/updated.txt"),
+          backup: join(project, backups, "updated.txt"),
           createdFolders: []
         },
         {
@@ -278,7 +280,7 @@ describe("apply lock and recovery", () => {
           action: "delete",
           beforeHash: rawHash("deleted\n"),
           afterHash: rawHash(undefined),
-          backup: join(project, ".fixture/backup/deleted.txt"),
+          backup: join(project, backups, "deleted.txt"),
           createdFolders: []
         },
         {
@@ -306,6 +308,35 @@ describe("apply lock and recovery", () => {
     expect(existsSync(join(project, "src/new"))).toBe(false)
     expect(existsSync(join(project, ".fixture/journal.json"))).toBe(false)
     expect(await recover(project, settings)).toMatchObject({ status: "unchanged" })
+  })
+
+  it("refuses a crafted journal that points outside the project or its backup folder", async () => {
+    const fingerprint = "0123456789abcdef0123456789abcdef"
+    writeFileSync(join(root, "outside.txt"), "keep\n")
+    const entry = {
+      path: "a.txt",
+      action: "create",
+      beforeHash: rawHash(undefined),
+      afterHash: "unsafe",
+      createdFolders: []
+    }
+    for (const journal of [
+      { fingerprint, entries: [{ ...entry, path: "../outside.txt" }] },
+      { fingerprint: "../../outside", entries: [entry] },
+      { fingerprint, entries: [{ ...entry, action: "update", backup: join(root, "outside.txt") }] },
+      { fingerprint, entries: [{ ...entry, createdFolders: [root] }] }
+    ]) {
+      mkdirSync(join(project, ".fixture"), { recursive: true })
+      writeFileSync(
+        join(project, ".fixture/journal.json"),
+        JSON.stringify({ started: new Date().toISOString(), ...journal })
+      )
+      const error = await failure(() => recover(project, settings))
+      expect(error.code).toBe("E_INVALID_STATE")
+      expect(error.message).toContain("nothing was changed")
+    }
+    expect(readFileSync(join(root, "outside.txt"), "utf8")).toBe("keep\n")
+    expect(existsSync(join(project, ".fixture/journal.json"))).toBe(true)
   })
 })
 

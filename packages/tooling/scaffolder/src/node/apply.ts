@@ -1,9 +1,10 @@
 import { readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs"
 import { hostname } from "node:os"
-import { join } from "node:path"
+import { isAbsolute, join, relative, resolve, sep } from "node:path"
 import { z } from "zod"
 import { setEnvValue } from "../edit/env.js"
 import { PlanError } from "../plan/errors.js"
+import { pathProblem } from "../plan/paths.js"
 import type { Notice, Operation, Plan } from "../plan/types.js"
 import type { ProductSettings } from "../state/settings.js"
 import {
@@ -295,8 +296,11 @@ async function rollback(root: string, journal: Journal): Promise<RollbackReport>
   for (const entry of [...journal.entries].reverse()) {
     const target = join(root, entry.path)
     const state = readSafely(root, entry.path)
-    const current = state.kind === "file" ? state.content : undefined
-    const hash = state.kind === "unsafe" ? "unsafe" : rawHash(current)
+    if (state.kind === "unsafe") {
+      report.changed.push(entry.path)
+      continue
+    }
+    const hash = rawHash(state.kind === "file" ? state.content : undefined)
     if (hash === entry.afterHash && hash !== entry.beforeHash) {
       if (entry.action === "create") {
         await removeFile(target)
@@ -340,6 +344,14 @@ export async function recover(
     releaseLock(root, settings)
     return { status: hadState ? "recovered" : "unchanged", report: empty }
   }
+  const problem = journalProblem(root, paths.backups, journal)
+  if (problem) {
+    throw new PlanError(
+      "E_INVALID_STATE",
+      `${settings.stateDir}/journal.json can't be used, so nothing was changed. ${problem} If you didn't run an apply here, delete it.`,
+      { paths: [`${settings.stateDir}/journal.json`] }
+    )
+  }
   const report = await rollback(root, journal)
   if (report.changed.length === 0) {
     rmSync(backupFolder(paths.backups, journal.fingerprint), { recursive: true, force: true })
@@ -347,4 +359,33 @@ export async function recover(
   await removeFile(paths.journal)
   releaseLock(root, settings)
   return { status: "recovered", report }
+}
+
+/**
+ * A journal is read from the project folder, which a cloned repository controls, so recover checks every path in it
+ * before trusting any: entries stay in the project, backups in this apply's backup folder.
+ */
+function journalProblem(root: string, backups: string, journal: Journal): string | undefined {
+  if (!/^[0-9a-f]{16,}$/.test(journal.fingerprint)) {
+    return "Its fingerprint isn't a hash."
+  }
+  const backupRoot = backupFolder(backups, journal.fingerprint)
+  for (const entry of journal.entries) {
+    const problem = pathProblem(entry.path)
+    if (problem) {
+      return `${JSON.stringify(entry.path)}: ${problem}`
+    }
+    if (entry.backup !== undefined && !inside(backupRoot, entry.backup)) {
+      return `The backup of ${entry.path} is outside its backup folder.`
+    }
+    if (entry.createdFolders.some((folder) => !inside(root, folder))) {
+      return `${entry.path} lists a created folder outside the project.`
+    }
+  }
+  return undefined
+}
+
+function inside(parent: string, path: string): boolean {
+  const relation = relative(parent, resolve(parent, path))
+  return relation !== "" && relation !== ".." && !relation.startsWith(`..${sep}`) && !isAbsolute(relation)
 }

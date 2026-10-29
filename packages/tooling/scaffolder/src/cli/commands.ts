@@ -251,6 +251,12 @@ export class CliRuntime {
     const context = await this.#context(root)
     const planFile = flags.strings.get("plan")
     if (planFile !== undefined) {
+      if (flags.booleans.has("dry-run") || options.applies === false) {
+        throw new PlanError(
+          "E_USAGE",
+          `--plan applies a reviewed plan, so it can't be used with ${flags.booleans.has("dry-run") ? "--dry-run" : "--list"}. Run plan show <file> to review it.`
+        )
+      }
       const reviewed = readPlanFile(resolve(this.io.cwd, planFile))
       const { plan, status } = await applyReviewed(
         context,
@@ -363,6 +369,11 @@ export class CliRuntime {
     if (flags.strings.get("plan") !== undefined) {
       const reviewed = readPlanFile(resolve(this.io.cwd, flags.strings.get("plan") ?? ""))
       const name = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.name : undefined
+      // The name picks the folder, and a lock is read there before planning, so check it first.
+      const nameProblem = name === undefined ? undefined : projectNameProblem(name)
+      if (name !== undefined && nameProblem) {
+        throw new PlanError("E_INVALID_OPTIONS", `"${name}" in the plan can't be a project name. ${nameProblem}`)
+      }
       return this.#planAndApply(resolve(this.io.cwd, folderArg ?? name ?? "."), reviewed.request, flags)
     }
     let partial: PartialAnswers = emptyAnswers()

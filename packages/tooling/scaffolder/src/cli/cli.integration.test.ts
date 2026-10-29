@@ -32,6 +32,8 @@ function options(
     catalog?: CatalogManifest
     hooks?: CliOptions["hooks"]
     runCommand?: CliOptions["runCommand"]
+    /** Leave cacheDir unset, so the CLI picks the per-user cache folder itself. */
+    defaultCache?: boolean
   } = {}
 ) {
   const scripted = scriptedPrompter(extra.script ?? [])
@@ -40,7 +42,7 @@ function options(
     version: "0.0.0",
     catalog: extra.catalog ?? fixtureCatalog(),
     settings,
-    cacheDir: join(root, "cache"),
+    ...(extra.defaultCache ? {} : { cacheDir: join(root, "cache") }),
     io: {
       stdout: (text) => stdout.push(text),
       stderr: (text) => stderr.push(text),
@@ -136,7 +138,9 @@ describe("init", () => {
       ["init", "app", "demo", "--set", "broken", "--yes"],
       ["init", "app", "demo", "--diff", "some", "--out", "--yes"],
       ["init", "app", "demo", "--preset", "nope", "--yes"],
-      ["init", "bare", "demo", "--preset", "saas", "--yes"]
+      ["init", "bare", "demo", "--preset", "saas", "--yes"],
+      ["sync", "--plan", "plan.json", "--dry-run"],
+      ["upgrade", "--list", "--plan", "plan.json"]
     ]) {
       const result = await run(argv)
       if (result.code !== 2) {
@@ -147,6 +151,14 @@ describe("init", () => {
     expect(files()).toEqual([])
     const name = await run(["init", "app", "Demo App", "--yes", "--json"])
     expect(envelope(name.out).error?.code).toBe("E_INVALID_OPTIONS")
+    const escaping = {
+      fingerprint: "f",
+      request: { intent: { command: "init", answers: { template: "app", name: "../away" } } }
+    }
+    writeFileSync(join(root, "escaping.json"), JSON.stringify(escaping))
+    const planned = await run(["init", "--plan", "escaping.json", "--yes", "--json"])
+    expect(envelope(planned.out).error?.code).toBe("E_INVALID_OPTIONS")
+    expect(existsSync(join(root, "../away"))).toBe(false)
   })
 
   it("--yes never makes a decision for you", async () => {
@@ -589,8 +601,19 @@ describe("add and other commands", () => {
     lock.catalog.version = "0.8.0"
     delete lock.catalog.integrity
     writeFileSync(join(root, "demo/.fixture/lock.json"), JSON.stringify(lock))
-    const planned = await run(["sync", "--cwd", "demo", "--dry-run", "--json"])
-    expect(envelope(planned.out).decisions?.[0]?.choices.map((choice) => choice.id)).toEqual(["upgrade"])
+    // XDG_CACHE_HOME keeps the default cache folder inside the test's temp folder on every platform.
+    const previous = process.env.XDG_CACHE_HOME
+    process.env.XDG_CACHE_HOME = join(root, "xdg")
+    try {
+      const planned = await run(["sync", "--cwd", "demo", "--dry-run", "--json"], { defaultCache: true })
+      expect(envelope(planned.out).decisions?.[0]?.choices.map((choice) => choice.id)).toEqual(["upgrade"])
+    } finally {
+      if (previous === undefined) {
+        delete process.env.XDG_CACHE_HOME
+      } else {
+        process.env.XDG_CACHE_HOME = previous
+      }
+    }
     expect(existsSync(marker)).toBe(false)
   })
 
