@@ -21,10 +21,10 @@ export interface CreateBetterAppsOptions<
   maxBodySize?: number | undefined
   /**
    * Reports errors no caller sees: unexpected errors in actions called over HTTP, and subscribers that fail. The default
-   * logs them with `console.error`. If it throws, that's logged too, and delivery and the action's result go on as if
-   * it hadn't.
+   * logs them with `console.error`. If it throws or rejects, that's logged too, and delivery and the action's result go
+   * on as if it hadn't. Nothing waits for a promise it returns.
    */
-  onError?: ((error: unknown, context: ErrorContext) => void) | undefined
+  onError?: ((error: unknown, context: ErrorContext) => void | Promise<void>) | undefined
 }
 
 /** Options server code passes to `app.api` calls, which a browser can't send. */
@@ -174,12 +174,14 @@ export function createBetterApps<const Features extends readonly BetterAppsFeatu
       const where = [context.feature, context.action ?? context.event?.type].filter(Boolean).join(" ")
       console.error(`Better Apps${where ? ` (${where})` : ""}:`, error)
     })
-  // A reporter that throws, such as one using a context that has ended, mustn't stop delivery or replace a result.
+  // A reporter that fails, such as one using a context that has ended, mustn't stop delivery or replace a result.
+  const reportFailed = (reportError: unknown) =>
+    console.error("Better Apps: onError failed while reporting an error.", reportError)
   const onError = (error: unknown, context: ErrorContext) => {
     try {
-      report(error, context)
+      Promise.resolve(report(error, context)).catch(reportFailed)
     } catch (reportError) {
-      console.error("Better Apps: onError threw while reporting an error.", reportError)
+      reportFailed(reportError)
     }
   }
   const outbox = createOutbox({ db, features, identity, onError })

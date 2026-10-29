@@ -161,7 +161,7 @@ export interface CreateBetterAppsOptions<Features extends readonly BetterAppsFea
     features: Features;
     identity: Identity;
     maxBodySize?: number | undefined;
-    onError?: ((error: unknown, context: ErrorContext) => void) | undefined;
+    onError?: ((error: unknown, context: ErrorContext) => void | Promise<void>) | undefined;
 }
 
 // @public

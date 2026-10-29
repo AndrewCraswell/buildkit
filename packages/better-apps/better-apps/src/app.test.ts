@@ -88,7 +88,7 @@ const notes = defineFeature({
 
 function setup<const Extra extends readonly BetterAppsFeature[] = readonly []>(extra: { features?: Extra } = {}) {
   const memory: MemoryDatabase = memoryDatabase()
-  const onError = vi.fn<(error: unknown, context: ErrorContext) => void>()
+  const onError = vi.fn<(error: unknown, context: ErrorContext) => void | Promise<void>>()
   const features = [notes, ...(extra.features ?? [])] as unknown as readonly [typeof notes, ...Extra]
   const app = createBetterApps({ database: memory.database, identity, features, onError })
   return { app, memory, onError }
@@ -442,7 +442,15 @@ describe("events", () => {
     expect(onError).toHaveBeenCalledWith(refused, { feature: "notes" })
   })
 
-  it("keeps delivering and returns the result when onError throws", async () => {
+  it.each([
+    [
+      "throws",
+      () => {
+        throw new Error("Reporter down")
+      }
+    ],
+    ["rejects", () => Promise.reject(new Error("Reporter down"))]
+  ])("keeps delivering and returns the result when onError %s", async (_, reporter) => {
     const received: string[] = []
     const { app, memory, onError } = setup({
       features: [
@@ -454,9 +462,7 @@ describe("events", () => {
         })
       ]
     })
-    onError.mockImplementation(() => {
-      throw new Error("Reporter down")
-    })
+    onError.mockImplementation(reporter)
     const logged = vi.spyOn(console, "error").mockImplementation(() => undefined)
     const context = {
       waitUntil: () => {
@@ -470,9 +476,11 @@ describe("events", () => {
     ])
     await app.api.notes.add({ text: "Hi" })
     expect(received).toEqual(["Hi"])
-    expect(logged).toHaveBeenCalledWith(
-      "Better Apps: onError threw while reporting an error.",
-      expect.objectContaining({ message: "Reporter down" })
+    await vi.waitFor(() =>
+      expect(logged).toHaveBeenCalledWith(
+        "Better Apps: onError failed while reporting an error.",
+        expect.objectContaining({ message: "Reporter down" })
+      )
     )
     logged.mockRestore()
   })
