@@ -40,6 +40,7 @@ function options(
     version: "0.0.0",
     catalog: extra.catalog ?? fixtureCatalog(),
     settings,
+    cacheDir: join(root, "cache"),
     io: {
       stdout: (text) => stdout.push(text),
       stderr: (text) => stderr.push(text),
@@ -520,6 +521,7 @@ describe("add and other commands", () => {
 
   it("catalog fetch caches a version and checks its integrity before loading it", async () => {
     await project()
+    const cached = join(root, "cache/catalogs/@fixture/catalog")
     const runCommand: CliOptions["runCommand"] = async (_command, args, cwd) => {
       const folder = join(cwd, "node_modules/@fixture/catalog")
       mkdirSync(folder, { recursive: true })
@@ -539,16 +541,14 @@ describe("add and other commands", () => {
     }
     const fetched = await run(["catalog", "fetch", "0.9.0", "--cwd", "demo", "--json"], { runCommand })
     expect(envelope(fetched.out).notices?.[0]?.text).toContain("sha512-test")
-    expect(JSON.parse(readFileSync(join(root, "demo/.fixture/catalogs/0.9.0/integrity.json"), "utf8")).integrity).toBe(
-      "sha512-test"
-    )
+    expect(JSON.parse(readFileSync(join(cached, "0.9.0/integrity.json"), "utf8")).integrity).toBe("sha512-test")
     const failed = await run(["catalog", "fetch", "0.8.0", "--cwd", "demo", "--json"], { runCommand })
     expect(envelope(failed.out).error?.code).toBe("E_BASELINE_UNAVAILABLE")
     const offline: CliOptions["runCommand"] = async () => ({ code: 1, output: "npm ERR! network" })
     const refetch = await run(["catalog", "fetch", "0.9.0", "--cwd", "demo", "--json"], { runCommand: offline })
     expect(envelope(refetch.out).error?.code).toBe("E_BASELINE_UNAVAILABLE")
-    expect(existsSync(join(root, "demo/.fixture/catalogs/0.9.0/integrity.json"))).toBe(true)
-    expect(existsSync(join(root, "demo/.fixture/catalogs/0.9.0.partial"))).toBe(false)
+    expect(existsSync(join(cached, "0.9.0/integrity.json"))).toBe(true)
+    expect(existsSync(join(cached, "0.9.0.partial"))).toBe(false)
     expect((await run(["catalog", "fetch", "latest", "--cwd", "demo"], { runCommand })).code).toBe(2)
     expect((await run(["catalog", "fetch", "--cwd", "demo"])).code).toBe(2)
     expect((await run(["catalog", "frob"])).code).toBe(2)
@@ -558,11 +558,40 @@ describe("add and other commands", () => {
     const planned = await run(["sync", "--cwd", "demo", "--dry-run", "--json"])
     expect(envelope(planned.out).decisions?.[0]?.choices.map((choice) => choice.id)).toEqual(["upgrade", "recorded"])
     writeFileSync(
-      join(root, "demo/.fixture/catalogs/0.9.0/integrity.json"),
+      join(cached, "0.9.0/integrity.json"),
       JSON.stringify({ name: "@fixture/catalog", version: "0.9.0", integrity: "sha512-other" })
     )
     const tampered = await run(["sync", "--cwd", "demo", "--dry-run", "--json"])
     expect(envelope(tampered.out).decisions?.[0]?.choices.map((choice) => choice.id)).toEqual(["upgrade"])
+  })
+
+  it("never imports a catalog cache that a project ships", async () => {
+    await project()
+    const marker = join(root, "imported")
+    const planted = join(root, "demo/.fixture/catalogs/0.8.0")
+    mkdirSync(join(planted, "node_modules/@fixture/catalog"), { recursive: true })
+    writeFileSync(
+      join(planted, "node_modules/@fixture/catalog/package.json"),
+      JSON.stringify({ name: "@fixture/catalog", main: "index.js" })
+    )
+    writeFileSync(
+      join(planted, "node_modules/@fixture/catalog/index.js"),
+      `require("node:fs").writeFileSync(${JSON.stringify(marker)}, "x")
+`
+    )
+    const integrity = { packages: { "node_modules/@fixture/catalog": { integrity: "sha512-planted" } } }
+    writeFileSync(join(planted, "package-lock.json"), JSON.stringify(integrity))
+    writeFileSync(
+      join(planted, "integrity.json"),
+      JSON.stringify({ name: "@fixture/catalog", version: "0.8.0", integrity: "sha512-planted" })
+    )
+    const lock = JSON.parse(readFileSync(join(root, "demo/.fixture/lock.json"), "utf8"))
+    lock.catalog.version = "0.8.0"
+    delete lock.catalog.integrity
+    writeFileSync(join(root, "demo/.fixture/lock.json"), JSON.stringify(lock))
+    const planned = await run(["sync", "--cwd", "demo", "--dry-run", "--json"])
+    expect(envelope(planned.out).decisions?.[0]?.choices.map((choice) => choice.id)).toEqual(["upgrade"])
+    expect(existsSync(marker)).toBe(false)
   })
 
   it("builds a citty command tree with every command and the catalog's slot flags", () => {

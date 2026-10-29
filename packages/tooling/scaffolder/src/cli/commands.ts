@@ -4,7 +4,7 @@ import { z } from "zod"
 import { findPreset } from "../manifest/catalog.js"
 import type { CatalogManifest } from "../manifest/types.js"
 import { recover, type ApplyHooks } from "../node/apply.js"
-import { CatalogStore, type CommandRunner } from "../node/catalogs.js"
+import { CatalogStore, userCacheDir, type CommandRunner } from "../node/catalogs.js"
 import {
   applyReviewed,
   defaultArtifactFolder,
@@ -53,6 +53,8 @@ export interface CliOptions {
   io?: Partial<CliIo>
   /** Runs npm for `catalog fetch`. */
   runCommand?: CommandRunner
+  /** The per-user cache for earlier catalog versions. Defaults to the product's folder in the user's cache folder. */
+  cacheDir?: string
   hooks?: ApplyHooks
 }
 
@@ -158,14 +160,17 @@ export class CliRuntime {
     return this.io.isTTY && !flags.booleans.has("json") && !flags.booleans.has("yes")
   }
 
-  /** Loads the catalog version the lock records when it differs from the installed one, so old baselines render. */
-  async #context(root: string): Promise<ProjectContext> {
-    const store = new CatalogStore({
-      root,
-      settings: this.#settings,
+  #catalogStore(): CatalogStore {
+    return new CatalogStore({
+      cacheRoot: this.options.cacheDir ?? userCacheDir(this.#settings),
       installed: this.options.catalog,
       ...(this.options.runCommand ? { run: this.options.runCommand } : {})
     })
+  }
+
+  /** Loads the catalog version the lock records when it differs from the installed one, so old baselines render. */
+  async #context(root: string): Promise<ProjectContext> {
+    const store = this.#catalogStore()
     const state = readSafely(root, lockPath(this.#settings))
     if (state.kind === "file") {
       try {
@@ -707,12 +712,7 @@ export class CliRuntime {
         throw new PlanError("E_USAGE", "catalog fetch takes a version.")
       }
       const root = this.#root(flags)
-      const store = new CatalogStore({
-        root,
-        settings: this.#settings,
-        installed: this.options.catalog,
-        ...(this.options.runCommand ? { run: this.options.runCommand } : {})
-      })
+      const store = this.#catalogStore()
       const lockState = readSafely(root, lockPath(this.#settings))
       const lock = lockState.kind === "file" ? readLock(lockPath(this.#settings), lockState.content) : undefined
       const fetched = await store.fetch(version, lock?.catalog.version === version ? lock.catalog.integrity : undefined)

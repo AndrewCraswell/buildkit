@@ -36,6 +36,7 @@ export interface CliIo {
 
 // @public (undocumented)
 export interface CliOptions {
+    cacheDir?: string;
     // Warning: (ae-forgotten-export) The symbol "CatalogManifest" needs to be exported by the entry point cli.d.ts
     //
     // (undocumented)

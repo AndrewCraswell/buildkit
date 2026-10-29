@@ -56,7 +56,16 @@ export async function applyReviewed(
   options: { secrets?: Record<string, string>; hooks?: ApplyHooks } = {}
 ): Promise<{ plan: Plan; status: "applied" | "unchanged" }> {
   if (lastApplied(context) === reviewed.fingerprint) {
-    const current = await planProject(context, reviewed.request)
+    // The lock now records this apply, so the fingerprint differs even with no change. The status is what counts. An
+    // init can't be planned twice, so a sync checks that the project still matches what it created.
+    const again: PlanRequest =
+      reviewed.request.intent.command === "init" ? { intent: { command: "sync" } } : reviewed.request
+    const current = await planProject(context, again)
+    if (current.status !== "unchanged") {
+      throw new PlanError("E_DRIFT", "The project changed after the plan was applied. Review the new plan.", {
+        paths: current.operations.map((operation) => operation.path)
+      })
+    }
     return { plan: current, status: "unchanged" }
   }
   const current = await planProject(context, reviewed.request)

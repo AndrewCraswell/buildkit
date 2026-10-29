@@ -235,9 +235,17 @@ async function askOption(prompter: Prompter, title: string, question: OptionQues
   const answer = await prompter.text({
     message,
     ...(initial === undefined ? {} : { initialValue: initial }),
-    // Number("") is 0, so a blank answer has to be refused on its own.
-    validate: (value) =>
-      numeric && (value.trim() === "" || Number.isNaN(Number(value))) ? "Enter a number." : undefined
+    validate: (value) => {
+      if (!numeric) {
+        return undefined
+      }
+      // Number("") is 0, so a blank answer has to be refused on its own.
+      const parsed = Number(value)
+      if (value.trim() === "" || !Number.isFinite(parsed)) {
+        return "Enter a number."
+      }
+      return schema.type === "integer" && !Number.isInteger(parsed) ? "Enter a whole number." : undefined
+    }
   })
   if (answer === cancelled) {
     return cancelled

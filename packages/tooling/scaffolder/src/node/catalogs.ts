@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process"
 import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { homedir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { z } from "zod"
@@ -44,26 +45,44 @@ export function isCatalogManifest(value: unknown): value is CatalogManifest {
 }
 
 /**
- * Earlier catalog versions, cached under the state folder so old baselines render offline. Fetched packages are
- * installed without running their scripts, and each one's integrity is checked before its code is imported.
+ * The per-user cache folder for a product: `%LOCALAPPDATA%\<product>\Cache` on Windows, `~/Library/Caches/<product>`
+ * on macOS, and `$XDG_CACHE_HOME/<product>` or `~/.cache/<product>` elsewhere.
+ */
+export function userCacheDir(settings: ProductSettings): string {
+  const env = process.env
+  if (env.XDG_CACHE_HOME) {
+    return join(env.XDG_CACHE_HOME, settings.product)
+  }
+  if (process.platform === "win32") {
+    return join(env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local"), settings.product, "Cache")
+  }
+  if (process.platform === "darwin") {
+    return join(homedir(), "Library", "Caches", settings.product)
+  }
+  return join(homedir(), ".cache", settings.product)
+}
+
+/**
+ * Earlier catalog versions, cached so old baselines render offline. Fetched packages are installed without running
+ * their scripts, and each one's integrity is checked before its code is imported. The cache lives in the user's cache
+ * folder, never in the project: a cloned repository could otherwise ship a cache, with its own integrity record, whose
+ * code the CLI would import.
  */
 export class CatalogStore {
-  readonly #root: string
-  readonly #settings: ProductSettings
+  readonly #cacheRoot: string
   readonly #installed: CatalogManifest
   readonly #run: CommandRunner
   readonly #loaded = new Map<string, CatalogManifest>()
 
-  constructor(options: { root: string; settings: ProductSettings; installed: CatalogManifest; run?: CommandRunner }) {
-    this.#root = options.root
-    this.#settings = options.settings
+  constructor(options: { cacheRoot: string; installed: CatalogManifest; run?: CommandRunner }) {
+    this.#cacheRoot = options.cacheRoot
     this.#installed = options.installed
     this.#run = options.run ?? runCommand
     this.#loaded.set(options.installed.version, options.installed)
   }
 
   folder(version: string): string {
-    return join(this.#root, this.#settings.stateDir, "catalogs", version)
+    return join(this.#cacheRoot, "catalogs", ...this.#installed.id.split("/"), version)
   }
 
   /** A loaded catalog version, for the planner's `catalogs` lookup. */

@@ -60,8 +60,7 @@ export function applyReviewed(context: ProjectContext, reviewed: {
 // @public
 export class CatalogStore {
     constructor(options: {
-        root: string;
-        settings: ProductSettings;
+        cacheRoot: string;
         installed: CatalogManifest;
         run?: CommandRunner;
     });
@@ -174,6 +173,9 @@ export interface RollbackReport {
 export const runCommand: CommandRunner;
 
 // @public
+export function userCacheDir(settings: ProductSettings): string;
+
+// @public
 export function writeArtifacts(plan: Plan, folder: string, options: {
     product: string;
     diff?: DiffScope;
@@ -182,7 +184,7 @@ export function writeArtifacts(plan: Plan, folder: string, options: {
 // Warnings were encountered during analysis:
 //
 // dist/node/apply.d.ts:38:5 - (ae-forgotten-export) The symbol "Notice" needs to be exported by the entry point node.d.ts
-// dist/node/catalogs.d.ts:18:9 - (ae-forgotten-export) The symbol "CatalogManifest" needs to be exported by the entry point node.d.ts
+// dist/node/catalogs.d.ts:24:9 - (ae-forgotten-export) The symbol "CatalogManifest" needs to be exported by the entry point node.d.ts
 // dist/node/project.d.ts:19:5 - (ae-forgotten-export) The symbol "PlanRequest" needs to be exported by the entry point node.d.ts
 
 // (No @packageDocumentation comment for this package)

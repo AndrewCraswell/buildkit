@@ -29,6 +29,6 @@ export function lockPath(settings: ProductSettings): string {
 export function stateIgnoreFile(settings: ProductSettings): { path: string; content: string } {
   return {
     path: `${settings.stateDir}/.gitignore`,
-    content: ["apply.lock", "journal.json", "backup/", "plans/", "catalogs/", ""].join("\n")
+    content: ["apply.lock", "journal.json", "backup/", "plans/", ""].join("\n")
   }
 }
