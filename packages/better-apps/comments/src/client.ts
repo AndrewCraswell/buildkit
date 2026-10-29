@@ -607,8 +607,11 @@ function createCommentsClientFor<Types extends CommentsTypes>(
 
     /** The store's state as JSON can carry it, to send a server render's loads to the browser. */
     dehydrate(): DehydratedComments {
-      // Through JSON on purpose, so dates become the strings a server render sends.
-      const json = JSON.stringify({ ...store.getSnapshot(), pending: {} })
+      // Through JSON on purpose, so dates become the strings a server render sends. Only loaded counts go, since the
+      // browser loads counts it doesn't have and would keep ones marked loading or failed.
+      const state = store.getSnapshot()
+      const counts = Object.fromEntries(Object.entries(state.counts).filter(([, count]) => count.state === "ready"))
+      const json = JSON.stringify({ ...state, counts, pending: {} })
       return JSON.parse(json) as DehydratedComments
     },
 
@@ -653,7 +656,10 @@ function createCommentsClientFor<Types extends CommentsTypes>(
         },
         threadComments: { ...state.threadComments, ...(snapshot.threadComments as Record<string, ThreadComments>) },
         lists: { ...state.lists, ...(snapshot.lists as Record<string, ThreadList>) },
-        counts: { ...state.counts, ...snapshot.counts },
+        counts: {
+          ...state.counts,
+          ...Object.fromEntries(Object.entries(snapshot.counts).filter(([, count]) => count.state === "ready"))
+        },
         users: { ...state.users, ...(snapshot.users as Record<string, IdentityUser>) },
         pending: state.pending
       }))

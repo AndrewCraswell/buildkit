@@ -5,6 +5,7 @@ import { useRef, type ReactNode } from "react"
 import { describe, expect, it, vi } from "vitest"
 import { browser } from "../test/browser.js"
 import {
+  countKey,
   useAnchorPosition,
   useComments,
   useCreateThread,
@@ -123,13 +124,26 @@ describe("comments hooks", () => {
   })
 
   it("load counts again when a reset overtakes them", async () => {
-    const { api, as, wrapper } = rendered()
+    const { api, as, wrapper, requests } = rendered()
     await api.createThread({ ...onInvoice, body: "Hi" }, as("bob"))
     const { result } = renderHook(() => ({ counts: useThreadCounts("invoice", ["inv-1"]), comments: useComments() }), {
       wrapper
     })
+    // The first request is still out when the reset comes, so its answer is ignored and a second one is made.
+    expect(requests).toEqual(["countThreads"])
     act(() => result.current.comments.reset())
     await waitFor(() => expect(result.current.counts).toEqual({ "inv-1": { open: 1, total: 1 } }))
+    expect(requests).toEqual(["countThreads", "countThreads"])
+  })
+
+  it("load failed counts again when the list mounts", async () => {
+    const { wrapper, comments } = rendered()
+    comments.store.setState((state) => ({
+      ...state,
+      counts: { [countKey("invoice", "inv-1")]: { open: 0, total: 0, state: "error" } }
+    }))
+    const { result } = renderHook(() => useThreadCounts("invoice", ["inv-1"]), { wrapper })
+    await waitFor(() => expect(result.current).toEqual({ "inv-1": { open: 0, total: 0 } }))
   })
 
   it("clear mention suggestions when the store is reset", async () => {

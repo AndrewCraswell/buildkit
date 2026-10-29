@@ -308,6 +308,25 @@ describe("dehydrate and hydrate", () => {
     expect(state.threadComments[thread.id]?.ids).toHaveLength(1)
     expect(Object.values(state.comments)[0]?.createdAt).toBeInstanceOf(Date)
   })
+
+  it("carry only loaded counts", () => {
+    const { comments } = browser()
+    const ready = countKey("invoice", "inv-1")
+    comments.store.setState((state) => ({
+      ...state,
+      counts: {
+        [ready]: { open: 1, total: 2, state: "ready" },
+        [countKey("invoice", "inv-2")]: { open: 0, total: 0, state: "loading" },
+        [countKey("invoice", "inv-3")]: { open: 0, total: 0, state: "error" }
+      }
+    }))
+    const snapshot = comments.dehydrate()
+    expect(Object.keys(snapshot.counts)).toEqual([ready])
+    const failed = { [countKey("invoice", "inv-4")]: { open: 0, total: 0, state: "error" as const } }
+    const fresh = createCommentsClient(createBetterAppsClient())
+    fresh.hydrate({ ...snapshot, counts: { ...snapshot.counts, ...failed } })
+    expect(Object.keys(fresh.store.getSnapshot().counts)).toEqual([ready])
+  })
 })
 
 describe("the browser client's types", () => {

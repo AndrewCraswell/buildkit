@@ -161,6 +161,16 @@ export function useThreadCounts<Types extends CommentsTypes = CommentsTypes>(
       comments.loadCounts(subjectType, missingKey.split("\u0000")).catch(() => undefined)
     }
   }, [comments, subjectType, idsKey, missingKey])
+  // Counts that failed load again once when the list mounts or changes, rather than after every failure, so a failing
+  // server isn't asked in a loop.
+  useEffect(() => {
+    const state = comments.store.getSnapshot()
+    const ids = idsKey === "" ? [] : idsKey.split("\u0000")
+    const failed = ids.filter((subjectId) => state.counts[countKey(subjectType, subjectId)]?.state === "error")
+    if (failed.length > 0) {
+      comments.loadCounts(subjectType, failed).catch(() => undefined)
+    }
+  }, [comments, subjectType, idsKey])
   return counts
 }
 
