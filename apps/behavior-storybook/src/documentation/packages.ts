@@ -46,6 +46,52 @@ export const packages = [
     example: "tooling-dev-domains--setup"
   },
   {
+    name: "cli",
+    group: "Tooling",
+    summary: "The buildkit CLI: create, extend and upgrade Buildkit apps.",
+    code: "npx @buildkitgg/cli init app my-app\n\n# Inside the app\npnpm buildkit add i18n\npnpm buildkit add database\npnpm buildkit upgrade\npnpm buildkit check",
+    api: [
+      "init [template] [folder]: ask the questions, show the plan, and write after one confirmation.",
+      "add / config set: add an add-on, answer a question later, or change an option.",
+      "upgrade / sync / check: merge template fixes into your code, or fail when generated files drift.",
+      "runBuildkit(argv, options): run one command from your own tools and get its exit code."
+    ],
+    notes:
+      "Requires Node.js 24 or later. New apps pin the CLI as a dev dependency, so later commands run through pnpm inside the project. Without a terminal, a command plans and writes nothing unless you pass --yes. --json prints one JSON envelope for scripts and agents.",
+    example: "tooling-cli--create-an-app"
+  },
+  {
+    name: "catalog",
+    group: "Tooling",
+    summary: "Buildkit's scaffolding catalog: the TanStack Start target, the app template and its add-ons.",
+    code: 'import { catalog, settings } from "@buildkitgg/catalog"\nimport { memoryTree, plan } from "@buildkitgg/scaffolder"\n\nconst planned = await plan({\n  catalog,\n  settings,\n  tree: memoryTree({}),\n  request: { intent: { command: "init", answers: { template: "app", mode: "ssr", name: "my-app" } } }\n})',
+    api: [
+      "catalog: the tanstack-start target in ssr and spa modes, the app template and its add-ons.",
+      "settings: buildkit.jsonc for your choices, .buildkit/ for the lock, and .env for secrets.",
+      "Add-ons: ci, sql, better-auth, i18n and better-apps-deploy.",
+      "Presets: saas answers ssr with a database, sign-in and localization."
+    ],
+    notes:
+      "Run it through the buildkit CLI; import it directly only to plan Buildkit apps in your own tools. Apps name no cloud: no Wrangler config, bindings or cloud names. The database, sign-in and deploy add-ons use Better Apps packages that aren't on npm yet.",
+    example: "tooling-catalog--the-app-template"
+  },
+  {
+    name: "scaffolder",
+    group: "Tooling",
+    summary: "A plan-first scaffolding engine: catalogs of targets, templates and add-ons, with safe upgrades.",
+    code: 'import catalog from "@acme/catalog"\nimport { defineSettings } from "@buildkitgg/scaffolder"\nimport { createCli } from "@buildkitgg/scaffolder/cli"\nimport { runMain } from "citty"\n\nawait runMain(createCli({\n  name: "acme",\n  version: "1.0.0",\n  catalog,\n  settings: defineSettings({ product: "acme" })\n}))',
+    api: [
+      "defineCatalog: targets, templates, slots and add-ons, each with its own define helper.",
+      "plan(options): turn answers into operations, decisions and conflicts, with a fingerprint.",
+      "createCli / runCli: init, add, config, upgrade, sync, check and more, with a wizard generated from the catalog.",
+      "definePack: publish templates for a catalog as an npm package.",
+      "checkCatalog / pairwiseAnswers: find broken references and plan every pair of answers in CI."
+    ],
+    notes:
+      "Requires Node.js 24 or later. Until 1.0, minor versions may change the catalog and manifest types. The engine creates a path only if it's absent, and overwrites or deletes only while a file still matches what it last wrote; anything else is a conflict that --yes can't answer.",
+    example: "tooling-scaffolder--writing-a-catalog"
+  },
+  {
     name: "preferences-core",
     group: "Core",
     summary: "Typed defaults, overrides, persistence, and JSON backup without a framework dependency.",
