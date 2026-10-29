@@ -1,6 +1,7 @@
 import { readEnv, removeEnvKey, setEnvValue } from "../edit/env.js"
 import type { JsonParseResult, JsonPath } from "../edit/json.js"
 import { appendLines, hasLine, isSecretLikePattern, removeLines } from "../edit/lines.js"
+import type { ItemOrder } from "../manifest/types.js"
 import { PlanError } from "../plan/errors.js"
 import { canonicalJson, isRecord, jsonEqual, parsePointer, readPointer } from "../plan/json.js"
 import type { PlanConflict, Resolution } from "../plan/types.js"
@@ -12,6 +13,7 @@ export type { Desired } from "./keys.js"
 export interface DesiredItem extends Desired {
   /** The field that identifies the item in a keyed array. Without it, the array is a set. */
   keyField?: string
+  order?: ItemOrder
 }
 
 export interface DesiredDocument {
@@ -245,7 +247,7 @@ export function planSharedDocument(input: {
         if (index === -1) {
           write((base) =>
             readPointer(parsedValue(format, base), segments).found
-              ? format.insertItem(base, segments, array.length, value)
+              ? format.insertItem(base, segments, insertionIndex(array, wanted), value)
               : format.set(base, segments, [value])
           )
         } else {
@@ -273,6 +275,21 @@ export function planSharedDocument(input: {
         : undefined,
     conflicts
   }
+}
+
+/** Where a new item goes: after the last item it follows, else before the first it precedes, else at the end. */
+function insertionIndex(array: unknown[], item: DesiredItem | undefined): number {
+  const { keyField, order } = item ?? {}
+  if (keyField === undefined || !order) {
+    return array.length
+  }
+  const keys = array.map((element) => (isRecord(element) ? element[keyField] : undefined))
+  const after = keys.findLastIndex((key) => typeof key === "string" && (order.after ?? []).includes(key))
+  if (after !== -1) {
+    return after + 1
+  }
+  const before = keys.findIndex((key) => typeof key === "string" && (order.before ?? []).includes(key))
+  return before === -1 ? array.length : before
 }
 
 function parsedValue(format: DocumentFormat, text: string): unknown {

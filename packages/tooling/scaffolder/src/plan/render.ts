@@ -1,4 +1,11 @@
-import type { CatalogManifest, Contribution, ContributeContext, Ownership, TargetContext } from "../manifest/types.js"
+import type {
+  CatalogManifest,
+  Contribution,
+  ContributeContext,
+  ItemOrder,
+  Ownership,
+  TargetContext
+} from "../manifest/types.js"
 import type { Desired, DesiredDocument, DesiredEnv, DesiredItem } from "../merge/shared.js"
 import { itemIdentity } from "../merge/shared.js"
 import { renderPoints, type OwnedPoint, type PointEntry } from "../points/render.js"
@@ -215,7 +222,16 @@ function collect(result: Rendered, contributor: string, contributions: Contribut
         } else {
           const items = Array.isArray(contribution.value) ? contribution.value : [contribution.value]
           for (const item of items) {
-            appendItem(result, contributor, contribution.path, contribution.kind, segments, item, contribution.key)
+            appendItem(
+              result,
+              contributor,
+              contribution.path,
+              contribution.kind,
+              segments,
+              item,
+              contribution.key,
+              contribution.order
+            )
           }
         }
         break
@@ -340,11 +356,19 @@ function appendItem(
   format: "json" | "yaml",
   segments: string[],
   item: unknown,
-  keyField: string | undefined
+  keyField: string | undefined,
+  order: ItemOrder | undefined
 ) {
   checkSegments(contributor, path, segments)
   const desired = documentFor(result, path, format)
   const pointer = formatPointer(segments)
+  if (order && keyField === undefined) {
+    throw new PlanError(
+      "E_CONTRIBUTION",
+      `${contributor} orders an item of ${pointer} in ${path}, but only items of a keyed array can be ordered.`,
+      { paths: [path] }
+    )
+  }
   for (const other of desired.keys.keys()) {
     if (overlaps(other, pointer)) {
       throw new PlanError(
@@ -375,8 +399,19 @@ function appendItem(
       )
     }
     existing.contributors.push(contributor)
+    if (order) {
+      existing.order = {
+        after: [...new Set([...(existing.order?.after ?? []), ...(order.after ?? [])])],
+        before: [...new Set([...(existing.order?.before ?? []), ...(order.before ?? [])])]
+      }
+    }
   } else {
-    items.set(identity, { value: item, contributors: [contributor], ...(keyField === undefined ? {} : { keyField }) })
+    items.set(identity, {
+      value: item,
+      contributors: [contributor],
+      ...(keyField === undefined ? {} : { keyField }),
+      ...(order ? { order } : {})
+    })
   }
   desired.items.set(pointer, items)
 }

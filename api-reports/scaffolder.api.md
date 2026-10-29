@@ -192,6 +192,7 @@ export type Contribution = {
     op: JsonOp;
     value: unknown;
     key?: string;
+    order?: ItemOrder;
 } | {
     kind: "yaml";
     path: string;
@@ -199,6 +200,7 @@ export type Contribution = {
     op: JsonOp;
     value: unknown;
     key?: string;
+    order?: ItemOrder;
 } | {
     kind: "lines";
     path: string;
@@ -463,6 +465,14 @@ export type Intent = {
     addons?: string[];
 };
 
+// @public
+export interface ItemOrder {
+    // (undocumented)
+    after?: string[];
+    // (undocumented)
+    before?: string[];
+}
+
 // @public (undocumented)
 export type JsonOp = "set" | "append" | "merge";
 
@@ -594,6 +604,11 @@ export const lockSchema: z.ZodObject<{
 
 // @public
 export function lookupAddon(catalog: CatalogManifest, name: string): NameLookup;
+
+// @public
+export function match<V extends string, R>(value: V, cases: {
+    readonly [K in V]: () => R;
+}): R;
 
 // @public (undocumented)
 export function memoryTree(files: Readonly<Record<string, string>>): VirtualTree;
@@ -908,6 +923,7 @@ export interface PresetManifest {
 // @public
 export interface ProductSettings {
     configFile: string;
+    printWidth?: number;
     product: string;
     schemaUrl?: string;
     secretsFile: string;

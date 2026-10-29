@@ -1,14 +1,12 @@
 import { defineTarget, type Contribution, type TargetContext } from "@buildkitgg/scaffolder"
 import { dependency, file, fromTemplate, json, jsonItems, jsonKey } from "./files.js"
 import { generatedFolder, startPoints } from "./points.js"
+import { printWidth } from "./settings.js"
 
 const common = "tanstack-start/common"
 
 /** Paths tools regenerate. The formatter and linter skip them, and GitHub collapses them in diffs. */
 const generatedPaths = [`${generatedFolder}/**`, "src/routeTree.gen.ts", ".buildkit/lock.json"]
-
-/** JSON files Buildkit edits by key. It keeps their layout, which isn't the formatter's, so the formatter skips them. */
-const editedByKey = ["buildkit.jsonc", "package.json", "tsconfig.json"]
 
 const compilerOptions = {
   target: "ES2023",
@@ -21,9 +19,7 @@ const compilerOptions = {
   noFallthroughCasesInSwitch: true,
   isolatedModules: true,
   skipLibCheck: true,
-  noEmit: true,
-  // Generated files import app modules by their file names, such as ../../i18n/router.tsx.
-  allowImportingTsExtensions: true
+  noEmit: true
 }
 
 function appName(name: string): string {
@@ -87,12 +83,14 @@ function base(ctx: TargetContext): Contribution[] {
       ".oxfmtrc.json",
       json({
         $schema: "./node_modules/oxfmt/configuration_schema.json",
-        printWidth: 120,
+        // The engine lays out the JSON it edits for this width, so package.json, tsconfig.json and buildkit.jsonc are
+        // formatted like the rest. It keeps package.json's key order, so the formatter doesn't sort it.
+        printWidth,
         semi: false,
         trailingComma: "none",
         sortImports: { enabled: true, newlinesBetween: false, sortSpecifiers: true },
         sortPackageJson: false,
-        ignorePatterns: ["dist/**", ".output/**", "pnpm-lock.yaml", ...generatedPaths, ...editedByKey]
+        ignorePatterns: ["dist/**", ".output/**", "pnpm-lock.yaml", ...generatedPaths]
       })
     ),
     fromTemplate(`tanstack-start/${mode}`, "vite.config.ts"),

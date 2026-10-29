@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "JSON the engine writes is laid out as oxfmt and Prettier lay it out, for the new `printWidth` setting: short lists on one line, objects as they are written, and `package.json` as `JSON.stringify` writes it. A keyed append takes `order: { after, before }`. `match(value, cases)` branches on a render model or mode. Removing the last item of a one-line array no longer leaves a stray quote.",
+  "packageName": "@buildkitgg/scaffolder",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

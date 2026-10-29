@@ -1,13 +1,16 @@
 import {
   applyEdits,
+  findNodeAtLocation,
   modify,
   parseTree,
   printParseErrorCode,
+  type Edit,
   type FormattingOptions,
   type Node,
   type ParseError
 } from "jsonc-parser"
 import { formatPointer, isUnsafeKey } from "../plan/json.js"
+import { defaultJsonLayout, printJson, relayoutJson, type JsonLayout } from "./layout.js"
 
 export type JsonPath = (string | number)[]
 
@@ -97,27 +100,124 @@ export function jsonFormatting(text: string | undefined): FormattingOptions {
   return { insertSpaces: true, tabSize: spaces, eol }
 }
 
-/** Sets a value, creating missing parent objects. Comments and formatting elsewhere are kept. */
-export function setJson(text: string, path: JsonPath, value: unknown): string {
-  return applyEdits(text, modify(text, path, value, { formattingOptions: jsonFormatting(text) }))
+/** One level of the document's indentation. */
+function indentUnit(formatting: FormattingOptions): string {
+  return formatting.insertSpaces === false ? "\t" : " ".repeat(formatting.tabSize ?? 2)
 }
 
-export function removeJson(text: string, path: JsonPath): string {
-  return applyEdits(text, modify(text, path, undefined, { formattingOptions: jsonFormatting(text) }))
-}
-
-export function insertJsonArrayItem(text: string, path: JsonPath, index: number, value: unknown): string {
-  return applyEdits(
-    text,
-    modify(text, [...path, index], value, { formattingOptions: jsonFormatting(text), isArrayInsertion: true })
+/** Applies an edit, then lays out the value at `relayoutAt` and what around it the edit can change. */
+function edit(
+  text: string,
+  path: JsonPath,
+  value: unknown,
+  relayoutAt: JsonPath,
+  layout: JsonLayout,
+  isArrayInsertion = false
+): string {
+  const formattingOptions = jsonFormatting(text)
+  const edits = modify(text, path, value, { formattingOptions, isArrayInsertion })
+  return relayoutJson(
+    applyEdits(text, edits),
+    relayoutAt,
+    layout,
+    indentUnit(formattingOptions),
+    formattingOptions.eol ?? "\n",
+    rewritten(edits)
   )
 }
 
-export function replaceJsonArrayItem(text: string, path: JsonPath, index: number, value: unknown): string {
-  return applyEdits(text, modify(text, [...path, index], value, { formattingOptions: jsonFormatting(text) }))
+/** The range of the edited text that `edits` wrote. */
+function rewritten(edits: Edit[]): { start: number; end: number } | undefined {
+  let shift = 0
+  let range: { start: number; end: number } | undefined
+  for (const edit of [...edits].sort((left, right) => left.offset - right.offset)) {
+    const start = edit.offset + shift
+    const end = start + edit.content.length
+    range = { start: Math.min(range?.start ?? start, start), end: Math.max(range?.end ?? end, end) }
+    shift += edit.content.length - edit.length
+  }
+  return range
 }
 
-/** A new JSON file: two-space indentation and a final newline. */
-export function stringifyJson(value: unknown): string {
-  return `${JSON.stringify(value, null, 2)}\n`
+/**
+ * Sets a value, creating missing parent objects. Comments and formatting elsewhere are kept, and the value is laid out
+ * as the project's formatter prints it (see `JsonLayout`).
+ */
+export function setJson(text: string, path: JsonPath, value: unknown, layout = defaultJsonLayout): string {
+  return edit(text, path, value, path, layout)
+}
+
+/**
+ * Removes a value. An item is cut from the array by its own text, since jsonc-parser's removal of a last item assumes
+ * the array is across lines, and the array is laid out again, so a list that now fits goes on one line. An object left
+ * empty becomes `{}`.
+ */
+export function removeJson(text: string, path: JsonPath, layout = defaultJsonLayout): string {
+  const parentPath = path.slice(0, -1)
+  const last = path.at(-1)
+  const formatting = jsonFormatting(text)
+  const unit = indentUnit(formatting)
+  const eol = formatting.eol ?? "\n"
+  const tree = parseTree(text, [], { allowTrailingComma: true })
+  const parent = tree ? findNodeAtLocation(tree, parentPath) : undefined
+  if (typeof last === "number" && parent?.type === "array") {
+    const items = parent.children ?? []
+    const item = items[last]
+    if (!item) {
+      return text
+    }
+    const [start, end] = itemRange(parent, last)
+    return relayoutJson(`${text.slice(0, start)}${text.slice(end)}`, parentPath, layout, unit, eol)
+  }
+  const edits = modify(text, path, undefined, { formattingOptions: formatting })
+  const removed = relayoutJson(applyEdits(text, edits), undefined, layout, unit, eol, rewritten(edits))
+  const removedTree = parseTree(removed, [], { allowTrailingComma: true })
+  const object = removedTree ? findNodeAtLocation(removedTree, parentPath) : undefined
+  if (object?.type === "object" && (object.children ?? []).length === 0 && object.length > 2) {
+    const inside = removed.slice(object.offset + 1, object.offset + object.length - 1)
+    if (inside.trim() === "") {
+      return `${removed.slice(0, object.offset)}{}${removed.slice(object.offset + object.length)}`
+    }
+  }
+  return removed
+}
+
+/** The text an item takes in its array: up to the next item, from the one before for the last, or all of an only item. */
+function itemRange(array: Node, index: number): [number, number] {
+  const items = array.children ?? []
+  const item = items[index]
+  const next = items[index + 1]
+  const previous = items[index - 1]
+  if (!item || items.length === 1) {
+    return [array.offset + 1, array.offset + array.length - 1]
+  }
+  if (next) {
+    return [item.offset, next.offset]
+  }
+  return [(previous?.offset ?? 0) + (previous?.length ?? 0), item.offset + item.length]
+}
+
+export function insertJsonArrayItem(
+  text: string,
+  path: JsonPath,
+  index: number,
+  value: unknown,
+  layout = defaultJsonLayout
+): string {
+  return edit(text, [...path, index], value, path, layout, true)
+}
+
+export function replaceJsonArrayItem(
+  text: string,
+  path: JsonPath,
+  index: number,
+  value: unknown,
+  layout = defaultJsonLayout
+): string {
+  return edit(text, [...path, index], value, path, layout)
+}
+
+/** A new JSON file: two-space indentation, laid out as the project's formatter prints it, and a final newline. */
+export function stringifyJson(value: unknown, layout = defaultJsonLayout): string {
+  return `${printJson(value, { layout })}\n`
 }

@@ -11,6 +11,7 @@ export {
 } from "./manifest/define.js"
 export { findAddon, findPreset, findTemplate, lookupAddon, shortName, slotAddons } from "./manifest/catalog.js"
 export type { NameLookup } from "./manifest/catalog.js"
+export { match } from "./manifest/match.js"
 export { mergePacks, templateSource } from "./manifest/packs.js"
 export type { LoadedPack, TemplateSource } from "./manifest/packs.js"
 export type {
@@ -22,6 +23,7 @@ export type {
   Contribution,
   EntryValue,
   FileClass,
+  ItemOrder,
   JsonOp,
   Migration,
   MutableTree,

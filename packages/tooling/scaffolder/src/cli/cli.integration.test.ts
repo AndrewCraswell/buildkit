@@ -270,9 +270,9 @@ describe("the wizard", () => {
     expect(result.notes[0]).toContain("Changes:")
     expect(result.notes[0]).toContain("Always included:\n  @fixture/lint")
     const config = readFileSync(join(root, "demo/fixture.jsonc"), "utf8")
-    expect(config).toContain('"@fixture/ui-fancy": {"theme":"dark"}')
-    expect(config).toContain('"@fixture/i18n": {"locales":["en","fr"]}')
-    expect(config).toContain('"declined": ["@fixture/sentry","@fixture/storybook"]')
+    expect(config).toContain('"@fixture/ui-fancy": { "theme": "dark" }')
+    expect(config).toContain('"@fixture/i18n": { "locales": ["en", "fr"] }')
+    expect(config).toContain('"declined": ["@fixture/sentry", "@fixture/storybook"]')
   })
 
   it("an optional slot asks yes or no first, and a slot with one fitting choice isn't asked", async () => {
@@ -436,7 +436,7 @@ describe("add and other commands", () => {
     expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain("@fixture/auth")
     const set = await run(["add", "i18n", "--set", "i18n.locales=en,de", "--cwd", "demo", "--yes", "--json"])
     expect(envelope(set.out).status).toBe("applied")
-    expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain('"locales":["en","de"]')
+    expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain('"locales": ["en", "de"]')
   })
 
   it("asks a slot's question later, and offers the replace decision on a terminal", async () => {

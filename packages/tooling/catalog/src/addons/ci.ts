@@ -1,4 +1,4 @@
-import { defineAddon, type Contribution } from "@buildkitgg/scaffolder"
+import { defineAddon, type Contribution, type ItemOrder } from "@buildkitgg/scaffolder"
 
 export const ciWorkflow = ".github/workflows/ci.yml"
 
@@ -13,9 +13,23 @@ export interface CiStep {
   env?: Record<string, string>
 }
 
-/** Appends a step to the CI workflow's `verify` job. */
-export function ciStep(step: CiStep, path = ciWorkflow, job = "verify"): Contribution {
-  return { kind: "yaml", path, pointer: `/jobs/${job}/steps`, op: "append", key: "id", value: step }
+/**
+ * Adds a step to a workflow job, the CI workflow's `verify` job unless `path` and `job` say otherwise. It goes at the end,
+ * or where `order` puts it by the ids of other steps, such as `{ after: ["format"] }`.
+ */
+export function ciStep(
+  step: CiStep,
+  { path = ciWorkflow, job = "verify", order }: { path?: string; job?: string; order?: ItemOrder } = {}
+): Contribution {
+  return {
+    kind: "yaml",
+    path,
+    pointer: `/jobs/${job}/steps`,
+    op: "append",
+    key: "id",
+    value: step,
+    ...(order ? { order } : {})
+  }
 }
 
 /** The steps every Buildkit workflow starts with: check out, then install with the app's pinned pnpm and Node 24. */

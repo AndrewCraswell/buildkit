@@ -16,6 +16,12 @@ export interface ProductSettings {
    * an old version can't be fetched.
    */
   seedBases?: "regenerate" | "stored"
+  /**
+   * The line width of the project's formatter. JSON the engine writes, the config file included, fits it as oxfmt and
+   * Prettier lay JSON out with trailing commas off, so the formatter leaves those files alone. Defaults to 80, the
+   * formatters' default.
+   */
+  printWidth?: number
 }
 
 export function defineSettings(settings: Pick<ProductSettings, "product"> & Partial<ProductSettings>): ProductSettings {

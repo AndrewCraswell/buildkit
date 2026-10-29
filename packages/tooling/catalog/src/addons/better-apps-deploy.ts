@@ -113,7 +113,7 @@ export const betterAppsDeploy = defineAddon({
         { id: "deploy", name: "Deploy to staging with Better Apps", run: "pnpm exec better-apps deploy --env staging" }
       ]
         .map((step) => (step.id === newestStep.id ? step : { ...step, if: "steps.newest.outputs.newest == 'true'" }))
-        .map((step) => ciStep(step, deployWorkflow, "staging"))
+        .map((step) => ciStep(step, { path: deployWorkflow, job: "staging" }))
     ]
   },
   nextSteps: () => [

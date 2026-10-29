@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs"
 import type { Contribution, Ownership } from "@buildkitgg/scaffolder"
+import { printJson } from "@buildkitgg/scaffolder/edit"
+import { printWidth } from "./settings.js"
 
 const templates = new URL("../templates/", import.meta.url)
 
@@ -36,33 +38,10 @@ export function jsonItems(path: string, pointer: string, value: unknown[]): Cont
   return { kind: "json", path, pointer, op: "append", value }
 }
 
-function isScalar(value: unknown): boolean {
-  return typeof value !== "object" || value === null
-}
-
-function printJson(value: unknown, indent: string): string {
-  const inner = `${indent}  `
-  if (Array.isArray(value)) {
-    const inline = `[${value.map((item) => JSON.stringify(item)).join(", ")}]`
-    if (value.every(isScalar) && inner.length + inline.length <= 100) {
-      return inline
-    }
-    return `[\n${value.map((item) => `${inner}${printJson(item, inner)}`).join(",\n")}\n${indent}]`
-  }
-  if (typeof value === "object" && value !== null) {
-    const entries = Object.entries(value)
-    if (entries.length === 0) {
-      return "{}"
-    }
-    return `{\n${entries.map(([key, item]) => `${inner}${JSON.stringify(key)}: ${printJson(item, inner)}`).join(",\n")}\n${indent}}`
-  }
-  return JSON.stringify(value)
-}
-
 /**
- * JSON as the app's formatter prints it: two-space indentation, objects expanded, short arrays of scalars on one line
- * and a final newline. Starter JSON files then pass `pnpm format:check` as written.
+ * JSON as the app's formatter prints it, with a final newline: the engine's layout for the app's line width. Starter
+ * JSON files then pass `pnpm format:check` as written.
  */
 export function json(value: unknown): string {
-  return `${printJson(value, "")}\n`
+  return `${printJson(value, { layout: { style: "json", printWidth } })}\n`
 }

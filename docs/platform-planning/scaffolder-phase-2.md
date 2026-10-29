@@ -5,9 +5,9 @@ and the `buildkit` CLI on `@buildkitgg/scaffolder`. Phase 0 built the engine
 ([scaffolder-phase-0.md](scaffolder-phase-0.md)), and phase 1 moves SpawnKit onto it
 ([scaffolder-phase-1.md](scaffolder-phase-1.md)).
 
-**Status (2026-10-29):** built on `feat/buildkit-catalog` (worktree `D:\system\worktrees\buildkit\phase-2`), not yet
-merged. Both packages are public with change files; neither is on npm yet. The staging deploy is deferred until Better
-Apps' deploy packages exist.
+**Status (2026-10-29):** merged in #67, with the engine changes it needed in #68 (`@buildkitgg/scaffolder` 0.4.0, on
+npm). `@buildkitgg/catalog` and `@buildkitgg/cli` 0.1.0 wait for their first publish by hand, as every new package does.
+The staging deploy is deferred until Better Apps' deploy packages exist.
 
 ## Owner decisions (2026-10-29)
 
@@ -196,21 +196,30 @@ in the template (or move its plugin entry into the target), then deploy staging.
 
 ## Engine follow-ups
 
-The engine wasn't changed in this phase.
+The phase found seven gaps in the engine. All but one are fixed.
 
-1. **`init <folder>` ignores `--cwd`:** the folder resolves against the process's directory. Apply `--cwd` to `init`, or
-   refuse it there.
-2. **`CliOptions` can't take earlier catalog versions,** so a `runCli` upgrade test only gets the two-way baseline. The
-   three-way merge is tested through `plan({ catalogs })` instead. Add a `catalogs` option.
-3. **Points render TypeScript only.** CI steps use keyed `yaml` contributions instead of a `ci.steps` point, and keyed
-   appends can't be ordered (`after`).
-4. **The engine's JSON layout isn't the formatter's** (arrays always expanded, inline objects in `buildkit.jsonc`), so
-   generated apps leave `buildkit.jsonc`, `package.json` and `tsconfig.json` out of oxfmt.
-5. **Point files import app modules with their extension** (`../../i18n/router.tsx`), so apps need
-   `allowImportingTsExtensions`.
-6. **Points are per target, not per mode,** so SPA apps get `server.requestMiddleware` (it runs only for server
-   functions and routes) and SSR apps get `app.bootstrap`.
-7. **No `match()` helper** for exhaustive render-model branches (research §4.7); add-ons use a `switch` that throws.
+1. **`init <folder>` ignored `--cwd`.** Fixed in #68: the folder resolves against `--cwd`.
+2. **`CliOptions` couldn't take earlier catalog versions.** Fixed in #68: `catalogs` gives `runCli` an upgrade's
+   three-way baseline.
+3. **Keyed appends couldn't be ordered.** A keyed `json` or `yaml` append takes `order: { after, before }`, naming the
+   keys of other items, so an add-on's CI step goes where it belongs: the translations check runs after `format`, before
+   the build. The order places an item when it's added and never moves one you have. A `ci.steps` point isn't needed:
+   keyed steps keep your own steps and your edits, which a generated file can't.
+4. **The engine's JSON layout wasn't the formatter's.** The engine now lays out what it writes as oxfmt and Prettier do,
+   for the width in the product's settings (`printWidth`, 120 for Buildkit): short lists go on one line, an object keeps
+   how it's written, and `package.json` is laid out as `JSON.stringify` writes it, which is the formatters' layout for
+   it. `buildkit.jsonc`, `package.json` and `tsconfig.json` are no longer left out of oxfmt, and the CLI's smoke test
+   checks the generated apps with it.
+5. **Point files imported app modules with their extension.** Add-ons now name modules without one
+   (`./src/i18n/router`), so generated files import `../../i18n/router`. Apps no longer set
+   `allowImportingTsExtensions`, and the starter config files import without extensions too. This was a catalog fix: the
+   engine prints the module an entry names.
+6. **Points are per target, not per mode.** Not changed, because TanStack Start runs both points in both modes. An SPA
+   still has server functions and server routes, which request middleware runs for, and an SSR app's browser runs
+   `app.bootstrap` before it hydrates. Points per mode wait for a target with a point only one of its modes can run.
+7. **No `match()` helper.** `match(value, cases)` runs the case for a value. A missing case is a type error when the
+   value is a union, and a plan error otherwise, which catalog CI's matrix reaches for every mode. The localization
+   add-on uses it instead of a `switch` that throws.
 
 ## Decisions made in this phase
 

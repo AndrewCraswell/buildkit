@@ -36,6 +36,16 @@ export interface PointDefinition {
 
 export type JsonOp = "set" | "append" | "merge"
 
+/**
+ * Where a new item goes in a keyed array, by the keys of the items it follows or precedes, such as `after: ["build"]`
+ * for a CI step. It goes after the last of `after` that the array has, else before the first of `before`, else at the
+ * end. It places an item when it's added, and never moves one that's there.
+ */
+export interface ItemOrder {
+  after?: string[]
+  before?: string[]
+}
+
 export type Contribution =
   | { kind: "dependency"; name: string; version: string; dev?: boolean }
   | { kind: "script"; name: string; command: string }
@@ -65,8 +75,10 @@ export type Contribution =
       value: unknown
       /** For `append`: the field that identifies an item, making the array keyed. Without it, the array is a set. */
       key?: string
+      /** For `append` to a keyed array: where new items go. */
+      order?: ItemOrder
     }
-  | { kind: "yaml"; path: string; pointer: string; op: JsonOp; value: unknown; key?: string }
+  | { kind: "yaml"; path: string; pointer: string; op: JsonOp; value: unknown; key?: string; order?: ItemOrder }
   | { kind: "lines"; path: string; lines: string[] }
   | { kind: "command"; run: string; when: "after-install" | "after-apply"; why: string }
   | { kind: "notice"; code: string; text: string }
