@@ -95,8 +95,9 @@ base path is `/api/apps` unless you set `basePath`. It works on any runtime with
 - `emit` adds an event to the action's next `db.batch`, so it's written to the core's outbox in the same transaction as
   the change, or in the same `batch()` on D1. Events emitted outside a batch are written after the handler returns. If
   the batch fails, its events are never written.
-- Once written, events are delivered to every subscriber. With a `waitUntil`, such as a Worker's execution context,
-  delivery runs after the response is sent; without one, or if `waitUntil` throws, the call waits for it.
+- Once written, events are delivered to every subscriber, starting as soon as the action finishes. With a `waitUntil`,
+  such as a Worker's execution context, the response doesn't wait for delivery, and `waitUntil` keeps it running after
+  the response is sent. Without one, or if `waitUntil` throws, the call waits for delivery.
 - An event every subscriber handled is removed from the outbox. One a subscriber failed on stays, reported through
   `onError`, and `app.deliverEvents()` retries it after a backoff: 30 seconds, doubling up to an hour. Call it from a
   scheduled job. Delivery is at least once, so subscribers skip event ids they've already handled.

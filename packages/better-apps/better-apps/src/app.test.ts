@@ -442,6 +442,41 @@ describe("events", () => {
     expect(onError).toHaveBeenCalledWith(refused, { feature: "notes" })
   })
 
+  it("keeps delivering and returns the result when onError throws", async () => {
+    const received: string[] = []
+    const { app, memory, onError } = setup({
+      features: [
+        subscriber((event) => {
+          if (event.data.text === "Fail") {
+            throw new Error("Subscriber down")
+          }
+          received.push(event.data.text)
+        })
+      ]
+    })
+    onError.mockImplementation(() => {
+      throw new Error("Reporter down")
+    })
+    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined)
+    const context = {
+      waitUntil: () => {
+        throw new Error("The context has ended.")
+      }
+    }
+    const response = await app.handler(post("/api/apps/notes/add", { text: "Fail" }), context)
+    expect(response.status).toBe(200)
+    expect(memory.tables.get(eventModel)).toEqual([
+      expect.objectContaining({ attempts: 1, lastError: "Subscriber down" })
+    ])
+    await app.api.notes.add({ text: "Hi" })
+    expect(received).toEqual(["Hi"])
+    expect(logged).toHaveBeenCalledWith(
+      "Better Apps: onError threw while reporting an error.",
+      expect.objectContaining({ message: "Reporter down" })
+    )
+    logged.mockRestore()
+  })
+
   it("keeps a failed event, retries it after a backoff, and reports the failure", async () => {
     vi.useFakeTimers({ toFake: ["Date"] })
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"))

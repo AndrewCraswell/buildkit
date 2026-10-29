@@ -21,7 +21,8 @@ export interface CreateBetterAppsOptions<
   maxBodySize?: number | undefined
   /**
    * Reports errors no caller sees: unexpected errors in actions called over HTTP, and subscribers that fail. The default
-   * logs them with `console.error`.
+   * logs them with `console.error`. If it throws, that's logged too, and delivery and the action's result go on as if
+   * it hadn't.
    */
   onError?: ((error: unknown, context: ErrorContext) => void) | undefined
 }
@@ -167,12 +168,20 @@ export function createBetterApps<const Features extends readonly BetterAppsFeatu
   const db = createDatabaseAdapter(options)
   const basePath = `/${(options.basePath ?? "/api/apps").replace(/^\/+|\/+$/g, "")}`.replace(/^\/$/, "")
   const maxBodySize = options.maxBodySize ?? 1024 * 1024
-  const onError =
+  const report =
     options.onError ??
     ((error: unknown, context: ErrorContext) => {
       const where = [context.feature, context.action ?? context.event?.type].filter(Boolean).join(" ")
       console.error(`Better Apps${where ? ` (${where})` : ""}:`, error)
     })
+  // A reporter that throws, such as one using a context that has ended, mustn't stop delivery or replace a result.
+  const onError = (error: unknown, context: ErrorContext) => {
+    try {
+      report(error, context)
+    } catch (reportError) {
+      console.error("Better Apps: onError threw while reporting an error.", reportError)
+    }
+  }
   const outbox = createOutbox({ db, features, identity, onError })
 
   const actions = new Map<string, Map<string, { feature: BetterAppsFeature; action: ActionDefinition }>>()
