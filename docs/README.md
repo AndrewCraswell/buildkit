@@ -56,3 +56,4 @@ Its [CLI](../packages/better-apps/cli/README.md) generates the schema for your O
 [`@better-apps/testing`](../packages/better-apps/testing/README.md) runs features against in-memory SQLite.
 [`@better-apps/comments`](../packages/better-apps/comments/README.md) adds comment threads to any record an app owns.
 [`@better-apps/react`](../packages/better-apps/react/README.md) binds the Better Apps client and its stores to React.
+[`@better-apps/tanstack-start`](../packages/better-apps/tanstack-start/README.md) serves an app from TanStack Start.
