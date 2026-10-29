@@ -427,6 +427,21 @@ describe("events", () => {
     expect(received).toEqual(["note.added"])
   })
 
+  it("waits for delivery when waitUntil throws", async () => {
+    const received: string[] = []
+    const { app, onError } = setup({ features: [subscriber((event) => void received.push(event.type))] })
+    const refused = new Error("The context has ended.")
+    const context = {
+      waitUntil: () => {
+        throw refused
+      }
+    }
+    const response = await app.handler(post("/api/apps/notes/add", { text: "Hi" }), context)
+    expect(response.status).toBe(200)
+    expect(received).toEqual(["note.added"])
+    expect(onError).toHaveBeenCalledWith(refused, { feature: "notes" })
+  })
+
   it("keeps a failed event, retries it after a backoff, and reports the failure", async () => {
     vi.useFakeTimers({ toFake: ["Date"] })
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"))

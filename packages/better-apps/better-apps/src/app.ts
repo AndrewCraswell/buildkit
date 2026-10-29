@@ -214,9 +214,17 @@ export function createBetterApps<const Features extends readonly BetterAppsFeatu
       // Events written before a failure belong to changes that committed, so they're delivered either way.
       if (events.written.length > 0) {
         const delivery = outbox.deliver(events.written)
+        let handedOff = false
         if (call.waitUntil) {
-          call.waitUntil(delivery)
-        } else {
+          try {
+            call.waitUntil(delivery)
+            handedOff = true
+          } catch (error) {
+            // The runtime refused it, such as after its context ended, so the call waits for delivery instead.
+            onError(error, { feature: feature.id })
+          }
+        }
+        if (!handedOff) {
           await delivery
         }
       }

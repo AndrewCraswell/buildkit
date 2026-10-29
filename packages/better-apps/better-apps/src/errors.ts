@@ -54,7 +54,8 @@ export class BetterAppsError extends Error {
     super(message, { cause: options.cause })
     this.name = "BetterAppsError"
     this.code = code
-    this.status = options.status ?? statuses[code] ?? 400
+    // An own-property check, so codes such as `constructor` don't read the object's prototype.
+    this.status = options.status ?? (Object.hasOwn(statuses, code) ? statuses[code] : undefined) ?? 400
     this.issues = options.issues?.map(toInputIssue)
   }
 }

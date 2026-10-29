@@ -42,4 +42,10 @@ describe("BetterAppsError", () => {
     expect(error.message).toBe("INVALID_INPUT")
     expect(error.issues).toEqual([{ message: "Required" }, { message: "Too long", path: ["items", 2, "Symbol(note)"] }])
   })
+
+  it("defaults to 400 for codes it doesn't know, even ones named like object members", () => {
+    expect(new BetterAppsError("PAYMENT_REQUIRED").status).toBe(400)
+    expect(new BetterAppsError("constructor").status).toBe(400)
+    expect(new BetterAppsError("toString", undefined, { status: 402 }).status).toBe(402)
+  })
 })
