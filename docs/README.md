@@ -52,3 +52,4 @@ Its [CLI](../packages/better-apps/cli/README.md) generates the schema for your O
 [Drizzle adapter](../packages/better-apps/drizzle/README.md) reads and writes the tables, using
 [forked Better Auth source](../packages/better-apps/drizzle/docs/fork.md).
 [`@better-apps/testing`](../packages/better-apps/testing/README.md) runs features against in-memory SQLite.
+[`@better-apps/comments`](../packages/better-apps/comments/README.md) adds comment threads to any record an app owns.
