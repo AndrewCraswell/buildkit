@@ -33,17 +33,36 @@ export interface FileInput {
   conflictStyle: "stop" | "markers"
   /** Adopting a project: a contributed path that already exists stays yours. */
   adopt: boolean
+  /** Keep each seed's generated text in its entry, as the merge base for later upgrades. */
+  storeBases: boolean
 }
 
-function newEntry(ownership: Ownership, genHash: string, diskHash: string, contributors: string[]): FileEntry {
+function newEntry(
+  ownership: Ownership,
+  genHash: string,
+  diskHash: string,
+  contributors: string[],
+  base?: string
+): FileEntry {
   switch (ownership) {
     case "owned":
       return { class: "owned", genHash, diskHash, contributors }
     case "seed":
-      return { class: "seed", genHash, diskHash }
+      return { class: "seed", genHash, diskHash, ...(base === undefined ? {} : { base }) }
     case "sample":
       return { class: "sample", genHash }
   }
+}
+
+/** What the engine last wrote: the old render, or the stored copy. Either one counts only if it hashes to `genHash`. */
+async function verifiedBase(input: FileInput, entry: FileEntry): Promise<string | undefined> {
+  const candidates = [input.old?.content, entry.class === "seed" ? entry.base : undefined]
+  for (const candidate of candidates) {
+    if (candidate !== undefined && (await hashText(candidate)) === entry.genHash) {
+      return candidate
+    }
+  }
+  return undefined
 }
 
 function diskHashOf(entry: FileEntry): string {
@@ -87,7 +106,14 @@ export async function planFile(input: FileInput): Promise<FileOutcome> {
     return planOrphan(input, recorded, current, currentHash)
   }
   const incomingHash = await hashText(incoming.content)
-  const fresh = (diskHash = incomingHash) => newEntry(incoming.ownership, incomingHash, diskHash, incoming.contributors)
+  const fresh = (diskHash = incomingHash) =>
+    newEntry(
+      incoming.ownership,
+      incomingHash,
+      diskHash,
+      incoming.contributors,
+      input.storeBases ? incoming.content : undefined
+    )
   if (typeof resolution === "object") {
     return { write: resolution.content, entry: fresh(await hashText(resolution.content)) }
   }
@@ -167,6 +193,10 @@ export async function planFile(input: FileInput): Promise<FileOutcome> {
   const engineChanged = incomingHash !== entry.genHash
   const diskUnchanged = currentHash === entry.diskHash
   if (!engineChanged) {
+    if (input.storeBases && entry.class === "seed" && entry.base === undefined) {
+      // Settings now store bases, and this seed still matches what was generated, so its base can be recorded.
+      return { entry: { ...entry, base: incoming.content } }
+    }
     if (!diskUnchanged && entry.class === "owned" && currentHash !== entry.genHash) {
       return {
         entry,
@@ -197,8 +227,8 @@ export async function planFile(input: FileInput): Promise<FileOutcome> {
       incoming: incoming.content
     })
   }
-  const base = input.old?.content
-  if (base === undefined || (await hashText(base)) !== entry.genHash) {
+  const base = await verifiedBase(input, entry)
+  if (base === undefined) {
     return conflict(
       input,
       "baseline-unverified",
@@ -237,8 +267,7 @@ async function planOrphan(
   if (!entry || entry.class === "sample" || current === undefined) {
     return {}
   }
-  const verified = input.old !== undefined && (await hashText(input.old.content)) === entry.genHash
-  if (!verified) {
+  if ((await verifiedBase(input, entry)) === undefined) {
     return {
       notice: {
         code: "orphan-kept",
