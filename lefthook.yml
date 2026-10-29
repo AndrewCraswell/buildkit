@@ -10,7 +10,8 @@ pre-commit:
       glob: "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,md,yml,yaml}"
       exclude:
         - "**/src/vendor/**"
-      run: node node_modules/oxfmt/bin/oxfmt {staged_files}
+      # Lockfiles and API reports match the glob but oxfmt ignores them, so a commit of only those has nothing to format.
+      run: node node_modules/oxfmt/bin/oxfmt --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
 pre-push:
   commands:
