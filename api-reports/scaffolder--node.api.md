@@ -198,6 +198,7 @@ export function userCacheDir(settings: ProductSettings): string;
 export function writeArtifacts(plan: Plan, folder: string, options: {
     product: string;
     catalog?: CatalogManifest;
+    catalogs?: (version: string) => CatalogManifest | undefined;
     diff?: DiffScope;
 }): string;
 

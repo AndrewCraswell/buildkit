@@ -1136,6 +1136,7 @@ export function toEnvelope(plan: Plan, options: {
     status?: EnvelopeStatus;
     artifacts?: string;
     catalog?: CatalogManifest;
+    catalogs?: (version: string) => CatalogManifest | undefined;
 }): Envelope;
 
 // @public (undocumented)

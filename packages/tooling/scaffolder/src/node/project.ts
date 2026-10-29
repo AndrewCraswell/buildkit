@@ -118,12 +118,18 @@ export type DiffScope = "none" | "user" | "all"
 export function writeArtifacts(
   plan: Plan,
   folder: string,
-  options: { product: string; catalog?: CatalogManifest; diff?: DiffScope }
+  options: {
+    product: string
+    catalog?: CatalogManifest
+    catalogs?: (version: string) => CatalogManifest | undefined
+    diff?: DiffScope
+  }
 ): string {
   mkdirSync(folder, { recursive: true })
   const envelope = toEnvelope(plan, {
     product: options.product,
     ...(options.catalog ? { catalog: options.catalog } : {}),
+    ...(options.catalogs ? { catalogs: options.catalogs } : {}),
     artifacts: folder
   })
   writeFileSync(

@@ -418,13 +418,27 @@ export class CliRuntime {
     return diff
   }
 
-  #artifacts(root: string, plan: Plan, flags: ParsedFlags): string | undefined {
+  #artifacts(root: string, plan: Plan, flags: ParsedFlags, context?: ProjectContext): string | undefined {
     const out = flags.strings.get("out")
     if (out === undefined) {
       return undefined
     }
     const folder = out === "" ? defaultArtifactFolder(root, this.#settings, plan) : resolve(this.io.cwd, out)
-    return writeArtifacts(plan, folder, { product: this.#product, catalog: this.#catalog, diff: this.#diff(flags) })
+    return writeArtifacts(plan, folder, { ...this.#catalogs(context), diff: this.#diff(flags) })
+  }
+
+  /** The product's name and the catalogs a plan's decisions are written against, for its envelope. */
+  #catalogs(context?: ProjectContext): {
+    product: string
+    catalog: CatalogManifest
+    catalogs?: (version: string) => CatalogManifest | undefined
+  } {
+    const lookup = context?.catalogs
+    return {
+      product: this.#product,
+      catalog: this.#catalog,
+      ...(lookup ? { catalogs: (version: string) => lookup(version) } : {})
+    }
   }
 
   /** Plan, ask the open decisions, show the plan, confirm once, then apply what was reviewed. */
@@ -451,7 +465,7 @@ export class CliRuntime {
         this.options.hooks ? { hooks: this.options.hooks } : {}
       )
       plan.notices.unshift(...this.#sourceNotices)
-      return this.#emit(toEnvelope(plan, { product: this.#product, catalog: this.#catalog, status }), json)
+      return this.#emit(toEnvelope(plan, { ...this.#catalogs(context), status }), json)
     }
     const interactive = this.#interactive(flags)
     let current = await planProject(context, request)
@@ -474,11 +488,10 @@ export class CliRuntime {
       current = await planProject(context, choice.request)
     }
     current.notices.unshift(...this.#sourceNotices)
-    const artifacts = this.#artifacts(root, current, flags)
+    const artifacts = this.#artifacts(root, current, flags, context)
     const envelope = (plan: Plan, status?: EnvelopeStatus) =>
       toEnvelope(plan, {
-        product: this.#product,
-        catalog: this.#catalog,
+        ...this.#catalogs(context),
         ...(status ? { status } : {}),
         ...(artifacts ? { artifacts } : {})
       })
