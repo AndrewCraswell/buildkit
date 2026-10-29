@@ -33,8 +33,8 @@ export const WritingACatalog: StoryObj<typeof meta> = {
       </Code>
       <p>
         Required add-ons are never asked about. Optional add-ons share one multi-select. An optional slot, such as the
-        database, first asks whether you want one, then which add-on, unless only one fits. Every question also has a
-        flag, so the same answers work without a terminal.
+        database, first asks whether you want one, then which add-on when more than one fits. It isn’t asked when no
+        add-on fits. Every question also has a flag, so the same answers work without a terminal.
       </p>
       <h2>Check it in CI</h2>
       <Code>
