@@ -1,0 +1,33 @@
+{
+  "extends": ["../../../node_modules/@repo/oxlint-config/base.json"],
+  "overrides": [
+    {
+      "files": [
+        "src/core.ts",
+        "src/edit.ts",
+        "src/manifest/**",
+        "src/resolve/**",
+        "src/plan/**",
+        "src/ownership/**",
+        "src/merge/**",
+        "src/state/**",
+        "src/points/**",
+        "src/upgrade/**",
+        "src/edit/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["node:*"],
+                "message": "The core runs in Workers and browsers: keep Node APIs in src/node or src/cli."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

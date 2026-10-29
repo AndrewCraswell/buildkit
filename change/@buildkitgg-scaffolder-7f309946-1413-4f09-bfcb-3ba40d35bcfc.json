@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "First release: a plan-first scaffolding engine. Describe targets, templates, slots and add-ons in a catalog, and the engine plans, applies, adds to and upgrades projects without overwriting your edits. Build a product CLI with `createCli` from `@buildkitgg/scaffolder/cli`.",
+  "packageName": "@buildkitgg/scaffolder",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

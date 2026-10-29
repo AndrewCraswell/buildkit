@@ -1,4 +1,6 @@
 // @ts-check
+const { writeFileSync } = require("node:fs")
+const { join } = require("node:path")
 
 /**
  * Beachball manages versioning and changelogs for the workspace packages.
@@ -17,6 +19,18 @@ module.exports = {
       disallowedChangeTypes: null
     }
   ],
+  hooks: {
+    // The scaffolder records its own version in every project's lock, so its source copy follows each bump.
+    postbump(packagePath, name, version) {
+      if (name === "@buildkitgg/scaffolder") {
+        const comment = "/** The engine's version, recorded in every lock. A test keeps it equal to package.json. */"
+        writeFileSync(
+          join(packagePath, "src/version.ts"),
+          `${comment}\nexport const engineVersion = ${JSON.stringify(version)}\n`
+        )
+      }
+    }
+  },
   ignorePatterns: [
     "**/*.test.{ts,tsx}",
     "**/*.stories.tsx",

@@ -40,6 +40,16 @@ For building command-line tools.
 - **c12** — Configuration file management.
 - **package-manager-detector** — package-manager discovery and command resolution for dev-domains.
 
+## Scaffolding
+
+Used by `@buildkitgg/scaffolder` to edit project files without losing your formatting.
+
+- **jsonc-parser** — reads and edits JSON and JSONC, keeping comments. Parse through the scaffolder's wrapper, which
+  refuses `__proto__` keys.
+- **yaml** — YAML document edits that keep comments. It re-indents on output, so write only when a value changes.
+- **diff** (jsdiff) — line counts and patches; **node-diff3** — line-based three-way merges of starter files.
+- **oxc-parser** + **magic-string** — small codemods that edit only the span they change.
+
 ## Testing
 
 - **Vitest** — test runner; **happy-dom** — DOM environment; **@vitest/coverage-v8** — coverage.
