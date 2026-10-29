@@ -1,6 +1,6 @@
 {
   "type": "minor",
-  "comment": "`pairwiseAnswers` returns a greedy covering array, so catalog CI and smoke tests plan far fewer answer sets for the same pairwise coverage. `requestArgv` takes a `preset` and writes `init --preset <id>` plus what differs from it. `init`'s folder is relative to `--cwd`.",
+  "comment": "`pairwiseAnswers` returns a greedy covering array, so catalog CI and smoke tests plan far fewer answer sets for the same pairwise coverage. `requestArgv` takes a `preset` and writes `init --preset <id>` plus what differs from it. `init`'s folder is relative to `--cwd`. On Windows, installing a template package and fetching an earlier catalog version work: the command line no longer quotes `npm.cmd`, which made npm look for its own code in the cache folder.",
   "packageName": "@buildkitgg/scaffolder",
   "email": "ajcraswell@gmail.com",
   "dependentChangeType": "patch"

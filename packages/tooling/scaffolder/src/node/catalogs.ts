@@ -25,7 +25,7 @@ export const runCommand: CommandRunner = (command, args, cwd) =>
     // argument, and version ranges use them, so the command line quotes each argument.
     const child =
       process.platform === "win32"
-        ? spawn([`${command}.cmd`, ...args].map(cmdArgument).join(" "), { cwd, shell: true, stdio })
+        ? spawn(cmdLine(command, args), { cwd, shell: true, stdio })
         : spawn(command, args, { cwd, stdio })
     let output = ""
     child.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()))
@@ -33,6 +33,15 @@ export const runCommand: CommandRunner = (command, args, cwd) =>
     child.on("error", reject)
     child.on("close", (code) => resolve({ code: code ?? 1, output }))
   })
+
+/**
+ * The cmd.exe command line that runs `<command>.cmd`. A bare name stays unquoted: cmd.exe gives a quoted batch file it
+ * finds on PATH the current folder as %~dp0, and npm.cmd finds npm through it. A path is quoted, since it can have spaces.
+ */
+function cmdLine(command: string, args: readonly string[]): string {
+  const name = /[\\/]/.test(command) ? cmdArgument(`${command}.cmd`) : `${command}.cmd`
+  return [name, ...args.map(cmdArgument)].join(" ")
+}
 
 /** An argument quoted for cmd.exe. A quote or a `%` would still be read inside the quotes, so neither is allowed. */
 function cmdArgument(argument: string): string {
