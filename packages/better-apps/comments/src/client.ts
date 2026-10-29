@@ -174,6 +174,17 @@ function createCommentsClientFor<Types extends CommentsTypes>(
   const run = (action: string, input: unknown) => call("comments", action, input)
   const applied: string[] = []
   const update = (change: (state: State) => State) => store.setState(change)
+  // reset() starts a new generation. Answers to requests made before it belong to the previous person, so an
+  // operation applies its changes only while its generation is current.
+  let generation = 0
+  const scoped = () => {
+    const started = generation
+    return (change: (state: State) => State) => {
+      if (started === generation) {
+        update(change)
+      }
+    }
+  }
 
   const mergeUsers = (state: State, users: Record<string, IdentityUser> | undefined): State =>
     users && Object.keys(users).length > 0 ? { ...state, users: { ...state.users, ...users } } : state
@@ -251,13 +262,14 @@ function createCommentsClientFor<Types extends CommentsTypes>(
   /** Applies a change now and returns a function that undoes it, for when the server refuses the write. */
   const optimistic = (change: (state: State) => State, ids: readonly string[]) => {
     const before = store.getSnapshot()
-    update((state) => {
+    const apply = scoped()
+    apply((state) => {
       const next = change(state)
       return { ...next, pending: { ...next.pending, ...Object.fromEntries(ids.map((id) => [id, true as const])) } }
     })
-    const settle = () => update((state) => ({ ...state, pending: without(state.pending, ...ids) }))
+    const settle = () => apply((state) => ({ ...state, pending: without(state.pending, ...ids) }))
     const undo = () =>
-      update((state) => ({
+      apply((state) => ({
         ...before,
         // Keep what was loaded meanwhile; only the optimistic change is rolled back.
         users: state.users,
@@ -273,6 +285,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
     ids: readonly string[],
     confirm: (state: State, output: Output) => State
   ): Promise<Output> {
+    const apply = scoped()
     const { settle, undo } = optimistic(change, ids)
     let output: Output
     try {
@@ -281,7 +294,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
       undo()
       throw error
     }
-    update((state) => confirm(state, output))
+    apply((state) => confirm(state, output))
     settle()
     return output
   }
@@ -343,6 +356,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
 
     /** Loads open and total counts for many subjects, 50 per call. */
     async loadCounts(subjectType: Types["subjectType"], subjectIds: readonly string[]) {
+      const apply = scoped()
       const unique = [...new Set(subjectIds)]
       const pages: string[][] = []
       for (let start = 0; start < unique.length; start += 50) {
@@ -352,7 +366,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
         pages.map(async (page) => {
           const input: CountThreadsInput = { subjectType, subjectIds: page }
           const counts = (await run("countThreads", input)) as Record<string, ThreadCounts>
-          update((state) => ({
+          apply((state) => ({
             ...state,
             counts: {
               ...state.counts,
@@ -581,6 +595,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
      * screen load again for the new person.
      */
     reset() {
+      generation += 1
       applied.length = 0
       store.setState(() => empty as State)
     },
@@ -636,6 +651,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
   }
 
   async function loadPage(key: string, input: ListThreadsInput, append: boolean) {
+    const apply = scoped()
     try {
       const page = (await run("listThreads", input)) as {
         threads: unknown[]
@@ -643,7 +659,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
         users: Record<string, IdentityUser>
       }
       const threads = page.threads.map((thread) => reviveThread<Thread>(thread))
-      update((state) => {
+      apply((state) => {
         const list = state.lists[key] as ThreadList
         const ids = threads.map((thread) => thread.id)
         // Threads that moved up through an event while paging are already listed, so they aren't repeated.
@@ -658,7 +674,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
         )
       })
     } catch (error) {
-      update((state) => ({
+      apply((state) => ({
         ...state,
         lists: { ...state.lists, [key]: { ...(state.lists[key] as ThreadList), state: "error", error: error as Error } }
       }))
@@ -668,7 +684,8 @@ function createCommentsClientFor<Types extends CommentsTypes>(
 
   async function loadComments(input: GetThreadInput, append: boolean) {
     const { threadId } = input
-    update((state) => ({
+    const apply = scoped()
+    apply((state) => ({
       ...state,
       threadComments: {
         ...state.threadComments,
@@ -683,7 +700,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
         users: Record<string, IdentityUser>
       }
       const comments = page.comments.map((comment) => reviveComment<Message>(comment))
-      update((state) => {
+      apply((state) => {
         const loaded = state.threadComments[threadId] as ThreadComments
         const ids = comments.map((comment) => comment.id)
         return mergeUsers(
@@ -704,7 +721,7 @@ function createCommentsClientFor<Types extends CommentsTypes>(
         )
       })
     } catch (error) {
-      update((state) => ({
+      apply((state) => ({
         ...state,
         threadComments: {
           ...state.threadComments,

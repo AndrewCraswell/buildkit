@@ -255,6 +255,28 @@ describe("reset", () => {
     expect(state.lists).toEqual({})
     expect(state.users).toEqual({})
   })
+
+  it("ignores answers to requests made before it", async () => {
+    const { api, as, comments } = browser()
+    const { thread } = await api.createThread({ ...onInvoice, body: "Before the switch" }, as("bob"))
+    const loading = comments.loadThreads(onInvoice)
+    const counting = comments.loadCounts("invoice", ["inv-1"])
+    const opening = comments.loadThread(thread.id)
+    const writing = comments.createThread({ ...onInvoice, body: "Written before the switch" })
+    const refused = comments.createThread({ subjectType: "invoice", subjectId: "inv-locked", body: "Refused" })
+    comments.reset()
+    await Promise.all([loading, counting, opening, writing])
+    await expect(refused).rejects.toMatchObject({ code: "FORBIDDEN" })
+    expect(comments.store.getSnapshot()).toEqual({
+      threads: {},
+      comments: {},
+      threadComments: {},
+      lists: {},
+      counts: {},
+      users: {},
+      pending: {}
+    })
+  })
 })
 
 describe("dehydrate and hydrate", () => {
