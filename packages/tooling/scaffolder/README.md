@@ -233,9 +233,11 @@ export default definePack({
   in the package's folder, after building it, to plan every option set of its templates before you publish.
 
 npm installs packages into the user cache folder, never the project, without running their scripts. The lock records
-each package's version and integrity, and later commands load that copy and refuse one that doesn't match. `upgrade`
-moves each package to its newest version that works with the installed catalog. The plan says the template comes from a
-package and not from the product, because applying it runs the package author's code.
+each package's version and integrity, and later commands load that copy and refuse one that doesn't match. Only the
+package itself is pinned: npm resolves its dependencies' ranges again when it installs it into a new cache, so a pack
+that needs exact dependencies publishes an `npm-shrinkwrap.json`, which npm follows. `upgrade` moves each package to its
+newest version that works with the installed catalog. The plan says the template comes from a package and not from the
+product, because applying it runs the package author's code.
 
 ## Catalog CI
 

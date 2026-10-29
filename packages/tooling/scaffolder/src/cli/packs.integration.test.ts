@@ -339,5 +339,21 @@ describe("template packages", () => {
       code: "E_INVALID_PACK",
       message: expect.stringContaining("can't be imported")
     })
+
+    // Nested export conditions resolve as Node resolves them, not to index.js.
+    writeFileSync(
+      join(folder, "package.json"),
+      JSON.stringify({
+        name: "@acme/tower",
+        version: "0.1.4",
+        type: "module",
+        exports: { ".": { types: "./nested.d.ts", require: "./nested.cjs", node: { import: "./nested.js" } } }
+      })
+    )
+    writeFileSync(join(folder, "index.js"), "export default {}\n")
+    writeFileSync(join(folder, "nested.js"), packSource("0.1.4"))
+    expect(envelope((await run(["catalog", "check", "tower", "--json"], npm)).out).notices?.[0]?.text).toContain(
+      "@acme/tower@0.1.4 works with @fixture/catalog@1.0.0"
+    )
   })
 })

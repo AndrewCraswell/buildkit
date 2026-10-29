@@ -95,7 +95,9 @@ A template package is code from its author, running on your computer, like any p
   ask, because the person automating it chose the package.
 - **The engine's rules still hold.** Paths stay inside the project, the ownership classes apply, and conflicts stop.
   Packs only produce contributions, and the engine does all the writing.
-- **Integrity.** It's recorded in the lock, so a teammate's `spawn sync` uses the same code the project was made with.
+- **Integrity.** The package's own integrity is recorded in the lock, so a teammate's `spawn sync` uses the same package
+  the project was made with. Its dependencies aren't pinned: npm resolves their ranges again when it installs the
+  package into a new cache, unless the package publishes an `npm-shrinkwrap.json`.
 
 ## Not in v1
 

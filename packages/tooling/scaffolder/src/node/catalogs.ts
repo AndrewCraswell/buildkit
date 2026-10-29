@@ -381,14 +381,24 @@ function entryFile(packageFolder: string, code: ErrorCode): string {
     return "index.js"
   }
   const root = isRecord(manifest.exports) ? (manifest.exports["."] ?? manifest.exports) : manifest.exports
-  if (typeof root === "string") {
-    return root
+  return exportTarget(root) ?? (typeof manifest.main === "string" ? manifest.main : "index.js")
+}
+
+const importConditions = new Set(["node", "import", "default"])
+
+/** The file an export resolves to for `import()` in Node: the first condition that matches, in the order written. */
+function exportTarget(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    return value
   }
-  if (isRecord(root)) {
-    const target = root.import ?? root.default
-    if (typeof target === "string") {
-      return target
+  if (!isRecord(value)) {
+    return undefined
+  }
+  for (const [condition, target] of Object.entries(value)) {
+    const resolved = importConditions.has(condition) ? exportTarget(target) : undefined
+    if (resolved !== undefined) {
+      return resolved
     }
   }
-  return typeof manifest.main === "string" ? manifest.main : "index.js"
+  return undefined
 }
