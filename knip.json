@@ -168,6 +168,14 @@
     "packages/better-apps/react": {
       "entry": ["src/index.tsx"],
       "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/tanstack-start": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "apps/better-apps-example": {
+      "entry": ["better-apps.config.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
 }

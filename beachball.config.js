@@ -19,8 +19,9 @@ module.exports = {
         "packages/better-apps/better-apps",
         "packages/better-apps/cli",
         "packages/better-apps/drizzle",
-        "packages/better-apps/testing",
-        "packages/better-apps/react"
+        "packages/better-apps/react",
+        "packages/better-apps/tanstack-start",
+        "packages/better-apps/testing"
       ],
       disallowedChangeTypes: null
     }
