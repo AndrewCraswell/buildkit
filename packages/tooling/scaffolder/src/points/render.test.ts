@@ -137,7 +137,7 @@ describe("renderPoints", () => {
     )
   })
 
-  it("refuses duplicate points, entries, keys and single entries, and bad payloads or names", () => {
+  it("refuses duplicate points, entries in a point, keys and single entries, and bad payloads or names", () => {
     expect(failure(() => render([list, list])).message).toContain("defined by both")
     expect(failure(() => render([list], [entry("a"), entry("a")])).message).toContain("more than once")
     const single = definePoint({ id: "one", version: 1, kind: "single", file: "a.ts", export: "one" })
@@ -160,6 +160,8 @@ describe("renderPoints", () => {
     expect(failure(() => render([map], [entry("K", { point: "map", value: { value: 1 } })])).message).toContain(
       "doesn't match the payload"
     )
+    const rendered = render([list, map], [entry("K"), entry("K", { point: "map", value: { value: "a" } })])
+    expect(rendered.files.get("a.ts")?.content).toContain('"K": "a"')
     expect(failure(() => render([{ ...list, export: "not valid" }])).message).toContain("isn't a valid name")
     expect(
       failure(() => render([list], [entry("a", { value: { ref: { module: "x", export: "no-dash" } } })])).message
