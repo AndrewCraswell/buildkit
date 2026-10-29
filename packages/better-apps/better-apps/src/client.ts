@@ -125,7 +125,16 @@ export function createBetterAppsClient<App = BetterApp>(options: ClientOptions =
   const call = async (feature: string, action: string, input?: unknown, { signal }: CallOptions = {}) => {
     const aborted = () =>
       new BetterAppsClientError("ABORTED", "The call was cancelled.", { status: 0, cause: signal?.reason })
-    const headers = new Headers(typeof options.headers === "function" ? await options.headers() : options.headers)
+    let headers: Headers
+    try {
+      headers = new Headers(typeof options.headers === "function" ? await options.headers() : options.headers)
+    } catch (error) {
+      // Headers that fail once the call is cancelled, such as a token refresh cut short by a sign-out, are part of it.
+      if (signal?.aborted) {
+        throw aborted()
+      }
+      throw error
+    }
     // Headers can take a while, such as while a token refreshes. A call cancelled meanwhile, such as by a sign-out, is
     // never sent, since its headers may now belong to someone else.
     if (signal?.aborted) {

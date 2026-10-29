@@ -139,6 +139,26 @@ describe("createBetterAppsClient", () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  it("rejects with ABORTED when headers fail after a cancel, and with their own error otherwise", async () => {
+    const fetch = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(() =>
+      Promise.resolve(Response.json(null))
+    )
+    let fail = (_error: Error) => undefined as void
+    const client = createBetterAppsClient({
+      fetch,
+      headers: () => new Promise<Record<string, string>>((_, reject) => (fail = reject))
+    })
+    const controller = new AbortController()
+    const cancelled = client.$call("notes", "ping", undefined, { signal: controller.signal })
+    controller.abort()
+    fail(new Error("Refresh cut short"))
+    await expect(cancelled).rejects.toMatchObject({ code: "ABORTED" })
+    const failing = client.$call("notes", "ping")
+    fail(new Error("Refresh failed"))
+    await expect(failing).rejects.toThrow("Refresh failed")
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it("rejects a call cancelled under way, whether or not its fetch stops", async () => {
     const controller = new AbortController()
     const stops = createBetterAppsClient({
