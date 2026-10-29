@@ -377,21 +377,29 @@ describe("questions and catalog CI", () => {
 
   it("covers every pair of values of every two questions, in few answer sets", () => {
     const template = catalog.templates.find((entry) => entry.id === "app")!
+    // Each question's values come from what the template asks in the mode, so a value no set uses is reported.
+    const asked = templateQuestions(catalog, template, "ssr")
     const questions = [
-      ...Object.keys(template.slots ?? {}).map(
-        (slot) => (answers: Answers) => `slot ${slot}=${answers.slots?.[slot] ?? "none"}`
-      ),
-      ...Object.keys(template.optional ?? {}).map(
-        (id) => (answers: Answers) => `${id}=${answers.optional?.includes(id) ?? false}`
-      )
+      ...asked.slots.map((slot) => ({
+        values: [...(slot.required ? [] : ["none"]), ...slot.choices.map((choice) => choice.id)].map(
+          (value) => `slot ${slot.slot}=${value}`
+        ),
+        of: (answers: Answers) => `slot ${slot.slot}=${answers.slots?.[slot.slot] ?? "none"}`
+      })),
+      ...asked.optional.map((tool) => ({
+        values: [`${tool.id}=false`, `${tool.id}=true`],
+        of: (answers: Answers) => `${tool.id}=${answers.optional?.includes(tool.id) ?? false}`
+      }))
     ]
     const sets = pairwiseAnswers(catalog, "app", "ssr")
-    const values = questions.map((question) => [...new Set(sets.map(question))])
+    const values = questions.map((question) => question.values)
     expect(values.filter((choices) => choices.length < 2)).toEqual([])
     const uncovered: string[] = []
     for (let left = 0; left < questions.length; left++) {
       for (let right = left + 1; right < questions.length; right++) {
-        const seen = new Set(sets.map((answers) => `${questions[left]!(answers)} & ${questions[right]!(answers)}`))
+        const seen = new Set(
+          sets.map((answers) => `${questions[left]!.of(answers)} & ${questions[right]!.of(answers)}`)
+        )
         for (const a of values[left]!) {
           for (const b of values[right]!) {
             if (!seen.has(`${a} & ${b}`)) {
@@ -410,6 +418,27 @@ describe("questions and catalog CI", () => {
     )
     expect(sets.length).toBeLessThan(pairs / 2)
     expect(pairwiseAnswers(catalog, "app", "ssr")).toEqual(sets)
+  })
+
+  it("plans the other questions when a required slot has no add-on for the mode", () => {
+    const lonely: CatalogManifest = {
+      ...catalog,
+      templates: [
+        ...catalog.templates,
+        {
+          id: "lonely",
+          title: "Lonely",
+          description: "A template whose slot has nothing to offer",
+          target: "web",
+          optional: { "@fixture/i18n": { default: false } },
+          slots: { nothing: { required: true } }
+        }
+      ]
+    }
+    expect(pairwiseAnswers(lonely, "lonely", "ssr").map(({ slots, optional }) => ({ slots, optional }))).toEqual([
+      { slots: { nothing: null }, optional: [] },
+      { slots: { nothing: null }, optional: ["@fixture/i18n"] }
+    ])
   })
 
   it("reports broken references, defaults and options", () => {

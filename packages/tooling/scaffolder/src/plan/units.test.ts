@@ -430,5 +430,18 @@ describe("envelope", () => {
     expect(
       requestArgv({ intent: { command: "init", answers: { template: "bare", name: "demo" } } }, { preset })
     ).toEqual(["init", "bare", "demo"])
+    // So is one that answers a question the request leaves to the template's default.
+    const { mode, slots, optional, options, ...rest } = answers
+    for (const partial of [
+      { ...rest, slots, optional, options },
+      { ...rest, mode, optional, options },
+      { ...rest, mode, slots, options },
+      { ...rest, mode, slots, optional }
+    ]) {
+      expect(requestArgv({ intent: { command: "init", answers: partial } }, { preset }).slice(0, 2)).toEqual([
+        "init",
+        "app"
+      ])
+    }
   })
 })

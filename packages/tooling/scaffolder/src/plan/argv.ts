@@ -1,5 +1,5 @@
 import { shortName } from "../manifest/catalog.js"
-import type { PresetManifest } from "../manifest/types.js"
+import type { Answers, PresetManifest } from "../manifest/types.js"
 import { compareText } from "./json.js"
 import type { PlanRequest } from "./types.js"
 
@@ -33,8 +33,24 @@ function changedOptions(
 }
 
 /**
+ * Whether the answers answer every question the preset does. One they leave to the template's default can't be written
+ * as a difference from the preset, because `--preset` answers it.
+ */
+function answersPreset(answers: Answers, preset: Answers): boolean {
+  return (
+    (preset.mode === undefined || answers.mode !== undefined) &&
+    (preset.optional === undefined || answers.optional !== undefined) &&
+    Object.keys(preset.slots ?? {}).every((slot) => answers.slots?.[slot] !== undefined) &&
+    Object.entries(preset.options ?? {}).every(([id, values]) =>
+      Object.keys(values).every((key) => answers.options?.[id]?.[key] !== undefined)
+    )
+  )
+}
+
+/**
  * The CLI arguments that make the same request, without the product's own name. With `preset`, an `init` for that
- * preset's template is written as `init --preset <id>` plus flags for the answers that differ from the preset's.
+ * preset's template that answers every question the preset does is written as `init --preset <id>` plus flags for the
+ * answers that differ from the preset's.
  */
 export function requestArgv(request: PlanRequest, options: { preset?: PresetManifest } = {}): string[] {
   const { intent } = request
@@ -42,7 +58,10 @@ export function requestArgv(request: PlanRequest, options: { preset?: PresetMani
   switch (intent.command) {
     case "init": {
       const { answers } = intent
-      const preset = options.preset?.answers.template === answers.template ? options.preset : undefined
+      const preset =
+        options.preset?.answers.template === answers.template && answersPreset(answers, options.preset.answers)
+          ? options.preset
+          : undefined
       const name = answers.name === undefined ? [] : [answers.name]
       argv.push("init", ...(preset ? ["--preset", preset.id] : [answers.template]), ...name)
       if (answers.mode !== undefined && answers.mode !== preset?.answers.mode) {

@@ -236,7 +236,9 @@ export function pairwiseAnswers(catalog: CatalogManifest, templateId: string, mo
       .map((addon) => addon.id)
     const values: (string | null)[] = [...(policy.required ? [] : [null]), ...candidates]
     factors.push({
-      values: values.length,
+      // A required slot with no add-on for the mode still gets one value, unanswered, so the other questions are
+      // planned and the plan reports the slot.
+      values: Math.max(values.length, 1),
       apply: (answers, value) => ({ ...answers, slots: { ...answers.slots, [slot]: values[value] ?? null } })
     })
   }
