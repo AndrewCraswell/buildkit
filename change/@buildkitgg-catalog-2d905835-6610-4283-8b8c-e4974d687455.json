@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "First release: Buildkit's scaffolding catalog. A TanStack Start target with server-rendered and single-page modes, the `app` template, and add-ons for CI, a SQL database through Better Apps, Better Auth sign-in and Lingui localization, plus Better Apps deploy wiring.",
+  "packageName": "@buildkitgg/catalog",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

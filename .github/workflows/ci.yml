@@ -46,6 +46,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @buildkitgg/dev-domains test:integration
       - run: pnpm --filter @buildkitgg/scaffolder test:integration
+      - run: pnpm turbo run build --filter=@buildkitgg/cli^...
+      - run: pnpm --filter @buildkitgg/cli test:integration
   databases:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -61,8 +63,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Test the Drizzle adapter on PostgreSQL, Neon and MySQL servers
         run: pnpm turbo run test:servers --filter=@better-apps/drizzle
+  templates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=@buildkitgg/cli...
+      - name: Generate Buildkit apps, then install, check, lint, build and type-check each one
+        run: pnpm --filter @buildkitgg/cli test:smoke
   release:
-    needs: [verify, integration, databases]
+    needs: [verify, integration, databases, templates]
     if: >-
       github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
@@ -70,7 +88,7 @@ jobs:
       actions: write
     uses: ./.github/workflows/publish-after-ci.yml
   merge-release:
-    needs: [verify, integration, databases]
+    needs: [verify, integration, databases, templates]
     if: >-
       github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/heads/codex/release-') ||
       startsWith(github.ref, 'refs/heads/codex/shadcn-update-'))

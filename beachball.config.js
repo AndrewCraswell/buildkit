@@ -27,6 +27,12 @@ module.exports = {
         "packages/better-apps/workos"
       ],
       disallowedChangeTypes: null
+    },
+    // The buildkit CLI and its catalog release together, so a new app pins the CLI at the catalog's own version.
+    {
+      name: "buildkit-cli",
+      include: ["packages/tooling/catalog", "packages/tooling/cli"],
+      disallowedChangeTypes: null
     }
   ],
   hooks: {
