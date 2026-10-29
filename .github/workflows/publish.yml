@@ -56,7 +56,7 @@ jobs:
         run: |
           git switch -C main "$GITHUB_SHA"
           pnpm --filter-prod "@buildkitgg/$PACKAGE..." --sort -r publish --dry-run --access public --report-summary
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: release-preview
@@ -89,7 +89,7 @@ jobs:
         run: |
           git switch -C main "$GITHUB_SHA"
           pnpm --filter-prod "@buildkitgg/$PACKAGE..." --sort -r publish --access public --provenance --report-summary --publish-wait-timeout 600000
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: published-packages
