@@ -915,9 +915,11 @@ A template is what `init` offers first. It names a target, and decides how the c
 3. The optional add-ons.
 4. For each chosen add-on, the options it lists in `ask`. The rest take their defaults; `--set`, or `config` later,
    changes them.
-5. Required secrets. Option schemas never hold secrets (§4.5), so a secret is an `env` contribution with
-   `secret: true, required: true`. The wizard asks for it with a masked prompt and writes it only to `.env` or
-   `.dev.vars`. Without a TTY, it's listed in the next steps instead.
+5. Environment variables. Option schemas never hold secrets (§4.5), so a secret is an `env` contribution with
+   `secret: true`. `init` asks for each variable the plan needs, with a masked prompt for secrets; a required one's
+   example is its default, and an optional one can be left blank. Values go only to the secrets file (`.env` or
+   `.dev.vars`). Later commands ask only for required secrets that file doesn't have yet. Without a TTY, required
+   secrets are listed in the next steps instead.
 6. A summary that also lists the required add-ons and anything `requires` pulled in ("also adds X, needed by Y"), then
    one confirmation.
 
