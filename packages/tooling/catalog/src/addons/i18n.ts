@@ -62,6 +62,37 @@ function localesModule(options: I18nOptions): string {
   ].join("\n")
 }
 
+/**
+ * How the app loads a locale's messages. The source locale's are imported with the app's own code, so a page can fall
+ * back to them without loading anything; production builds keep no source text to fall back to. Every other catalog
+ * is its own chunk.
+ */
+function catalogsModule(options: I18nOptions): string {
+  const source = `../locales/${options.sourceLocale}.po`
+  return [
+    "// Buildkit writes this from the i18n options. Lingui's Vite plugin compiles each catalog when it's imported.",
+    'import type { Messages } from "@lingui/core"',
+    `import { messages as sourceMessages } from "${source}"`,
+    'import { sourceLocale, type Locale } from "./locales"',
+    "",
+    "// Every catalog but the source locale's, each loaded the first time it's needed.",
+    `const catalogs = import.meta.glob<{ messages: Messages }>(["../locales/*.po", "!${source}"])`,
+    "",
+    "/** A locale's messages: the source locale's at once, which needs no network, and any other's from its chunk. */",
+    "export async function loadMessages(locale: Locale): Promise<Messages> {",
+    "  if (locale === sourceLocale) {",
+    "    return sourceMessages",
+    "  }",
+    "  const load = catalogs[`../locales/${locale}.po`]",
+    "  if (!load) {",
+    "    throw new Error(`src/locales/${locale}.po doesn't exist. Run pnpm i18n:extract.`)",
+    "  }",
+    "  return (await load()).messages",
+    "}",
+    ""
+  ].join("\n")
+}
+
 /** An empty catalog, as `lingui extract` writes one. */
 function emptyCatalog(locale: string): string {
   return [
@@ -106,6 +137,8 @@ export const i18n = defineAddon({
       common("lingui.config.ts"),
       common("src/i18n/match.ts"),
       common("src/i18n/instance.ts"),
+      common("src/i18n/po.d.ts"),
+      file("src/i18n/catalogs.ts", catalogsModule(options)),
       common("src/i18n/navigation.ts"),
       common("src/i18n/provider.tsx"),
       ...allLocales(options).map((locale) => file(`src/locales/${locale}.po`, emptyCatalog(locale), "sample")),

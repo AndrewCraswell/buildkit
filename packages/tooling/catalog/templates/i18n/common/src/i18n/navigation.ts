@@ -1,6 +1,6 @@
 import type { I18n } from "@lingui/core"
 import type { AnyRouter } from "@tanstack/react-router"
-import { loadMessages } from "./instance"
+import { loadMessages } from "./catalogs"
 import { detectLocale, htmlLangDir } from "./match"
 
 /**

@@ -216,6 +216,12 @@ describe("the localization add-on", () => {
       const planned = await init({ mode, optional: ["@buildkit/i18n"] })
       expect(paths(planned)).toContain("src/i18n/navigation.ts")
       expect(written(planned, "src/i18n/router.tsx")).toContain("followLocale(router, i18n)")
+      // The source locale's messages come with the app's code, for when another locale's catalog doesn't load, and
+      // every other catalog is its own chunk.
+      const catalogs = written(planned, "src/i18n/catalogs.ts")
+      expect(catalogs).toContain('import { messages as sourceMessages } from "../locales/en.po"')
+      expect(catalogs).toContain('import.meta.glob<{ messages: Messages }>(["../locales/*.po", "!../locales/en.po"])')
+      expect(paths(planned)).toContain("src/i18n/po.d.ts")
     }
   })
 
@@ -253,6 +259,8 @@ describe("the Better Apps deploys add-on", () => {
     expect(deploy).toMatch(/^ {4}concurrency:/m)
     expect(deploy).toContain('gh api "repos/$GITHUB_REPOSITORY/commits/main"')
     expect(deploy.match(/if: steps\.newest\.outputs\.newest == 'true'/g)).toHaveLength(5)
+    // Every passing run waits its turn, so an older commit's can't replace the newest's.
+    expect(deploy).toContain("queue: max")
     const environments = written(planned, "better-apps.environments.jsonc")
     expect(environments).toContain('"sql": "per-pr"')
     expect(environments).not.toMatch(/cloudflare|wrangler/i)

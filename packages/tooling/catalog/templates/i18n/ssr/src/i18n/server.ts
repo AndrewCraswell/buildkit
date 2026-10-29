@@ -1,5 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start"
-import { createI18n, loadMessages } from "./instance"
+import { loadMessages } from "./catalogs"
+import { createI18n } from "./instance"
 import { detection } from "./locales"
 import { acceptedLanguages, detectLocale } from "./match"
 

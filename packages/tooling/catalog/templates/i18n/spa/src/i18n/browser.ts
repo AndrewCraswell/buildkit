@@ -1,5 +1,5 @@
 import { setupI18n, type Messages } from "@lingui/core"
-import { loadMessages } from "./instance"
+import { loadMessages } from "./catalogs"
 import { sourceLocale, type Locale } from "./locales"
 import { detectLocale, htmlLangDir } from "./match"
 
@@ -22,10 +22,10 @@ export async function bootstrapLocale() {
     messages = await loadMessages(detected)
   } catch (error) {
     // Lingui's provider renders nothing until a locale is active, so a catalog that doesn't load, such as on a lost
-    // connection, falls back to the source locale rather than leaving the page blank.
+    // connection, falls back to the source locale, whose messages come with the app's own code.
     console.error(`Couldn't load the ${detected} messages, so the page is in ${sourceLocale}.`, error)
     locale = sourceLocale
-    messages = await loadMessages(sourceLocale).catch(() => ({}))
+    messages = await loadMessages(sourceLocale)
   }
   browserI18n.loadAndActivate({ locale, messages })
   const { lang, dir } = htmlLangDir(locale)

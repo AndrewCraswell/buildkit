@@ -91,13 +91,14 @@ export const betterAppsDeploy = defineAddon({
         op: "set",
         value: "github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'"
       },
-      // On the job, so a run whose CI failed is skipped before it can take a passing one's place in the queue.
+      // On the job, so a run whose CI failed is skipped before it joins the queue. Every passing run waits its turn:
+      // with one pending run at most, an older commit's could replace the newest's, then skip as not the newest.
       {
         kind: "yaml",
         path: deployWorkflow,
         pointer: "/jobs/staging/concurrency",
         op: "set",
-        value: { group: "deploy-staging", "cancel-in-progress": false }
+        value: { group: "deploy-staging", "cancel-in-progress": false, queue: "max" }
       },
       { kind: "yaml", path: deployWorkflow, pointer: "/jobs/staging/runs-on", op: "set", value: "ubuntu-latest" },
       { kind: "yaml", path: deployWorkflow, pointer: "/jobs/staging/environment", op: "set", value: "staging" },
