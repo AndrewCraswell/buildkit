@@ -1,9 +1,5 @@
 {
   "servers": {
-    "fluent": {
-      "type": "http",
-      "url": "https://chat.fluentui.dev/mcp/server"
-    },
     "shadcn": {
       "command": "npx",
       "args": ["shadcn@latest", "mcp"]
