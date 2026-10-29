@@ -247,6 +247,12 @@ describe("the Better Apps deploys add-on", () => {
     expect(deploy).toContain("github.event.workflow_run.conclusion == 'success'")
     expect(deploy).toContain("ref: ${{ github.event.workflow_run.head_sha }}")
     expect(deploy).not.toContain("push:")
+    // The deploy slot is the job's, so a skipped run never takes a place in its queue, and a commit main has moved past
+    // deploys nothing.
+    expect(deploy).not.toMatch(/^concurrency:/m)
+    expect(deploy).toMatch(/^ {4}concurrency:/m)
+    expect(deploy).toContain('gh api "repos/$GITHUB_REPOSITORY/commits/main"')
+    expect(deploy.match(/if: steps\.newest\.outputs\.newest == 'true'/g)).toHaveLength(5)
     const environments = written(planned, "better-apps.environments.jsonc")
     expect(environments).toContain('"sql": "per-pr"')
     expect(environments).not.toMatch(/cloudflare|wrangler/i)

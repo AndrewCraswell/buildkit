@@ -6,6 +6,7 @@ export const ciWorkflow = ".github/workflows/ci.yml"
 export interface CiStep {
   id: string
   name?: string
+  if?: string
   uses?: string
   run?: string
   with?: Record<string, string | number | boolean>

@@ -1,7 +1,7 @@
 import { defineAddon, type Contribution } from "@buildkitgg/scaffolder"
 import { file, json } from "../files.js"
 import { betterAppsDependency } from "../versions.js"
-import { ciStep, setupSteps } from "./ci.js"
+import { ciStep, setupSteps, type CiStep } from "./ci.js"
 
 const deployWorkflow = ".github/workflows/deploy.yml"
 
@@ -25,6 +25,24 @@ function environments(used: string[]): string {
     "// Better Apps' deploy service reads this file: each environment, and whether it gets its own resources (per-pr),",
     "// shares them (shared) or has none. It names no cloud, account or binding.",
     json(value)
+  ].join("\n")
+}
+
+/**
+ * CI runs can finish out of order, so a commit deploys only while it's still main's newest. Once the job holds the
+ * deploy slot, a commit main has moved past is skipped: the newer one deploys when its own CI passes.
+ */
+const newestStep: CiStep = {
+  id: "newest",
+  name: "Check that main has no newer commit",
+  env: { GH_TOKEN: "${{ github.token }}", HEAD_SHA: "${{ github.event.workflow_run.head_sha }}" },
+  run: [
+    'newest="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"',
+    'if [ "$newest" = "$HEAD_SHA" ]; then',
+    '  echo "newest=true" >> "$GITHUB_OUTPUT"',
+    "else",
+    '  echo "main is at $newest now, which deploys once its CI passes."',
+    "fi"
   ].join("\n")
 }
 
@@ -69,20 +87,22 @@ export const betterAppsDeploy = defineAddon({
       {
         kind: "yaml",
         path: deployWorkflow,
-        pointer: "/concurrency",
-        op: "set",
-        value: { group: "deploy-staging", "cancel-in-progress": false }
-      },
-      {
-        kind: "yaml",
-        path: deployWorkflow,
         pointer: "/jobs/staging/if",
         op: "set",
         value: "github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'"
       },
+      // On the job, so a run whose CI failed is skipped before it can take a passing one's place in the queue.
+      {
+        kind: "yaml",
+        path: deployWorkflow,
+        pointer: "/jobs/staging/concurrency",
+        op: "set",
+        value: { group: "deploy-staging", "cancel-in-progress": false }
+      },
       { kind: "yaml", path: deployWorkflow, pointer: "/jobs/staging/runs-on", op: "set", value: "ubuntu-latest" },
       { kind: "yaml", path: deployWorkflow, pointer: "/jobs/staging/environment", op: "set", value: "staging" },
       ...[
+        newestStep,
         // The commit CI checked, not whatever main is now.
         ...setupSteps().map((step) =>
           step.id === "checkout"
@@ -90,7 +110,9 @@ export const betterAppsDeploy = defineAddon({
             : step
         ),
         { id: "deploy", name: "Deploy to staging with Better Apps", run: "pnpm exec better-apps deploy --env staging" }
-      ].map((step) => ciStep(step, deployWorkflow, "staging"))
+      ]
+        .map((step) => (step.id === newestStep.id ? step : { ...step, if: "steps.newest.outputs.newest == 'true'" }))
+        .map((step) => ciStep(step, deployWorkflow, "staging"))
     ]
   },
   nextSteps: () => [
