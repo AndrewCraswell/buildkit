@@ -4,6 +4,9 @@ export default defineConfig({
     fsModuleCachePath: "node_modules/.vitest-cache",
     // The temp-folder tests are fast, so they run here too; CI also runs them on Windows and macOS.
     exclude: ["**/node_modules/**", "**/dist/**"],
+    // On a busy Windows machine, apply waits out file locks for seconds at a time, so a test of several commands can
+    // pass 5 seconds without anything being wrong.
+    testTimeout: 30_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

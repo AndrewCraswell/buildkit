@@ -17,6 +17,7 @@ Requires Node.js 24 or later. Until 1.0, minor versions may change the catalog a
 - [Commands](#commands)
 - [The JSON envelope and exit codes](#the-json-envelope-and-exit-codes)
 - [Upgrades](#upgrades)
+- [Template packages](#template-packages)
 - [Catalog CI](#catalog-ci)
 
 ## Exports
@@ -103,8 +104,10 @@ Contribution kinds: `dependency`, `script`, `env`, `file` (`owned`, `seed` or `s
 
 The wizard is generated from the catalog, so a new add-on or a new choice in a slot needs no CLI code. It asks, in
 order: the template, the project name, the mode, each slot (yes or no first for an optional slot, then which one), the
-optional add-ons in one multi-select, the options each chosen add-on lists in `ask`, and required secrets with a masked
-prompt. Then it shows the plan and asks for one confirmation, which defaults to no.
+optional add-ons in one multi-select, the options each chosen add-on lists in `ask`, and the plan's environment
+variables, with a masked prompt for secrets. A required variable's example is its default, and an optional one can be
+left blank. Then it shows the plan and asks for one confirmation, which defaults to no. The answers go to the secrets
+file. Later commands ask only for required secrets that file doesn't have yet.
 
 A slot's choices are the add-ons whose `supports()` accepts the target, and a slot with one fitting choice isn't asked.
 Required add-ons are never asked about, so their options must all have defaults.
@@ -144,24 +147,26 @@ await runMain(createCli({ name: "acme", version: "1.0.0", catalog, settings: def
 
 ## Commands
 
-| Command                                       | What it does                                                         |
-| --------------------------------------------- | -------------------------------------------------------------------- |
-| `init [template] [folder]`                    | Create a project. `--adopt` brings an existing one in                |
-| `add <add-on or slot…>`                       | Add add-ons, or answer a slot question: `add database`. `--replace`  |
-| `config`, `config get`, `config set`          | Show the config, get an option, or set options                       |
-| `upgrade [--list]`                            | Move to the installed catalog version, running migrations            |
-| `sync`                                        | Bring generated files and the lock in line with the config           |
-| `check`                                       | Fail when generated files or the lock are out of date                |
-| `status [path]`, `explain <subject>`          | What the engine manages, and who contributes a path, add-on or entry |
-| `plan show <file>`                            | Show a saved plan                                                    |
-| `catalog [--json]`, `catalog fetch <version>` | Describe the questionnaire, or cache an earlier catalog version      |
-| `schema`                                      | JSON Schemas for the config, the lock and plan requests              |
-| `recover`                                     | Roll back an interrupted apply                                       |
+| Command                                    | What it does                                                         |
+| ------------------------------------------ | -------------------------------------------------------------------- |
+| `init [template] [folder]`                 | Create a project, from a template or a package. `--adopt` adopts one |
+| `add <add-on or slot…>`                    | Add add-ons, or answer a slot question: `add database`. `--replace`  |
+| `config`, `config get`, `config set`       | Show the config, get an option, or set options                       |
+| `upgrade [--list]`                         | Move to the installed catalog version, running migrations            |
+| `sync`                                     | Bring generated files and the lock in line with the config           |
+| `check`                                    | Fail when generated files or the lock are out of date                |
+| `status [path]`, `explain <subject>`       | What the engine manages, and who contributes a path, add-on or entry |
+| `plan show <file>`                         | Show a saved plan                                                    |
+| `catalog [package] [--json]`               | Describe the questionnaire, or a template package's templates        |
+| `catalog fetch <version>`, `catalog check` | Cache an earlier catalog version, or check a package before publish  |
+| `schema`                                   | JSON Schemas for the config, the lock and plan requests              |
+| `recover`                                  | Roll back an interrupted apply                                       |
 
 Every planning command takes `--dry-run`, `--json`, `--out [folder]`, `--plan <file>`, `--yes`, `--diff`,
 `--resolve <id>=keep-current|take-incoming|file:<path>` and `--conflict markers`. Without a terminal, a command plans
 and writes nothing unless you pass `--yes` or apply a reviewed plan with `--plan`. A reviewed plan applies only if the
-project hasn't changed since; applying it twice is a no-op.
+project hasn't changed since; applying it twice is a no-op. It records the template packages it was made with, and
+applying it loads those exact versions, so a newer release never runs first.
 
 ## The JSON envelope and exit codes
 
@@ -203,6 +208,39 @@ a cloned repository can't supply catalog code for the CLI to run. A product whos
 `seedBases: "stored"` in `defineSettings`, which keeps each seed's generated text in the lock to merge against instead.
 Migrations run when an add-on's version moves past theirs: option rewrites, codemods, package bumps, and agent tasks
 that are only listed.
+
+## Template packages
+
+Anyone can publish templates for a product's catalog as an npm package, and the product's CLI installs one by name:
+`npx <cli> init @acme/tower-defense my-game`. A scoped name, or any name after `npm:`, is a package. Add a version or a
+range (`@acme/tower-defense@^2`), and `#<id>` to pick one of several templates (`@acme/starters#tower`). Built-in
+template ids can't look like a package, so a typo is never fetched.
+
+A template package's default export is a pack:
+
+```ts
+import { definePack } from "@buildkitgg/scaffolder"
+
+export default definePack({
+  extends: { catalog: "@acme/catalog", versions: "^1.0.0" },
+  templates: [{ id: "tower", title: "Tower defense", description: "Waves, towers and a path", target: "web" }],
+  addons: [/* ids start with "@acme/tower-defense/" */]
+})
+```
+
+- **It extends one catalog.** Its templates and add-ons use the catalog's targets, slots and points, and the catalog's
+  add-ons stay available to `add`. It can't add targets, slots or points, or replace anything the catalog has.
+- **Ids.** A template is recorded as `<package>#<id>`, and its add-on ids start with `<package>/`.
+- **Compatibility.** The engine refuses a pack whose `versions` range doesn't include the installed catalog.
+- **Checks.** The engine merges the pack into the catalog and runs `checkCatalog` before planning. Run `catalog check`
+  in the package's folder, after building it, to plan every option set of its templates before you publish.
+
+npm installs packages into the user cache folder, never the project, without running their scripts. The lock records
+each package's version and integrity, and later commands load that copy and refuse one that doesn't match. Only the
+package itself is pinned: npm resolves its dependencies' ranges again when it installs it into a new cache, so a pack
+that needs exact dependencies publishes an `npm-shrinkwrap.json`, which npm follows. `upgrade` moves each package to its
+newest version that works with the installed catalog. The plan says the template comes from a package and not from the
+product, because applying it runs the package author's code.
 
 ## Catalog CI
 

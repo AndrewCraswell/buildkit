@@ -90,7 +90,10 @@ export function toEnvelope(
     ...nonEmpty("commands", plan.commands),
     ...nonEmpty("migrations", plan.migrations),
     ...nonEmpty("merged", plan.merged),
-    ...(plan.upgrade && (plan.upgrade.addons.length > 0 || plan.upgrade.catalog.from !== plan.upgrade.catalog.to)
+    ...(plan.upgrade &&
+    (plan.upgrade.addons.length > 0 ||
+      plan.upgrade.packs.length > 0 ||
+      plan.upgrade.catalog.from !== plan.upgrade.catalog.to)
       ? { upgrade: plan.upgrade }
       : {}),
     ...nonEmpty("notices", plan.notices),

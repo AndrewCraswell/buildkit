@@ -108,10 +108,28 @@ export function isCatalogManifest(value: unknown): value is CatalogManifest;
 // @public
 export function isStaleLock(info: ApplyLockInfo): boolean;
 
+// Warning: (ae-forgotten-export) The symbol "LoadedPack" needs to be exported by the entry point node.d.ts
+//
+// @public
+export function loadLocalPack(folder: string): Promise<LoadedPack>;
+
 // Warning: (ae-forgotten-export) The symbol "VirtualTree" needs to be exported by the entry point node.d.ts
 //
 // @public
 export function nodeTree(root: string): VirtualTree;
+
+// @public
+export class PackStore {
+    constructor(options: {
+        cacheRoot: string;
+        run?: CommandRunner;
+    });
+    // (undocumented)
+    folder(name: string, version: string): string;
+    load(name: string, version: string, expectedIntegrity?: string): Promise<LoadedPack>;
+    resolve(name: string, range: string): Promise<string>;
+    versions(name: string): Promise<string[]>;
+}
 
 // @public
 export function planProject(context: ProjectContext, request: PlanRequest): Promise<Plan>;
@@ -122,8 +140,10 @@ export interface ProjectContext {
     catalog: CatalogManifest;
     // (undocumented)
     catalogIntegrity?: string;
+    // Warning: (ae-forgotten-export) The symbol "PackRecord" needs to be exported by the entry point node.d.ts
+    //
     // (undocumented)
-    catalogs?: (version: string) => CatalogManifest | undefined;
+    catalogs?: (version: string, packs?: Record<string, PackRecord>) => CatalogManifest | undefined;
     // (undocumented)
     root: string;
     // (undocumented)
@@ -146,11 +166,10 @@ export interface ProjectStatus {
 // @public
 export function projectStatus(root: string, settings: ProductSettings, filter?: string): Promise<ProjectStatus>;
 
+// Warning: (ae-forgotten-export) The symbol "planFileSchema" needs to be exported by the entry point node.d.ts
+//
 // @public
-export function readPlanFile(path: string): {
-    request: PlanRequest;
-    fingerprint: string;
-};
+export function readPlanFile(path: string): z.infer<typeof planFileSchema>;
 
 // @public
 export function recover(root: string, settings: ProductSettings): Promise<{
@@ -184,8 +203,8 @@ export function writeArtifacts(plan: Plan, folder: string, options: {
 // Warnings were encountered during analysis:
 //
 // dist/node/apply.d.ts:38:5 - (ae-forgotten-export) The symbol "Notice" needs to be exported by the entry point node.d.ts
-// dist/node/catalogs.d.ts:24:9 - (ae-forgotten-export) The symbol "CatalogManifest" needs to be exported by the entry point node.d.ts
-// dist/node/project.d.ts:19:5 - (ae-forgotten-export) The symbol "PlanRequest" needs to be exported by the entry point node.d.ts
+// dist/node/catalogs.d.ts:25:9 - (ae-forgotten-export) The symbol "CatalogManifest" needs to be exported by the entry point node.d.ts
+// dist/node/project.d.ts:20:5 - (ae-forgotten-export) The symbol "PlanRequest" needs to be exported by the entry point node.d.ts
 
 // (No @packageDocumentation comment for this package)
 

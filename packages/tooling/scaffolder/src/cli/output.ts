@@ -75,6 +75,9 @@ export function describeEnvelope(envelope: Envelope): string {
       envelope.upgrade
         ? [
             `catalog ${envelope.upgrade.catalog.from} to ${envelope.upgrade.catalog.to}`,
+            ...envelope.upgrade.packs.map(
+              (pack) => `${pack.name} ${pack.from ?? "(new)"} to ${pack.to ?? "(removed)"}`
+            ),
             ...envelope.upgrade.addons.map(
               (addon) => `${addon.id} ${addon.from ?? "(new)"} to ${addon.to ?? "(removed)"}`
             )

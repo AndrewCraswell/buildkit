@@ -1,4 +1,4 @@
-import { lstatSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs"
+import { lstatSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { hostname } from "node:os"
 import { isAbsolute, join, relative, sep } from "node:path"
 import { z } from "zod"
@@ -15,6 +15,7 @@ import {
   rawHash,
   removeEmptyFolders,
   removeFile,
+  removeTree,
   writeAtomic
 } from "./fs.js"
 import { readSafely } from "./tree.js"
@@ -145,12 +146,12 @@ function acquireLock(root: string, settings: ProductSettings, fingerprint: strin
   return created
 }
 
-function releaseLock(root: string, settings: ProductSettings) {
-  try {
-    unlinkSync(statePaths(root, settings).lock)
-  } catch {
-    // Already released.
-  }
+/**
+ * Windows can hold the lock file for a moment after the apply, so removing it retries. A lock that still can't be
+ * removed is left for the next run, which reports it as stale once this process exits.
+ */
+async function releaseLock(root: string, settings: ProductSettings): Promise<void> {
+  await removeFile(statePaths(root, settings).lock).catch(() => undefined)
 }
 
 function currentContent(root: string, path: string): string | undefined {
@@ -239,11 +240,11 @@ export async function applyPlan(
       const report = await rollback(root, journal)
       // A file someone else changed was left as it is, so its backup stays for them.
       if (report.changed.length === 0) {
-        rmSync(backupRoot, { recursive: true, force: true })
+        removeTree(backupRoot)
       }
     }
     await removeFile(paths.journal).catch(() => undefined)
-    releaseLock(root, settings)
+    await releaseLock(root, settings)
     removeEmptyFolders([...rootFolders, ...lockFolders])
     if (error instanceof PlanError) {
       throw error
@@ -256,7 +257,7 @@ export async function applyPlan(
   const notices: Notice[] = []
   try {
     await removeFile(paths.journal)
-    rmSync(backupRoot, { recursive: true, force: true })
+    removeTree(backupRoot)
     if (options.secrets && Object.keys(options.secrets).length > 0) {
       try {
         await writeSecretsFile(root, settings, options.secrets)
@@ -270,7 +271,7 @@ export async function applyPlan(
       }
     }
   } finally {
-    releaseLock(root, settings)
+    await releaseLock(root, settings)
   }
   return { status: "applied", written, notices }
 }
@@ -341,7 +342,7 @@ export async function recover(
       statSync(paths.journal, { throwIfNoEntry: false }) !== undefined ||
       statSync(paths.lock, { throwIfNoEntry: false }) !== undefined
     await removeFile(paths.journal).catch(() => undefined)
-    releaseLock(root, settings)
+    await releaseLock(root, settings)
     return { status: hadState ? "recovered" : "unchanged", report: empty }
   }
   const problem = journalProblem(root, paths.backups, journal)
@@ -354,10 +355,10 @@ export async function recover(
   }
   const report = await rollback(root, journal)
   if (report.changed.length === 0) {
-    rmSync(backupFolder(paths.backups, journal.fingerprint), { recursive: true, force: true })
+    removeTree(backupFolder(paths.backups, journal.fingerprint))
   }
   await removeFile(paths.journal)
-  releaseLock(root, settings)
+  await releaseLock(root, settings)
   return { status: "recovered", report }
 }
 

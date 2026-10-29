@@ -138,6 +138,8 @@ export type ErrorCode =
   | "E_INVALID_OPTIONS"
   | "E_UNKNOWN_ADDON"
   | "E_UNKNOWN_TEMPLATE"
+  | "E_PACKAGE_UNAVAILABLE"
+  | "E_INVALID_PACK"
   | "E_UNKNOWN_TARGET"
   | "E_CATALOG_MISMATCH"
   | "E_CONTRIBUTION"
@@ -166,6 +168,8 @@ export type PlanStatus = "planned" | "unchanged" | "needs-decision" | "conflict"
 
 export interface UpgradeSummary {
   catalog: { from: string; to: string }
+  /** Template packages that move to another version. */
+  packs: { name: string; from?: string; to?: string }[]
   addons: { id: string; from?: string; to?: string }[]
 }
 

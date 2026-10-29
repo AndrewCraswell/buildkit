@@ -1,8 +1,31 @@
 # Change Log - @buildkitgg/scaffolder
 
-<!-- This log was last generated on Thu, 29 Oct 2026 04:54:16 GMT and should not be manually modified. -->
+<!-- This log was last generated on Thu, 29 Oct 2026 12:16:13 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.3.0
+
+Thu, 29 Oct 2026 12:16:13 GMT
+
+### Minor changes
+
+- The init wizard asks for every environment variable the plan needs, optional ones included, and later commands ask
+  only for required secrets that aren't set yet. `askSecrets` is now `askEnv`. Plans no longer list add-ons the project
+  already has. Apply retries Windows file locks for longer, including when it releases its lock, so a held lock file no
+  longer blocks the next command. A saved plan records the template package versions it was made with, and `init --plan`
+  loads exactly those, so a newer release never runs before the plan is checked. (ajcraswell@gmail.com)
+
+## 0.2.0
+
+Thu, 29 Oct 2026 11:46:01 GMT
+
+### Minor changes
+
+- Add template packages. Anyone can publish templates for a product's catalog as an npm package (`definePack`), and
+  `init @scope/name` installs one by name. The lock records each package's version and integrity, `upgrade` moves
+  packages to their newest compatible version, and `catalog check` checks a package before it's published.
+  (ajcraswell@gmail.com)
 
 ## 0.1.0
 

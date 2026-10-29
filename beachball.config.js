@@ -17,10 +17,14 @@ module.exports = {
       name: "better-apps-platform",
       include: [
         "packages/better-apps/better-apps",
+        "packages/better-apps/better-auth",
+        "packages/better-apps/clerk",
         "packages/better-apps/cli",
         "packages/better-apps/drizzle",
+        "packages/better-apps/react",
+        "packages/better-apps/tanstack-start",
         "packages/better-apps/testing",
-        "packages/better-apps/react"
+        "packages/better-apps/workos"
       ],
       disallowedChangeTypes: null
     },

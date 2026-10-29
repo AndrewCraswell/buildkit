@@ -1,10 +1,12 @@
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { basename, dirname, resolve } from "node:path"
 import { z } from "zod"
-import { findPreset } from "../manifest/catalog.js"
-import type { CatalogManifest } from "../manifest/types.js"
+import { readEnv } from "../edit/env.js"
+import { catalogVersionText, findPreset, packOf } from "../manifest/catalog.js"
+import { mergePacks, templateSource, type LoadedPack, type TemplateSource } from "../manifest/packs.js"
+import type { CatalogManifest, PackRecord } from "../manifest/types.js"
 import { recover, type ApplyHooks } from "../node/apply.js"
-import { CatalogStore, userCacheDir, type CommandRunner } from "../node/catalogs.js"
+import { CatalogStore, loadLocalPack, PackStore, userCacheDir, type CommandRunner } from "../node/catalogs.js"
 import {
   applyReviewed,
   defaultArtifactFolder,
@@ -23,15 +25,17 @@ import { explain } from "../plan/explain.js"
 import { isRecord } from "../plan/json.js"
 import { planRequestSchema } from "../plan/request-schema.js"
 import type { Plan, PlanRequest, Resolution } from "../plan/types.js"
+import { checkCatalog } from "../resolve/check.js"
 import { describeCatalog, optionsSchema } from "../resolve/questions.js"
 import { projectNameProblem, requireAddonId } from "../resolve/resolve.js"
 import { readConfig, readLock } from "../state/files.js"
-import { lockSchema, projectConfigSchema } from "../state/schemas.js"
+import { lockSchema, projectConfigSchema, type Lock } from "../state/schemas.js"
 import { lockPath, type ProductSettings } from "../state/settings.js"
+import { compareVersions, satisfiesRange } from "../upgrade/semver.js"
 import { parseFlags, parseSet, type FlagSpec, type ParsedFlags } from "./flags.js"
 import { describeEnvelope } from "./output.js"
-import { cancelled, clackPrompter, type Prompter } from "./prompter.js"
-import { askSecrets, completeAnswers, emptyAnswers, runWizard, type PartialAnswers } from "./wizard.js"
+import { cancelled, clackPrompter, type Cancelled, type Prompter } from "./prompter.js"
+import { askEnv, completeAnswers, emptyAnswers, runWizard, type PartialAnswers } from "./wizard.js"
 
 export interface CliIo {
   stdout(text: string): void
@@ -65,6 +69,13 @@ const sharedFlags = {
   repeats: ["resolve"]
 } satisfies FlagSpec
 
+/**
+ * Commands on an existing project that use the catalog. They load the template packages its lock records first, so
+ * `schema --cwd` describes a package's add-on options too. `status` reads only the lock and the files, so it never runs
+ * a package's code.
+ */
+const projectCommands = new Set(["add", "config", "upgrade", "sync", "check", "explain", "schema"])
+
 function spec(extra: FlagSpec): FlagSpec {
   return {
     booleans: [...sharedFlags.booleans, ...(extra.booleans ?? [])],
@@ -80,9 +91,15 @@ function spec(extra: FlagSpec): FlagSpec {
 export class CliRuntime {
   readonly options: CliOptions
   readonly io: CliIo
+  /** The product catalog, with the project's template packages merged in once they're loaded. */
+  #catalog: CatalogManifest
+  #packs: PackStore | undefined
+  /** Says where a template package's template came from, in the plan `init` shows. */
+  readonly #sourceNotices: Plan["notices"] = []
 
   constructor(options: CliOptions) {
     this.options = options
+    this.#catalog = options.catalog
     this.io = {
       stdout: options.io?.stdout ?? ((text) => process.stdout.write(text)),
       stderr: options.io?.stderr ?? ((text) => process.stderr.write(text)),
@@ -124,6 +141,9 @@ export class CliRuntime {
           "E_USAGE",
           `There's no command named "${command}". Run ${this.#product} --help to see the commands.`
         )
+      }
+      if (projectCommands.has(command)) {
+        await this.#loadProjectPacks(command, argv)
       }
       return await handler(argv)
     } catch (error) {
@@ -168,25 +188,192 @@ export class CliRuntime {
     })
   }
 
+  #packStore(): PackStore {
+    this.#packs ??= new PackStore({
+      cacheRoot: this.options.cacheDir ?? userCacheDir(this.#settings),
+      ...(this.options.runCommand ? { run: this.options.runCommand } : {})
+    })
+    return this.#packs
+  }
+
+  #readLock(root: string): Lock | undefined {
+    const state = readSafely(root, lockPath(this.#settings))
+    if (state.kind !== "file") {
+      return undefined
+    }
+    try {
+      return readLock(lockPath(this.#settings), state.content)
+    } catch {
+      // The planner reports an unreadable lock.
+      return undefined
+    }
+  }
+
+  /**
+   * Merges the template packages a project uses into the catalog, before any add-on name is looked up. Commands load
+   * the versions the lock records. `upgrade` moves each package to its newest version that works with this catalog.
+   */
+  async #loadProjectPacks(command: string, argv: string[]): Promise<void> {
+    const cwdIndex = argv.indexOf("--cwd")
+    const cwdFlag =
+      argv.find((arg) => arg.startsWith("--cwd="))?.slice(6) ?? (cwdIndex === -1 ? undefined : argv[cwdIndex + 1])
+    const packs = Object.entries(this.#readLock(resolve(this.io.cwd, cwdFlag ?? "."))?.catalog.packs ?? {})
+    if (packs.length === 0) {
+      return
+    }
+    const store = this.#packStore()
+    const loaded: LoadedPack[] = []
+    for (const [name, recorded] of packs) {
+      loaded.push(
+        command === "upgrade"
+          ? await this.#newestCompatible(store, name, recorded)
+          : await this.#loadRecorded(name, recorded)
+      )
+    }
+    this.#catalog = mergePacks(this.options.catalog, loaded)
+  }
+
+  /** A template package version the lock records. Installs always record its integrity, so a record without one is refused. */
+  async #loadRecorded(name: string, recorded: PackRecord): Promise<LoadedPack> {
+    if (recorded.integrity === undefined) {
+      throw new PlanError(
+        "E_PACKAGE_UNAVAILABLE",
+        `The lock records ${name}@${recorded.version} without its integrity, so it can't be checked. Restore the lock from version control.`
+      )
+    }
+    return this.#packStore().load(name, recorded.version, recorded.integrity)
+  }
+
+  async #newestCompatible(store: PackStore, name: string, recorded: PackRecord): Promise<LoadedPack> {
+    const current = await this.#loadRecorded(name, recorded)
+    let versions: string[]
+    try {
+      versions = await store.versions(name)
+    } catch (error) {
+      // Offline, the project keeps the version it has, and the plan says why.
+      this.#sourceNotices.push({
+        code: "template-package-unchecked",
+        text: `${name} stays at ${recorded.version}: newer versions couldn't be checked. ${errorInfo(error).message}`
+      })
+      return current
+    }
+    // Like npm ranges, an upgrade moves to a prerelease only from a prerelease.
+    const prereleases = recorded.version.includes("-")
+    for (const version of versions) {
+      if (compareVersions(version, recorded.version) <= 0) {
+        break
+      }
+      if (version.includes("-") && !prereleases) {
+        continue
+      }
+      try {
+        const candidate = await store.load(name, version)
+        if (
+          candidate.pack.extends.catalog === this.options.catalog.id &&
+          satisfiesRange(this.options.catalog.version, candidate.pack.extends.versions)
+        ) {
+          return candidate
+        }
+      } catch (error) {
+        // A version that won't install, isn't a pack or has an unreadable range isn't a candidate. The plan says why, and
+        // the next one is tried.
+        this.#sourceNotices.push({
+          code: "template-package-skipped",
+          text: `${name}@${version} was skipped: ${errorInfo(error).message}`
+        })
+      }
+    }
+    return current
+  }
+
+  /** Fetches a template package named on the command line, at the newest version in its range, into the catalog. */
+  async #loadPackage(source: TemplateSource): Promise<LoadedPack> {
+    const store = this.#packStore()
+    const loaded = await store.load(source.package, await store.resolve(source.package, source.range))
+    this.#catalog = mergePacks(this.options.catalog, [loaded])
+    return loaded
+  }
+
+  /**
+   * Loads a template package for `init` and returns the template's catalog id, `<package>#<id>`, asking which one when
+   * the package has several.
+   */
+  async #usePackage(source: TemplateSource, interactive: boolean): Promise<string | Cancelled> {
+    const loaded = await this.#loadPackage(source)
+    const label = `${loaded.name}@${loaded.version}`
+    const ids = loaded.pack.templates.map((template) => template.id)
+    let id = source.template
+    if (id !== undefined && !ids.includes(id)) {
+      throw new PlanError("E_UNKNOWN_TEMPLATE", `${label} has no template named ${id}. It has ${ids.join(", ")}.`)
+    }
+    if (id === undefined && ids.length === 1) {
+      id = ids[0]
+    }
+    if (id === undefined) {
+      if (!interactive) {
+        throw new PlanError(
+          "E_USAGE",
+          `${label} has more than one template. Pick one: ${ids.map((each) => `${loaded.name}#${each}`).join(", ")}.`
+        )
+      }
+      const answer = await this.io.prompter.select({
+        message: "Which template?",
+        options: loaded.pack.templates.map((template) => ({
+          value: template.id,
+          label: template.title,
+          hint: template.description
+        }))
+      })
+      if (answer === cancelled) {
+        return cancelled
+      }
+      id = answer
+    }
+    this.#noteSource(label)
+    return `${loaded.name}#${id}`
+  }
+
+  #noteSource(label: string): void {
+    this.#sourceNotices.push({
+      code: "template-package",
+      text: `The template comes from ${label} on npm, not from ${this.#product}. Applying it runs code from its author.`
+    })
+  }
+
   /** Loads the catalog version the lock records when it differs from the installed one, so old baselines render. */
   async #context(root: string): Promise<ProjectContext> {
     const store = this.#catalogStore()
-    const state = readSafely(root, lockPath(this.#settings))
-    if (state.kind === "file") {
+    const lock = this.#readLock(root)
+    // The old baseline renders with the template package versions the lock records, which an upgrade may move past.
+    const recordedPacks: LoadedPack[] = []
+    if (lock) {
       try {
-        const lock = readLock(lockPath(this.#settings), state.content)
         if (lock.catalog.version !== this.options.catalog.version) {
           await store.load(lock.catalog.version, lock.catalog.integrity)
         }
+        for (const [name, recorded] of Object.entries(lock.catalog.packs ?? {})) {
+          recordedPacks.push(await this.#loadRecorded(name, recorded))
+        }
       } catch {
-        // The planner reports an unreadable lock, and plans two-way without the old catalog.
+        // Without the old catalog, the planner plans two-way, or merges against stored seed bases.
       }
     }
     return {
       root,
-      catalog: this.options.catalog,
+      catalog: this.#catalog,
       settings: this.#settings,
-      catalogs: (version) => store.get(version),
+      catalogs: (version, packs) => {
+        const host = version === this.options.catalog.version ? this.options.catalog : store.get(version)
+        const wanted = recordedPacks.filter((pack) => packs?.[pack.name]?.version === pack.version)
+        if (!host || wanted.length !== Object.keys(packs ?? {}).length) {
+          return undefined
+        }
+        try {
+          return mergePacks(host, wanted)
+        } catch {
+          return undefined
+        }
+      },
       ...(this.options.catalogIntegrity ? { catalogIntegrity: this.options.catalogIntegrity } : {})
     }
   }
@@ -263,6 +450,7 @@ export class CliRuntime {
         reviewed,
         this.options.hooks ? { hooks: this.options.hooks } : {}
       )
+      plan.notices.unshift(...this.#sourceNotices)
       return this.#emit(toEnvelope(plan, { product: this.#product, status }), json)
     }
     const interactive = this.#interactive(flags)
@@ -285,28 +473,37 @@ export class CliRuntime {
       }
       current = await planProject(context, choice.request)
     }
+    current.notices.unshift(...this.#sourceNotices)
     const artifacts = this.#artifacts(root, current, flags)
     const envelope = (plan: Plan, status?: EnvelopeStatus) =>
       toEnvelope(plan, { product: this.#product, ...(status ? { status } : {}), ...(artifacts ? { artifacts } : {}) })
     if (current.status !== "planned" || flags.booleans.has("dry-run") || options.applies === false) {
       return this.#emit(envelope(current), json)
     }
-    const secretsNeeded = current.env.filter((variable) => variable.secret && variable.required)
+    // init asks for every variable; later commands only for required secrets, so an add doesn't ask about the rest of
+    // the project. Variables the secrets file already has aren't asked again: a required one needs a value, and an
+    // optional one was answered once, even if blank.
+    const state = readSafely(root, this.#settings.secretsFile)
+    const present = readEnv(state.kind === "file" ? state.content : undefined)
+    const everything = current.request.intent.command === "init"
+    const unset = current.env.filter(
+      (variable) =>
+        (everything || (variable.secret && variable.required)) &&
+        (variable.required ? !present.get(variable.name) : !present.has(variable.name))
+    )
     let secrets: Record<string, string> | undefined
-    if (secretsNeeded.length > 0) {
-      if (interactive) {
-        const answer = await askSecrets(secretsNeeded, this.io.prompter)
-        if (answer === cancelled) {
-          return this.#cancel(json)
-        }
-        secrets = answer
-      } else {
-        current.nextSteps.push(
-          ...secretsNeeded.map(
-            (variable) => `Set ${variable.name} in ${this.#settings.secretsFile}: ${variable.description}`
-          )
-        )
+    if (interactive && unset.length > 0) {
+      const answer = await askEnv(unset, this.io.prompter)
+      if (answer === cancelled) {
+        return this.#cancel(json)
       }
+      secrets = answer
+    } else if (!interactive) {
+      current.nextSteps.push(
+        ...unset
+          .filter((variable) => variable.secret && variable.required)
+          .map((variable) => `Set ${variable.name} in ${this.#settings.secretsFile}: ${variable.description}`)
+      )
     }
     if (!interactive && !flags.booleans.has("yes")) {
       current.notices.push({
@@ -328,17 +525,18 @@ export class CliRuntime {
       { ...(secrets ? { secrets } : {}), ...(this.options.hooks ? { hooks: this.options.hooks } : {}) }
     )
     plan.nextSteps = current.nextSteps
+    plan.notices.unshift(...this.#sourceNotices)
     return this.#emit(envelope(plan, status), json)
   }
 
   #slotIds(): string[] {
-    return this.options.catalog.slots.map((slot) => slot.id)
+    return this.#catalog.slots.map((slot) => slot.id)
   }
 
   #options(flags: ParsedFlags): Record<string, Record<string, unknown>> {
     const options: Record<string, Record<string, unknown>> = {}
     for (const { addon, key, value } of parseSet(flags.lists.get("set") ?? [])) {
-      const id = requireAddonId(this.options.catalog, addon)
+      const id = requireAddonId(this.#catalog, addon)
       options[id] = { ...options[id], [key]: value }
     }
     return options
@@ -356,18 +554,42 @@ export class CliRuntime {
       })
     )
     const json = flags.booleans.has("json")
-    const catalog = this.options.catalog
     // With --preset, the template comes from the preset, so a lone argument is the folder.
     const positionals =
       flags.strings.has("preset") && flags.positionals.length === 1
         ? [undefined, ...flags.positionals]
         : flags.positionals
-    const [templateArg, folderArg, ...extra] = positionals
+    let [templateArg] = positionals
+    const [, folderArg, ...extra] = positionals
     if (extra.length > 0) {
       throw new PlanError("E_USAGE", `init takes a template and a folder. Remove ${extra.join(" ")}.`)
     }
+    const source = templateArg === undefined ? undefined : templateSource(templateArg)
+    if (source) {
+      const template = await this.#usePackage(source, this.#interactive(flags))
+      if (template === cancelled) {
+        return this.#cancel(json)
+      }
+      templateArg = template
+    }
+    const catalog = this.#catalog
     if (flags.strings.get("plan") !== undefined) {
       const reviewed = readPlanFile(resolve(this.io.cwd, flags.strings.get("plan") ?? ""))
+      const planned = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.template : undefined
+      const pack = planned === undefined ? undefined : packOf(planned)
+      // The plan records the package version and integrity it was made with. Loading exactly that copy means no other
+      // version's code runs before the fingerprint is checked.
+      if (planned !== undefined && pack !== undefined && source === undefined) {
+        const recorded = reviewed.packs?.[pack]
+        if (!recorded) {
+          throw new PlanError(
+            "E_USAGE",
+            `The plan doesn't record which version of ${pack} it was made with. Make it again with --out.`
+          )
+        }
+        this.#catalog = mergePacks(this.options.catalog, [await this.#loadRecorded(pack, recorded)])
+        this.#noteSource(`${pack}@${recorded.version}`)
+      }
       const name = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.name : undefined
       // The name picks the folder, and a lock is read there before planning, so check it first.
       const nameProblem = name === undefined ? undefined : projectNameProblem(name)
@@ -488,7 +710,7 @@ export class CliRuntime {
       names.push(value)
     }
     if (names.length === 0 && flags.strings.get("plan") === undefined) {
-      const slots = this.options.catalog.slots.map((slot) => slot.id).join(", ")
+      const slots = this.#catalog.slots.map((slot) => slot.id).join(", ")
       throw new PlanError("E_USAGE", `Name an add-on to add, or a question to answer (${slots}).`)
     }
     const replace = flags.lists.get("replace") ?? []
@@ -513,7 +735,7 @@ export class CliRuntime {
       }
       const options: Record<string, Record<string, unknown>> = {}
       for (const { addon, key, value } of parseSet(rest)) {
-        const id = requireAddonId(this.options.catalog, addon)
+        const id = requireAddonId(this.#catalog, addon)
         options[id] = { ...options[id], [key]: value }
       }
       return this.#planAndApply(
@@ -539,7 +761,7 @@ export class CliRuntime {
       throw new PlanError("E_USAGE", "config get takes <add-on> or <add-on>.<option>.")
     }
     const dot = subject.indexOf(".")
-    const id = requireAddonId(this.options.catalog, dot === -1 ? subject : subject.slice(0, dot))
+    const id = requireAddonId(this.#catalog, dot === -1 ? subject : subject.slice(0, dot))
     const options = config.addons[id]
     const value = dot === -1 ? options : options?.[subject.slice(dot + 1)]
     this.io.stdout(`${JSON.stringify(value ?? null, null, json ? undefined : 2)}\n`)
@@ -570,7 +792,7 @@ export class CliRuntime {
   /** `--with` on config set, upgrade and sync: add-ons to add with the change, as a decision's choice writes them. */
   #alongside(flags: ParsedFlags): { addons?: string[] } {
     const names = flags.lists.get("with") ?? []
-    return names.length > 0 ? { addons: names.map((name) => requireAddonId(this.options.catalog, name)) } : {}
+    return names.length > 0 ? { addons: names.map((name) => requireAddonId(this.#catalog, name)) } : {}
   }
 
   /** Fails when generated files, the lock or seeds are out of date, or seeds still hold conflict markers. */
@@ -646,7 +868,7 @@ export class CliRuntime {
       throw new PlanError("E_USAGE", "explain takes a path, an add-on or an entry id.")
     }
     const result = explain({
-      catalog: this.options.catalog,
+      catalog: this.#catalog,
       tree: nodeTree(this.#root(flags)),
       settings: this.#settings,
       subject
@@ -740,15 +962,25 @@ export class CliRuntime {
         json
       )
     }
-    if (action !== undefined) {
-      throw new PlanError("E_USAGE", `catalog takes fetch, not "${action}".`)
+    if (action === "check") {
+      return this.#checkPack(resolve(this.io.cwd, version ?? "."), json)
     }
-    const description = describeCatalog(this.options.catalog)
+    const source = action === undefined ? undefined : templateSource(action)
+    if (action !== undefined && source === undefined) {
+      throw new PlanError("E_USAGE", `catalog takes fetch, check or a template package, not "${action}".`)
+    }
+    if (source) {
+      await this.#loadPackage(source)
+    }
+    const description = describeCatalog(this.#catalog)
+    if (source) {
+      description.templates = description.templates.filter((template) => packOf(template.template) === source.package)
+    }
     if (json) {
       this.io.stdout(`${JSON.stringify(description)}\n`)
       return 0
     }
-    const lines = [`${description.catalog.id}@${description.catalog.version}`]
+    const lines = [`${description.catalog.id}@${catalogVersionText(this.#catalog)}`]
     for (const template of description.templates) {
       lines.push("", `${template.title} (${template.template}): ${template.description}`)
       for (const required of template.required) {
@@ -768,13 +1000,37 @@ export class CliRuntime {
     return 0
   }
 
+  /** `catalog check [path]`: a template package in a folder, merged in, with every option set of its templates planned. */
+  async #checkPack(folder: string, json: boolean): Promise<number> {
+    const loaded = await loadLocalPack(folder)
+    const merged = mergePacks(this.options.catalog, [loaded])
+    const templates = loaded.pack.templates.map((template) => `${loaded.name}#${template.id}`)
+    const problems = checkCatalog(merged, { matrix: true, templates })
+    const label = `${loaded.name}@${loaded.version}`
+    if (problems.length > 0) {
+      throw new PlanError("E_INVALID_PACK", `${label} has problems. ${problems.join(" ")}`)
+    }
+    return this.#emit(
+      {
+        status: "unchanged",
+        notices: [
+          {
+            code: "pack-checked",
+            text: `${label} works with ${this.options.catalog.id}@${this.options.catalog.version}. Every option set of ${templates.join(", ")} plans.`
+          }
+        ]
+      },
+      json
+    )
+  }
+
   async schema(argv: string[]): Promise<number> {
     parseFlags(argv, spec({}))
     const config: unknown = z.toJSONSchema(projectConfigSchema, { io: "input", unrepresentable: "any" })
     if (isRecord(config) && isRecord(config.properties) && isRecord(config.properties.addons)) {
       config.properties.addons = {
         ...config.properties.addons,
-        properties: Object.fromEntries(this.options.catalog.addons.map((addon) => [addon.id, optionsSchema(addon)]))
+        properties: Object.fromEntries(this.#catalog.addons.map((addon) => [addon.id, optionsSchema(addon)]))
       }
     }
     const schemas = {

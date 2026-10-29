@@ -355,7 +355,19 @@ describe("questions and catalog CI", () => {
         default: ["en"]
       }
     ])
-    expect(description.presets).toEqual([{ id: "saas", title: "SaaS", template: "app" }])
+    expect(description.presets).toEqual([
+      {
+        id: "saas",
+        title: "SaaS",
+        template: "app",
+        answers: {
+          template: "app",
+          mode: "ssr",
+          slots: { database: "@fixture/db-postgres" },
+          optional: ["@fixture/i18n"]
+        }
+      }
+    ])
   })
 
   it("passes for the fixture catalog, including every pair of answers", () => {

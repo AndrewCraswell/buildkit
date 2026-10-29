@@ -52,6 +52,16 @@ describe("planning", () => {
     expect(again.error?.code).toBe("E_ALREADY_INITIALIZED")
   })
 
+  it("lists only the add-ons a plan brings in, not ones the project already has", async () => {
+    const files = await applyFixture(await project(), addRequest(["@fixture/sessions"]))
+    const added = await planFixture(files, addRequest(["@fixture/auth"]))
+    expect(added.status).toBe("planned")
+    expect(added.required).toEqual([])
+    expect(added.pulled.map((pulled) => pulled.id)).not.toContain("@fixture/sessions")
+    const fresh = await planFixture(await project(), addRequest(["@fixture/auth"]))
+    expect(fresh.pulled.map((pulled) => pulled.id)).toContain("@fixture/sessions")
+  })
+
   it("commands other than init need a project", async () => {
     for (const request of [
       addRequest(["i18n"]),
@@ -642,6 +652,7 @@ describe("upgrade", () => {
     expect(planned.migrations.map((migration) => migration.kind)).toEqual(["options", "codemod", "agent"])
     expect(planned.upgrade).toEqual({
       catalog: { from: "1.0.0", to: "2.0.0" },
+      packs: [],
       addons: [{ id: "@fixture/lint", from: "1.0.0", to: "1.1.0" }]
     })
     const next = applyInMemory(edited, planned)

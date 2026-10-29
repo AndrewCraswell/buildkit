@@ -17,6 +17,7 @@
     "pnpm-lock.yaml",
     "api-reports/*.api.md",
     "**/.generated/**",
-    "**/src/vendor/**"
+    "**/src/vendor/**",
+    "**/routeTree.gen.ts"
   ]
 }

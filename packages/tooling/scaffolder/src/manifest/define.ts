@@ -6,7 +6,8 @@ import type {
   PresetManifest,
   SlotDefinition,
   TargetManifest,
-  TemplateManifest
+  TemplateManifest,
+  TemplatePack
 } from "./types.js"
 
 /** Identity helpers that give manifests their types. Catalog CI checks them with `checkCatalog()`. */
@@ -38,4 +39,9 @@ export function definePoint(definition: PointDefinition): PointDefinition {
 
 export function defineCatalog(manifest: CatalogManifest): CatalogManifest {
   return manifest
+}
+
+/** A template package's default export. The engine checks it against the product catalog when it loads it. */
+export function definePack(pack: TemplatePack): TemplatePack {
+  return pack
 }
