@@ -15,7 +15,12 @@ module.exports = {
   groups: [
     {
       name: "better-apps-platform",
-      include: ["packages/better-apps/better-apps", "packages/better-apps/cli", "packages/better-apps/drizzle"],
+      include: [
+        "packages/better-apps/better-apps",
+        "packages/better-apps/cli",
+        "packages/better-apps/drizzle",
+        "packages/better-apps/testing"
+      ],
       disallowedChangeTypes: null
     }
   ],
