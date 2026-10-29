@@ -72,11 +72,11 @@ export interface CatalogDescription {
         id: string;
         version: string;
     };
-    // (undocumented)
     presets: {
         id: string;
         title: string;
         template: string;
+        answers: Omit<Answers, "name">;
     }[];
     // (undocumented)
     slots: {

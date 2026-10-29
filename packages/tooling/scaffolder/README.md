@@ -104,8 +104,10 @@ Contribution kinds: `dependency`, `script`, `env`, `file` (`owned`, `seed` or `s
 
 The wizard is generated from the catalog, so a new add-on or a new choice in a slot needs no CLI code. It asks, in
 order: the template, the project name, the mode, each slot (yes or no first for an optional slot, then which one), the
-optional add-ons in one multi-select, the options each chosen add-on lists in `ask`, and required secrets with a masked
-prompt. Then it shows the plan and asks for one confirmation, which defaults to no.
+optional add-ons in one multi-select, the options each chosen add-on lists in `ask`, and the plan's environment
+variables, with a masked prompt for secrets. A required variable's example is its default, and an optional one can be
+left blank. Then it shows the plan and asks for one confirmation, which defaults to no. The answers go to the secrets
+file. Later commands ask only for required secrets that file doesn't have yet.
 
 A slot's choices are the add-ons whose `supports()` accepts the target, and a slot with one fitting choice isn't asked.
 Required add-ons are never asked about, so their options must all have defaults.
@@ -163,7 +165,8 @@ await runMain(createCli({ name: "acme", version: "1.0.0", catalog, settings: def
 Every planning command takes `--dry-run`, `--json`, `--out [folder]`, `--plan <file>`, `--yes`, `--diff`,
 `--resolve <id>=keep-current|take-incoming|file:<path>` and `--conflict markers`. Without a terminal, a command plans
 and writes nothing unless you pass `--yes` or apply a reviewed plan with `--plan`. A reviewed plan applies only if the
-project hasn't changed since; applying it twice is a no-op.
+project hasn't changed since; applying it twice is a no-op. It records the template packages it was made with, and
+applying it loads those exact versions, so a newer release never runs first.
 
 ## The JSON envelope and exit codes
 

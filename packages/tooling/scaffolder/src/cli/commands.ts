@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { basename, dirname, resolve } from "node:path"
 import { z } from "zod"
+import { readEnv } from "../edit/env.js"
 import { catalogVersionText, findPreset, packOf } from "../manifest/catalog.js"
 import { mergePacks, templateSource, type LoadedPack, type TemplateSource } from "../manifest/packs.js"
 import type { CatalogManifest, PackRecord } from "../manifest/types.js"
@@ -34,7 +35,7 @@ import { compareVersions, satisfiesRange } from "../upgrade/semver.js"
 import { parseFlags, parseSet, type FlagSpec, type ParsedFlags } from "./flags.js"
 import { describeEnvelope } from "./output.js"
 import { cancelled, clackPrompter, type Cancelled, type Prompter } from "./prompter.js"
-import { askSecrets, completeAnswers, emptyAnswers, runWizard, type PartialAnswers } from "./wizard.js"
+import { askEnv, completeAnswers, emptyAnswers, runWizard, type PartialAnswers } from "./wizard.js"
 
 export interface CliIo {
   stdout(text: string): void
@@ -328,11 +329,15 @@ export class CliRuntime {
       }
       id = answer
     }
+    this.#noteSource(label)
+    return `${loaded.name}#${id}`
+  }
+
+  #noteSource(label: string): void {
     this.#sourceNotices.push({
       code: "template-package",
       text: `The template comes from ${label} on npm, not from ${this.#product}. Applying it runs code from its author.`
     })
-    return `${loaded.name}#${id}`
   }
 
   /** Loads the catalog version the lock records when it differs from the installed one, so old baselines render. */
@@ -445,6 +450,7 @@ export class CliRuntime {
         reviewed,
         this.options.hooks ? { hooks: this.options.hooks } : {}
       )
+      plan.notices.unshift(...this.#sourceNotices)
       return this.#emit(toEnvelope(plan, { product: this.#product, status }), json)
     }
     const interactive = this.#interactive(flags)
@@ -474,22 +480,30 @@ export class CliRuntime {
     if (current.status !== "planned" || flags.booleans.has("dry-run") || options.applies === false) {
       return this.#emit(envelope(current), json)
     }
-    const secretsNeeded = current.env.filter((variable) => variable.secret && variable.required)
+    // init asks for every variable; later commands only for required secrets, so an add doesn't ask about the rest of
+    // the project. Variables the secrets file already has aren't asked again: a required one needs a value, and an
+    // optional one was answered once, even if blank.
+    const state = readSafely(root, this.#settings.secretsFile)
+    const present = readEnv(state.kind === "file" ? state.content : undefined)
+    const everything = current.request.intent.command === "init"
+    const unset = current.env.filter(
+      (variable) =>
+        (everything || (variable.secret && variable.required)) &&
+        (variable.required ? !present.get(variable.name) : !present.has(variable.name))
+    )
     let secrets: Record<string, string> | undefined
-    if (secretsNeeded.length > 0) {
-      if (interactive) {
-        const answer = await askSecrets(secretsNeeded, this.io.prompter)
-        if (answer === cancelled) {
-          return this.#cancel(json)
-        }
-        secrets = answer
-      } else {
-        current.nextSteps.push(
-          ...secretsNeeded.map(
-            (variable) => `Set ${variable.name} in ${this.#settings.secretsFile}: ${variable.description}`
-          )
-        )
+    if (interactive && unset.length > 0) {
+      const answer = await askEnv(unset, this.io.prompter)
+      if (answer === cancelled) {
+        return this.#cancel(json)
       }
+      secrets = answer
+    } else if (!interactive) {
+      current.nextSteps.push(
+        ...unset
+          .filter((variable) => variable.secret && variable.required)
+          .map((variable) => `Set ${variable.name} in ${this.#settings.secretsFile}: ${variable.description}`)
+      )
     }
     if (!interactive && !flags.booleans.has("yes")) {
       current.notices.push({
@@ -563,9 +577,18 @@ export class CliRuntime {
       const reviewed = readPlanFile(resolve(this.io.cwd, flags.strings.get("plan") ?? ""))
       const planned = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.template : undefined
       const pack = planned === undefined ? undefined : packOf(planned)
-      // A saved plan names the package but not its version. The plan's fingerprint stops it if the package changed.
+      // The plan records the package version and integrity it was made with. Loading exactly that copy means no other
+      // version's code runs before the fingerprint is checked.
       if (planned !== undefined && pack !== undefined && source === undefined) {
-        await this.#usePackage({ package: pack, range: "latest", template: planned.slice(pack.length + 1) }, false)
+        const recorded = reviewed.packs?.[pack]
+        if (!recorded) {
+          throw new PlanError(
+            "E_USAGE",
+            `The plan doesn't record which version of ${pack} it was made with. Make it again with --out.`
+          )
+        }
+        this.#catalog = mergePacks(this.options.catalog, [await this.#loadRecorded(pack, recorded)])
+        this.#noteSource(`${pack}@${recorded.version}`)
       }
       const name = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.name : undefined
       // The name picks the folder, and a lock is read there before planning, so check it first.

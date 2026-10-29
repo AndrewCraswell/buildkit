@@ -1,5 +1,15 @@
 import { createHash, randomBytes } from "node:crypto"
-import { linkSync, mkdirSync, readdirSync, renameSync, rmdirSync, statSync, unlinkSync, writeFileSync } from "node:fs"
+import {
+  linkSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  rmdirSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+  writeFileSync
+} from "node:fs"
 import { basename, dirname, join } from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 
@@ -14,8 +24,11 @@ export function rawHash(content: string | undefined): string {
   return content === undefined ? "absent" : createHash("sha256").update(content).digest("hex")
 }
 
-/** Retries operations that Windows fails while another process, such as an indexer or antivirus, holds the file. */
-export async function withRetries<T>(operation: () => T, attempts = 8): Promise<T> {
+/**
+ * Retries operations that Windows fails while another process, such as an indexer or antivirus, holds the file. Each
+ * wait doubles up to half a second, so the default attempts wait about five and a half seconds in all.
+ */
+export async function withRetries<T>(operation: () => T, attempts = 16): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       return operation()
@@ -24,9 +37,14 @@ export async function withRetries<T>(operation: () => T, attempts = 8): Promise<
       if (attempt >= attempts - 1 || code === undefined || !retryCodes.has(code)) {
         throw error
       }
-      await delay(10 * 2 ** attempt)
+      await delay(Math.min(10 * 2 ** attempt, 500))
     }
   }
+}
+
+/** Removes a folder and everything in it. Node retries the removal while Windows holds a file in it. */
+export function removeTree(path: string): void {
+  rmSync(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })
 }
 
 function tempPath(path: string): string {
@@ -59,7 +77,8 @@ export async function writeAtomic(path: string, content: string, mode?: number):
   try {
     await withRetries(() => renameSync(temp, path))
   } catch (error) {
-    unlinkSync(temp)
+    // The rename's error is the one to report, so a temp file that can't be removed either is left behind.
+    await removeFile(temp).catch(() => undefined)
     throw error
   }
 }

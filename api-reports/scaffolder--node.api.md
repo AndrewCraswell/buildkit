@@ -166,11 +166,10 @@ export interface ProjectStatus {
 // @public
 export function projectStatus(root: string, settings: ProductSettings, filter?: string): Promise<ProjectStatus>;
 
+// Warning: (ae-forgotten-export) The symbol "planFileSchema" needs to be exported by the entry point node.d.ts
+//
 // @public
-export function readPlanFile(path: string): {
-    request: PlanRequest;
-    fingerprint: string;
-};
+export function readPlanFile(path: string): z.infer<typeof planFileSchema>;
 
 // @public
 export function recover(root: string, settings: ProductSettings): Promise<{
@@ -205,7 +204,7 @@ export function writeArtifacts(plan: Plan, folder: string, options: {
 //
 // dist/node/apply.d.ts:38:5 - (ae-forgotten-export) The symbol "Notice" needs to be exported by the entry point node.d.ts
 // dist/node/catalogs.d.ts:25:9 - (ae-forgotten-export) The symbol "CatalogManifest" needs to be exported by the entry point node.d.ts
-// dist/node/project.d.ts:19:5 - (ae-forgotten-export) The symbol "PlanRequest" needs to be exported by the entry point node.d.ts
+// dist/node/project.d.ts:20:5 - (ae-forgotten-export) The symbol "PlanRequest" needs to be exported by the entry point node.d.ts
 
 // (No @packageDocumentation comment for this package)
 

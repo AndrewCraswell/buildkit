@@ -261,18 +261,29 @@ async function askOption(prompter: Prompter, title: string, question: OptionQues
     : answer
 }
 
-/** Asks for each required secret with a masked prompt. Values go only to the secrets file. */
-export async function askSecrets(env: EnvVar[], prompter: Prompter): Promise<Record<string, string> | Cancelled> {
+/**
+ * Asks for each environment variable, with a masked prompt for secrets. A required one needs a value, and its example
+ * is the default. An optional one can be left blank, which writes it empty so later commands don't ask again. Values
+ * go only to the secrets file.
+ */
+export async function askEnv(env: EnvVar[], prompter: Prompter): Promise<Record<string, string> | Cancelled> {
   const values: Record<string, string> = {}
-  for (const variable of env.filter((entry) => entry.secret && entry.required)) {
-    const answer = await prompter.password({
-      message: `${variable.name}: ${variable.description}`,
-      validate: (value) => (value.trim() === "" ? "Enter a value, or press Ctrl+C to stop." : undefined)
-    })
+  for (const variable of env) {
+    const message = `${variable.name}: ${variable.description}${variable.required ? "" : " (optional, press Enter to skip)"}`
+    const validate = (value: string) =>
+      variable.required && value.trim() === "" ? "Enter a value, or press Ctrl+C to stop." : undefined
+    const answer = variable.secret
+      ? await prompter.password({ message, validate })
+      : await prompter.text({
+          message,
+          validate,
+          ...(variable.required && variable.example !== undefined ? { initialValue: variable.example } : {}),
+          ...(variable.example === undefined ? {} : { placeholder: variable.example })
+        })
     if (answer === cancelled) {
       return cancelled
     }
-    values[variable.name] = answer
+    values[variable.name] = answer.trim()
   }
   return values
 }

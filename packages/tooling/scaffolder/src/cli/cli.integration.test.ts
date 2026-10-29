@@ -241,10 +241,17 @@ describe("the wizard", () => {
   it("an optional slot asks yes or no first, and a slot with one fitting choice isn't asked", async () => {
     const result = await run(["init", "app", "demo", "--mode", "spa", "--ui", "ui-basic", "--with", "storybook"], {
       tty: true,
-      script: [true, true]
+      script: [true, "file:local.db", true]
     })
-    expect(result.asked.map((question) => question.message)).toEqual(["Add a database?", "Apply these changes?"])
+    expect(result.asked.map((question) => question.message)).toEqual([
+      "Add a database?",
+      "DATABASE_URL: Database file",
+      "Apply these changes?"
+    ])
+    // A required value's example is its default.
+    expect(result.asked[1]).toMatchObject({ kind: "text", initial: "file:local.db" })
     expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain("@fixture/db-sqlite")
+    expect(readFileSync(join(root, "demo/.env"), "utf8")).toContain("DATABASE_URL=file:local.db")
     const declined = await run(["init", "app", "other", "--mode", "spa", "--ui", "ui-basic", "--with", "storybook"], {
       tty: true,
       script: [false, true]
@@ -300,12 +307,18 @@ describe("the wizard", () => {
 
   it("asks for a required secret with a masked prompt and keeps it out of the summary, plan and lock", async () => {
     const dsn = "https://publickey@sentry.example/123"
+    const answer: ScriptedAnswer = (question) => {
+      if (question.kind === "password") {
+        return dsn
+      }
+      return question.kind === "text" ? String(question.initial) : true
+    }
     const result = await run([...init, "--database", "db-sqlite", "--ui", "ui-basic", "--with", "sentry", "--out"], {
       tty: true,
-      script: [dsn, true]
+      script: [answer, answer, answer]
     })
     expect(result.code).toBe(0)
-    expect(result.asked.map((question) => question.kind)).toEqual(["password", "confirm"])
+    expect(result.asked.map((question) => question.kind).sort()).toEqual(["confirm", "password", "text"])
     expect(result.notes.join("")).not.toContain(dsn)
     expect(readFileSync(join(root, "demo/.env"), "utf8")).toContain(dsn)
     const tracked = files()
@@ -315,6 +328,33 @@ describe("the wizard", () => {
     expect(tracked).not.toContain(dsn)
     const plain = await run(["init", "app", "other", "--mode", "ssr", "--with", "sentry", "--yes", "--json"])
     expect(envelope(plain.out).nextSteps).toEqual(["Set SENTRY_DSN in .env: Your Sentry DSN"])
+  })
+
+  it("init asks for an optional value too, and a blank answer writes it empty", async () => {
+    const catalog = fixtureCatalog()
+    const sentry = catalog.addons.find((addon) => addon.id === "@fixture/sentry")!
+    const contribute = sentry.contribute
+    sentry.contribute = (ctx) => [
+      ...contribute(ctx),
+      { kind: "env", name: "SENTRY_RELEASE", scope: "build", secret: false, required: false, description: "Release" }
+    ]
+    const answer: ScriptedAnswer = (question) => {
+      if (question.kind === "confirm") {
+        return true
+      }
+      // A blank text answer skips the optional value; the password prompt is the database's.
+      return question.kind === "text" ? "" : "postgres://local"
+    }
+    const created = await run([...init, "--database", "db-postgres", "--ui", "ui-basic", "--with", "sentry"], {
+      tty: true,
+      catalog,
+      script: Array.from({ length: 4 }, () => answer)
+    })
+    expect(created.code).toBe(0)
+    expect(created.asked).toContainEqual(
+      expect.objectContaining({ kind: "text", message: "SENTRY_RELEASE: Release (optional, press Enter to skip)" })
+    )
+    expect(readFileSync(join(root, "demo/.env"), "utf8")).toMatch(/^SENTRY_RELEASE=$/m)
   })
 
   it("cancelling a choice, the secret prompt or the confirmation writes nothing and exits 130", async () => {

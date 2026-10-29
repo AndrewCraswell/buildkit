@@ -8,7 +8,7 @@ import {
   targetInfo,
   templateModes
 } from "../manifest/catalog.js"
-import type { AddonManifest, CatalogManifest, TemplateManifest } from "../manifest/types.js"
+import type { AddonManifest, Answers, CatalogManifest, TemplateManifest } from "../manifest/types.js"
 import { isRecord } from "../plan/json.js"
 import { addonSupports } from "./resolve.js"
 
@@ -64,7 +64,8 @@ export interface CatalogDescription {
     options: Record<string, unknown>
   }[]
   slots: { id: string; title: string; question: string; choose: string }[]
-  presets: { id: string; title: string; template: string }[]
+  /** Each preset's saved answers, so other doors can show or apply them without the catalog. */
+  presets: { id: string; title: string; template: string; answers: Omit<Answers, "name"> }[]
 }
 
 function choice(addon: AddonManifest): Choice {
@@ -183,7 +184,8 @@ export function describeCatalog(catalog: CatalogManifest): CatalogDescription {
     presets: (catalog.presets ?? []).map((preset) => ({
       id: preset.id,
       title: preset.title,
-      template: preset.answers.template
+      template: preset.answers.template,
+      answers: preset.answers
     }))
   }
 }

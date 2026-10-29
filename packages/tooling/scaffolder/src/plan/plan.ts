@@ -189,7 +189,9 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
     return
   }
   const selection = desired.selection
-  result.required = desired.required
+  // The plan lists what it brings in, so add-ons the lock already records aren't listed again.
+  const installed = new Set(Object.keys(lock?.addons ?? {}))
+  result.required = desired.required.filter((id) => !installed.has(id))
   const scratch = new ScratchTree(tree)
   if (command === "upgrade" && lock) {
     const pending = Object.entries(lock.addons).flatMap(([id, state]) => {
@@ -207,7 +209,7 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
   }
   const resolved = resolution.value
   result.pulled = resolved.addons
-    .filter((addon) => !addon.explicit)
+    .filter((addon) => !addon.explicit && !installed.has(addon.manifest.id))
     .map((addon) => ({ id: addon.manifest.id, by: addon.by }))
   if (desired.adopt) {
     const context: TargetContext = {
