@@ -105,7 +105,8 @@ export class BetterAppsClientError extends Error {
 // Names a proxy must not answer, so the client isn't mistaken for a promise or a React element.
 const reserved = new Set(["then", "toJSON", "$$typeof", "constructor"])
 
-// Settles as `value` does, or rejects as soon as `signal` aborts, so a cancelled call stops waiting on slow headers.
+// Settles as `value` does, or rejects as soon as `signal` aborts, so a cancelled call stops waiting on headers, a fetch
+// or a body, even ones that ignore the signal.
 function unlessAborted<Value>(value: Value | Promise<Value>, signal: AbortSignal | undefined): Promise<Value> {
   if (!signal) {
     return Promise.resolve(value)
@@ -172,8 +173,8 @@ export function createBetterAppsClient<App = BetterApp>(options: ClientOptions =
     let response: Response
     let text: string
     try {
-      response = await (options.fetch ?? globalThis.fetch)(url, init)
-      text = await response.text()
+      response = await unlessAborted((options.fetch ?? globalThis.fetch)(url, init), signal)
+      text = await unlessAborted(response.text(), signal)
     } catch (error) {
       if (signal?.aborted) {
         throw aborted()

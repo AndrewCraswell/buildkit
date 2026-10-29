@@ -176,6 +176,23 @@ describe("createBetterAppsClient", () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  it("stops waiting on a fetch or a body that never finishes once the call is cancelled", async () => {
+    const controller = new AbortController()
+    const never = createBetterAppsClient({ fetch: () => new Promise<Response>(() => undefined) })
+    const waiting = never.$call("notes", "ping", undefined, { signal: controller.signal })
+    controller.abort()
+    await expect(waiting).rejects.toMatchObject({ code: "ABORTED" })
+
+    const later = new AbortController()
+    const stalled = createBetterAppsClient({
+      fetch: () => Promise.resolve(new Response(new ReadableStream({ pull: () => new Promise<void>(() => undefined) })))
+    })
+    const reading = stalled.$call("notes", "ping", undefined, { signal: later.signal })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    later.abort()
+    await expect(reading).rejects.toMatchObject({ code: "ABORTED" })
+  })
+
   it("rejects a call cancelled under way, whether or not its fetch stops", async () => {
     const controller = new AbortController()
     const stops = createBetterAppsClient({
