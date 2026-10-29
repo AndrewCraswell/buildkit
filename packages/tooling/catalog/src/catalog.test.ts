@@ -1,6 +1,7 @@
 import { checkCatalog, describeCatalog, type Plan } from "@buildkitgg/scaffolder"
 import { describe, expect, it } from "vitest"
 import { catalog } from "./catalog.js"
+import { settings } from "./settings.js"
 import {
   addRequest,
   applied,
@@ -108,15 +109,25 @@ describe("the TanStack Start target", () => {
     expect(dependencies["@tanstack/react-start"]).toBe(catalog.versions?.["@tanstack/react-start"])
   })
 
-  it("runs Buildkit's checks in CI, and skips generated and key-edited files in the formatter", async () => {
-    const planned = await init()
+  it("runs Buildkit's checks in CI, and formats every file but the generated ones", async () => {
+    const planned = await init({ optional: ["@buildkit/i18n"] })
     const workflow = written(planned, ".github/workflows/ci.yml")
     for (const run of ["pnpm buildkit check", "pnpm lint", "pnpm format:check", "pnpm build", "pnpm typecheck"]) {
       expect(workflow).toContain(`run: ${run}`)
     }
     const formatter = JSON.parse(written(planned, ".oxfmtrc.json"))
+    expect(formatter.printWidth).toBe(settings.printWidth)
     expect(formatter.ignorePatterns).toEqual(
-      expect.arrayContaining(["src/generated/buildkit/**", "src/routeTree.gen.ts", "buildkit.jsonc", "tsconfig.json"])
+      expect.arrayContaining(["src/generated/buildkit/**", "src/routeTree.gen.ts"])
+    )
+    expect(formatter.ignorePatterns).not.toEqual(expect.arrayContaining(["buildkit.jsonc"]))
+    expect(formatter.ignorePatterns).not.toEqual(expect.arrayContaining(["package.json"]))
+    expect(formatter.ignorePatterns).not.toEqual(expect.arrayContaining(["tsconfig.json"]))
+    // The engine lays these out as the formatter does: short lists on one line, package.json as JSON.stringify writes it.
+    expect(written(planned, "tsconfig.json")).toContain('"include": ["src", "vite.config.ts", "lingui.config.ts"]')
+    expect(written(planned, "buildkit.jsonc")).toContain('"declined": ["slot:auth", "slot:database"]')
+    expect(written(planned, "package.json")).toBe(
+      `${JSON.stringify(JSON.parse(written(planned, "package.json")), null, 2)}\n`
     )
   })
 })
@@ -178,7 +189,8 @@ describe("the localization add-on", () => {
     expect(written(planned, generated.config)).toContain('pre: [vitePluginsById["@buildkit/i18n/lingui"]]')
     expect(paths(planned)).toEqual(expect.arrayContaining(["src/locales/en.po", "src/locales/fr.po"]))
     expect(paths(planned)).not.toContain("src/i18n/browser.ts")
-    expect(written(planned, ".github/workflows/ci.yml")).toContain("run: pnpm i18n:check")
+    const steps = [...written(planned, ".github/workflows/ci.yml").matchAll(/- id: (\S+)/g)].map((found) => found[1])
+    expect(steps.slice(steps.indexOf("format"))).toEqual(["format", "translations", "build", "typecheck"])
   })
 
   it("detects the locale in the browser before the first render on a single-page app", async () => {
@@ -187,6 +199,20 @@ describe("the localization add-on", () => {
     expect(written(planned, generated.server)).not.toContain("localeMiddleware")
     expect(written(planned, "src/i18n/router.tsx")).toContain("browserI18n")
     expect(paths(planned)).not.toContain("src/i18n/server.ts")
+  })
+
+  it("imports app modules without their extensions, so the app type-checks without allowImportingTsExtensions", async () => {
+    for (const mode of ["ssr", "spa"]) {
+      const planned = await init({ mode, optional: ["@buildkit/i18n"], options })
+      const imports = [generated.client, generated.server, "vite.config.ts", "lingui.config.ts"].flatMap((path) =>
+        [...written(planned, path).matchAll(/from "(\.{1,2}\/[^"]+)"/g)].map((found) => found[1])
+      )
+      expect(imports).toContain("../../i18n/router")
+      expect(imports.filter((specifier) => /\.tsx?$/.test(specifier ?? ""))).toEqual([])
+      expect(JSON.parse(written(planned, "tsconfig.json")).compilerOptions).not.toHaveProperty(
+        "allowImportingTsExtensions"
+      )
+    }
   })
 
   it("leaves URLs alone without localizedUrls, and refuses locale tags that aren't safe file names", async () => {

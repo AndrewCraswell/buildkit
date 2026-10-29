@@ -131,7 +131,7 @@ describe("buildkit add", () => {
     expect(read("src/generated/buildkit/client.ts")).toContain("withI18n")
     expect(read("src/generated/buildkit/server.ts")).toContain("localeMiddleware")
     expect(read("src/locales/fr.po")).toContain("Language: fr")
-    expect(read("buildkit.jsonc")).toContain('"@buildkit/i18n": {"locales":["en","fr"]}')
+    expect(read("buildkit.jsonc")).toContain('"@buildkit/i18n": { "locales": ["en", "fr"] }')
     expect((await run(["check", "--cwd", "demo"])).code).toBe(0)
   })
 })

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { defineAddon } from "../manifest/define.js"
+import type { Contribution } from "../manifest/types.js"
 import { readLock } from "../state/files.js"
 import {
   addRequest,
@@ -530,6 +531,81 @@ describe("YAML and adoption", () => {
     ).toBe("unchanged")
   })
 
+  it("puts an ordered item after the item it follows, in a new file and in yours", async () => {
+    const workflow = ".github/workflows/ci.yml"
+    const catalog = fixtureCatalog()
+    const steps = (value: unknown, order?: { after?: string[]; before?: string[] }): Contribution => ({
+      kind: "yaml",
+      path: workflow,
+      pointer: "/jobs/verify/steps",
+      op: "append",
+      key: "id",
+      value,
+      ...(order ? { order } : {})
+    })
+    catalog.addons.push(
+      defineAddon({
+        id: "@fixture/ci",
+        version: "1.0.0",
+        title: "CI",
+        description: "",
+        contribute: () => [
+          steps([
+            { id: "lint", run: "pnpm lint" },
+            { id: "build", run: "pnpm build" }
+          ])
+        ]
+      }),
+      defineAddon({
+        id: "@fixture/translations",
+        version: "1.0.0",
+        title: "Translations",
+        description: "",
+        after: ["@fixture/ci"],
+        contribute: () => [
+          steps({ id: "translations", run: "pnpm i18n:check" }, { after: ["lint", "missing"] }),
+          steps({ id: "first", run: "echo" }, { before: ["build", "lint"] }),
+          steps({ id: "last", run: "echo" }, { after: ["missing"] })
+        ]
+      })
+    )
+    const ids = (text: string | undefined) => [...(text ?? "").matchAll(/- id: (\w+)/g)].map((found) => found[1])
+    const request = initRequest({ optional: ["@fixture/ci", "@fixture/translations"] })
+    const created = applyInMemory({}, await plan({ catalog, settings, tree: memoryTree({}), request }))
+    expect(ids(created[workflow])).toEqual(["first", "lint", "translations", "build", "last"])
+    const yours = { [workflow]: "jobs:\n  verify:\n    steps:\n      - id: build\n        run: pnpm build\n" }
+    const adopted = applyInMemory(
+      yours,
+      await plan({
+        catalog,
+        settings,
+        tree: memoryTree(yours),
+        request: initRequest({ optional: ["@fixture/ci", "@fixture/translations"], adopt: true })
+      })
+    )
+    expect(ids(adopted[workflow])).toEqual(["first", "build", "lint", "translations", "last"])
+
+    const unkeyed = fixtureCatalog()
+    unkeyed.addons.push(
+      defineAddon({
+        id: "@fixture/ci",
+        version: "1.0.0",
+        title: "CI",
+        description: "",
+        contribute: () => [
+          { kind: "json", path: "ci.json", pointer: "/steps", op: "append", value: "lint", order: { after: ["x"] } }
+        ]
+      })
+    )
+    const refused = await plan({
+      catalog: unkeyed,
+      settings,
+      tree: memoryTree({}),
+      request: initRequest({ optional: ["@fixture/ci"] })
+    })
+    expect(refused.error?.message).toContain("only items of a keyed array can be ordered")
+  })
+
   it("adopting keeps existing files yours and runs the target's codemods once", async () => {
     const existing = { "README.md": "# Demo\n", "src/main.ts": "console.log('mine')\n" }
     const planned = await planFixture(existing, initRequest({ adopt: true }))
@@ -568,7 +644,7 @@ describe("state", () => {
       optional: ["@fixture/i18n"],
       options: { "@fixture/i18n": { locales: ["en", "fr"] } }
     })
-    expect(files["fixture.jsonc"]).toContain('"@fixture/i18n": {"locales":["en","fr"]}')
+    expect(files["fixture.jsonc"]).toContain('"@fixture/i18n": { "locales": ["en", "fr"] }')
     expect((await planFixture(files, { intent: { command: "sync" } })).status).toBe("unchanged")
     const lock = lockOf(files)
     expect(lock.addons["@fixture/i18n"]).toMatchObject({ explicit: true, options: { locales: ["en", "fr"] } })
@@ -658,7 +734,7 @@ describe("upgrade", () => {
     const next = applyInMemory(edited, planned)
     expect(next["src/main.ts"]).toMatch(/^\/\/ note\n[\s\S]*export const ready = true\n$/)
     expect(next["scripts/ci.sh"]).toBe("pnpm lint\n")
-    expect(next["fixture.jsonc"]).toContain('"@fixture/lint": {"level":"strict"}')
+    expect(next["fixture.jsonc"]).toContain('"@fixture/lint": { "level": "strict" }')
     expect(lockOf(next).catalog.version).toBe("2.0.0")
     expect((await planFixture(next, { intent: { command: "sync" } }, { catalog: fixtureCatalog(2) })).status).toBe(
       "unchanged"

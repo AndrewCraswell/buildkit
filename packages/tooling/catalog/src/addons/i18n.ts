@@ -1,4 +1,4 @@
-import { defineAddon, type Contribution } from "@buildkitgg/scaffolder"
+import { defineAddon, match, type Contribution } from "@buildkitgg/scaffolder"
 import { z } from "zod"
 import { dependency, file, fromTemplate, jsonItems } from "../files.js"
 import { ciStep } from "./ci.js"
@@ -154,57 +154,59 @@ export const i18n = defineAddon({
         kind: "entry",
         point: "router.wrappers",
         id: "lingui",
-        value: { ref: { module: "./src/i18n/router.tsx", export: "withI18n" } }
+        value: { ref: { module: "./src/i18n/router", export: "withI18n" } }
       },
       {
         kind: "entry",
         point: "html.attributes",
         id: "lang-dir",
-        value: { ref: { module: "./src/i18n/provider.tsx", export: "useLocaleAttributes" } }
+        value: { ref: { module: "./src/i18n/provider", export: "useLocaleAttributes" } }
       }
     ]
-    switch (target.renderModel) {
-      case "ssr-loader":
-        contributions.push(
+    contributions.push(
+      ...match(target.renderModel, {
+        "ssr-loader": (): Contribution[] => [
           fromTemplate("i18n/ssr", "src/i18n/router.tsx"),
           fromTemplate("i18n/ssr", "src/i18n/server.ts"),
           {
             kind: "entry",
             point: "server.requestMiddleware",
             id: "locale",
-            value: { ref: { module: "./src/i18n/server.ts", export: "localeMiddleware" } }
+            value: { ref: { module: "./src/i18n/server", export: "localeMiddleware" } }
           }
-        )
-        break
-      case "spa":
-        contributions.push(
+        ],
+        spa: (): Contribution[] => [
           fromTemplate("i18n/spa", "src/i18n/router.tsx"),
           fromTemplate("i18n/spa", "src/i18n/browser.ts"),
           {
             kind: "entry",
             point: "app.bootstrap",
             id: "locale",
-            value: { ref: { module: "./src/i18n/browser.ts", export: "bootstrapLocale" } }
+            value: { ref: { module: "./src/i18n/browser", export: "bootstrapLocale" } }
           }
-        )
-        break
-      default:
-        throw new Error(`Localization has no wiring for the ${target.renderModel} render model.`)
-    }
+        ]
+      })
+    )
     if (options.localizedUrls) {
       if (target.has("router-rewrite")) {
         contributions.push(common("src/i18n/rewrite.ts"), {
           kind: "entry",
           point: "router.rewrite",
           id: "locale",
-          value: { ref: { module: "./src/i18n/rewrite.ts", export: "localeRewrite" } }
+          value: { ref: { module: "./src/i18n/rewrite", export: "localeRewrite" } }
         })
       } else {
         ctx.ignored("localizedUrls", "This target's router has no URL rewrite.")
       }
     }
     if (ctx.selected("@buildkit/ci")) {
-      contributions.push(ciStep({ id: "translations", name: "Check translations", run: "pnpm i18n:check" }))
+      // The check reads only the source and catalogs, so it runs with the quick checks, before the build.
+      contributions.push(
+        ciStep(
+          { id: "translations", name: "Check translations", run: "pnpm i18n:check" },
+          { order: { after: ["format"] } }
+        )
+      )
     }
     return contributions
   },

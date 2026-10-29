@@ -13,7 +13,7 @@ export function appendLines(text: string | undefined, lines: readonly string[]):
 export function hasLine(text: string | undefined, line: string): boolean;
 
 // @public (undocumented)
-export function insertJsonArrayItem(text: string, path: JsonPath, index: number, value: unknown): string;
+export function insertJsonArrayItem(text: string, path: JsonPath, index: number, value: unknown, layout?: JsonLayout): string;
 
 // @public (undocumented)
 export function insertYamlArrayItem(text: string, path: JsonPath, index: number, value: unknown): string;
@@ -23,6 +23,17 @@ export function isSecretLikePattern(line: string): boolean;
 
 // @public
 export function jsonFormatting(text: string | undefined): FormattingOptions;
+
+// @public
+export interface JsonLayout {
+    // (undocumented)
+    printWidth: number;
+    // (undocumented)
+    style: "json" | "stringify";
+}
+
+// @public
+export function jsonLayoutFor(path: string, printWidth?: number): JsonLayout;
 
 // @public (undocumented)
 export type JsonParseResult = {
@@ -42,6 +53,13 @@ export type JsonParseResult = {
 export type JsonPath = (string | number)[];
 
 // @public
+export interface JsonPosition {
+    column: number;
+    indent: string;
+    trailing: number;
+}
+
+// @public
 export function mergeText(current: string, base: string, incoming: string): TextMerge;
 
 // @public
@@ -49,6 +67,17 @@ export function parseJsonc(text: string): JsonParseResult;
 
 // @public
 export function parseYaml(text: string): JsonParseResult;
+
+// @public
+export function printJson(value: unknown, options?: PrintJsonOptions): string;
+
+// @public
+export interface PrintJsonOptions extends Partial<JsonPosition> {
+    eol?: string;
+    layout?: JsonLayout;
+    objects?: "expanded" | "inline";
+    unit?: string;
+}
 
 // @public
 export function readEnv(text: string | undefined): Map<string, string>;
@@ -59,8 +88,8 @@ export function readLines(text: string | undefined): string[];
 // @public
 export function removeEnvKey(text: string | undefined, name: string, description?: string): string;
 
-// @public (undocumented)
-export function removeJson(text: string, path: JsonPath): string;
+// @public
+export function removeJson(text: string, path: JsonPath, layout?: JsonLayout): string;
 
 // @public (undocumented)
 export function removeLines(text: string | undefined, lines: readonly string[]): string;
@@ -69,7 +98,7 @@ export function removeLines(text: string | undefined, lines: readonly string[]):
 export function removeYaml(text: string, path: JsonPath): string;
 
 // @public (undocumented)
-export function replaceJsonArrayItem(text: string, path: JsonPath, index: number, value: unknown): string;
+export function replaceJsonArrayItem(text: string, path: JsonPath, index: number, value: unknown, layout?: JsonLayout): string;
 
 // @public (undocumented)
 export function replaceYamlArrayItem(text: string, path: JsonPath, index: number, value: unknown): string;
@@ -78,13 +107,13 @@ export function replaceYamlArrayItem(text: string, path: JsonPath, index: number
 export function setEnvValue(text: string | undefined, name: string, value: string, description?: string): string;
 
 // @public
-export function setJson(text: string, path: JsonPath, value: unknown): string;
+export function setJson(text: string, path: JsonPath, value: unknown, layout?: JsonLayout): string;
 
 // @public (undocumented)
 export function setYaml(text: string, path: JsonPath, value: unknown): string;
 
 // @public
-export function stringifyJson(value: unknown): string;
+export function stringifyJson(value: unknown, layout?: JsonLayout): string;
 
 // @public (undocumented)
 export interface TextMerge {

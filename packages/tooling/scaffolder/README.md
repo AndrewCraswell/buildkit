@@ -100,6 +100,25 @@ Contribution kinds: `dependency`, `script`, `env`, `file` (`owned`, `seed` or `s
 `notice`. Add-ons declare `requires` (ids, `slot:<id>` or `provides:<name>`), `conflicts`, `after`, `supports()` and
 `migrations`.
 
+A keyed append can say where a new item goes with `order: { after, before }`, by the keys of other items. A CI step with
+`order: { after: ["format"] }` goes after the `format` step, or at the end when there's none. The order places an item
+when it's added and never moves one that's there.
+
+An add-on that differs by render model or mode branches with `match`, which runs the case for a value. A missing case is
+a type error when the value is a union, and a plan error otherwise. Catalog CI finds it in each mode for the add-ons its
+answer sets select, so an add-on no template offers needs its own test:
+
+```ts
+import { match, type Contribution } from "@buildkitgg/scaffolder"
+
+const wiring = match(ctx.target.renderModel, {
+  "ssr-loader": (): Contribution[] => [middleware],
+  spa: (): Contribution[] => [bootstrap]
+})
+```
+
+Entries name app modules without an extension (`./src/i18n/router`), and generated files import them as named.
+
 ## Templates and the wizard
 
 The wizard is generated from the catalog, so a new add-on or a new choice in a slot needs no CLI code. It asks, in
@@ -144,6 +163,11 @@ await runMain(createCli({ name: "acme", version: "1.0.0", catalog, settings: def
 
 `defineSettings` picks the product's file names: `acme.jsonc`, `.acme/` and `.env` for secrets, unless you set them.
 `runCli(argv, options)` runs one command and returns its exit code, for tests and embedding tools.
+
+Set `printWidth` to the line width of your apps' formatter. The JSON the engine writes, the config file included, is
+laid out as oxfmt and Prettier lay it out with trailing commas off: short lists on one line, objects as they're written,
+and `package.json` as `JSON.stringify` writes it. A formatter then leaves those files alone, so apps don't need to
+exclude them. `printJson` and `jsonLayoutFor` in `@buildkitgg/scaffolder/edit` print a starter JSON file the same way.
 
 ## Commands
 

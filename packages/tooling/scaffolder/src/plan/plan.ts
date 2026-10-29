@@ -1,4 +1,5 @@
 import { diffLines } from "diff"
+import { jsonLayoutFor } from "../edit/layout.js"
 import { catalogVersionText, findAddon, lookupAddon, sameCatalogVersion } from "../manifest/catalog.js"
 import type { CatalogManifest, PackRecord, TargetContext } from "../manifest/types.js"
 import { jsonFormat, yamlFormat } from "../merge/formats.js"
@@ -285,7 +286,7 @@ async function planInto(input: PlanInput, tree: RecordingTree, result: Plan) {
   const nextConfig = configFor(selection, catalog, config)
   const nextConfigText =
     config && configText !== undefined
-      ? updateConfig(configText, config, nextConfig)
+      ? updateConfig(configText, config, nextConfig, settings)
       : renderConfig(nextConfig, settings)
   pushOperation(result, configPath, tree.read(configPath), nextConfigText, "config")
   let integrity: string | undefined
@@ -372,7 +373,8 @@ async function planPath(context: {
       return fromShared(
         planSharedDocument({
           path,
-          format: sharedFormat === "json" ? jsonFormat : yamlFormat,
+          format:
+            sharedFormat === "json" ? jsonFormat(jsonLayoutFor(path, context.input.settings.printWidth)) : yamlFormat,
           current: currentText,
           desired: document?.desired,
           entry: sharedEntry,
