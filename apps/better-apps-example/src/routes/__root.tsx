@@ -1,8 +1,19 @@
-import { createRootRoute, HeadContent, Link, Scripts } from "@tanstack/react-router"
+import { createRootRouteWithContext, HeadContent, Link, Scripts } from "@tanstack/react-router"
 import type { ReactNode } from "react"
+import type { Comments } from "../app-types"
+import { getViewer } from "../viewer.functions"
 import styles from "../styles.css?url"
 
-export const Route = createRootRoute({
+/** What every route's loader gets from the router. */
+export interface RouterContext {
+  /** The comments store, which loaders fill for the server render. */
+  comments: Comments
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  // Who the page is for. It changes only on sign-in or sign-out, which invalidate the router.
+  loader: () => getViewer(),
+  staleTime: Number.POSITIVE_INFINITY,
   head: () => ({
     meta: [
       { charSet: "utf-8" },

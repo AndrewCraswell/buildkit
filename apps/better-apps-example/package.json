@@ -16,7 +16,9 @@
     "db:generate": "better-apps generate --output src/db/better-apps-schema.ts && drizzle-kit generate && oxfmt src/db/better-apps-schema.ts drizzle"
   },
   "dependencies": {
+    "@better-apps/comments": "workspace:*",
     "@better-apps/drizzle": "workspace:*",
+    "@better-apps/react": "workspace:*",
     "@better-apps/tanstack-start": "workspace:*",
     "@tanstack/react-router": "^1.170.46",
     "@tanstack/react-start": "^1.169.4",

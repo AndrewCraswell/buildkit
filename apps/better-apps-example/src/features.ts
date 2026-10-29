@@ -1,3 +1,4 @@
+import { comments, elementAnchor } from "@better-apps/comments"
 import { BetterAppsError, defineAction, defineFeature } from "better-apps"
 import { z } from "zod"
 
@@ -63,5 +64,23 @@ const notes = defineFeature({
   }
 })
 
+// Loaded when a check runs rather than with this file, so generating the schema never opens the database.
+const invoiceExists = async (id: string) => (await import("./invoices.server")).invoiceExists(id)
+
+/**
+ * Comment threads on invoices, optionally pinned to one of an invoice's details. Anyone signed in can read and discuss
+ * any invoice that exists; a real app would check the invoice's owner or organization here.
+ */
+const invoiceComments = comments({
+  subjects: {
+    invoice: {
+      canView: ({ subjectId }) => invoiceExists(subjectId),
+      canComment: ({ subjectId }) => invoiceExists(subjectId),
+      canModerate: ({ actor }) => actor.roles.includes("admin")
+    }
+  },
+  anchors: [elementAnchor()]
+})
+
 /** The features the app enables. `better-apps.config.ts` reads them to generate their tables. */
-export const features = [notes] as const
+export const features = [notes, invoiceComments] as const

@@ -19,7 +19,15 @@ Then open <http://127.0.0.1:4190>. `build` and `preview` run the production buil
 - **Notes**, on the home page, is a tiny feature in `src/features.ts`. Its loader calls a server function that calls
   `api.notes.list()` as the request's user, and the form posts to `/api/apps/notes/add` from the browser.
 - **Invoices** is the app's own table, in `src/db/schema.ts`, with a list page and a detail page. The app adds five
-  sample invoices on start. Comments will attach to invoices as their subject.
+  sample invoices on start.
+- **Comments** from [`@better-apps/comments`](../../packages/better-apps/comments/README.md) attach to invoices. The
+  detail page lists an invoice's threads beside it, with a form to start one on the whole invoice or pinned to one of
+  its details, and numbered pins on the details that have open threads. Threads can be replied to, resolved, reopened
+  and deleted. The list shows each invoice's open threads. The UI is in `src/invoice-comments.tsx`; the hooks and the
+  store come from `@better-apps/comments/react`.
+- Pages render on the server with their comments. Loaders call server functions in `src/comments.functions.ts`, which
+  load a comments store through the bound `client()` and return its snapshot, and the router in `src/router.tsx` carries
+  the store to the browser, so the first paint has the threads and the browser doesn't fetch them again.
 - `src/better-apps.server.ts` creates the app and its Start bindings. `src/routes/api/apps/$.ts` serves the actions.
 - `src/start.ts` only lets same-origin requests call server functions.
 

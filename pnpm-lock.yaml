@@ -324,9 +324,15 @@ importers:
 
   apps/better-apps-example:
     dependencies:
+      '@better-apps/comments':
+        specifier: workspace:*
+        version: link:../../packages/better-apps/comments
       '@better-apps/drizzle':
         specifier: workspace:*
         version: link:../../packages/better-apps/drizzle
+      '@better-apps/react':
+        specifier: workspace:*
+        version: link:../../packages/better-apps/react
       '@better-apps/tanstack-start':
         specifier: workspace:*
         version: link:../../packages/better-apps/tanstack-start

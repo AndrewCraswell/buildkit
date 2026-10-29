@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import type { BetterAppsEvent } from "better-apps"
+import { createBetterAppsClient } from "better-apps/client"
 import { describe, expect, expectTypeOf, it } from "vitest"
 import { browser } from "../test/browser.js"
 import { countKey, createCommentsClient, listKey, mentionToken, type CommentsState } from "./client.js"
@@ -233,15 +234,23 @@ describe("applyEvent", () => {
   })
 })
 
+describe("createCommentsClient", () => {
+  it("keeps one store per Better Apps client", () => {
+    const { client, comments } = browser()
+    expect(createCommentsClient(client)).toBe(comments)
+    expect(createCommentsClient(createBetterAppsClient())).not.toBe(comments)
+  })
+})
+
 describe("dehydrate and hydrate", () => {
   it("carry a server render's loads to the browser as JSON", async () => {
-    const { api, as, comments, client } = browser()
+    const { api, as, comments } = browser()
     const { thread } = await api.createThread({ ...onInvoice, body: "Prefetched" }, as("bob"))
     await comments.loadThreads(onInvoice)
     await comments.loadThread(thread.id)
     const json = JSON.stringify(comments.dehydrate())
     const snapshot = JSON.parse(json) as ReturnType<typeof comments.dehydrate>
-    const fresh = createCommentsClient(client)
+    const fresh = createCommentsClient(createBetterAppsClient())
     fresh.hydrate(snapshot)
     const state = fresh.store.getSnapshot()
     expect(state.threads[thread.id]?.lastActivityAt).toBeInstanceOf(Date)

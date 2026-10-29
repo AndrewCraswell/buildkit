@@ -19,20 +19,13 @@ import type { Comment, CommentThread } from "./schema.js"
 
 export * from "./client.js"
 
-const clients = new WeakMap<object, CommentsClient>()
-
 /**
- * The comments client for the nearest `BetterAppsProvider`, created once per Better Apps client, so every hook shares
- * one store. Pass `typeof app` for the app's types.
+ * The comments client for the nearest `BetterAppsProvider`. Each Better Apps client has one, so every hook shares one
+ * store, and so does code that called `createCommentsClient` with the same client, such as a router hydrating a server
+ * render's loads. Pass `typeof app` for the app's types.
  */
 export function useComments<App = BetterApp>() {
-  const client = useBetterApps<BetterAppsClient<App>>()
-  let comments = clients.get(client)
-  if (!comments) {
-    comments = createCommentsClient(client as BetterAppsClient) as CommentsClient
-    clients.set(client, comments)
-  }
-  return comments as unknown as ReturnType<typeof createCommentsClient<App>>
+  return createCommentsClient(useBetterApps<BetterAppsClient<App>>())
 }
 
 type ThreadOf<Types extends CommentsTypes> = CommentThread & Types["threadFields"]

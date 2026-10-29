@@ -33,7 +33,7 @@ const tasks = defineFeature({
   }
 })
 
-function setup() {
+function setup(basePath?: string) {
   const delivered: BetterAppsEvent[] = []
   const audit = defineFeature({
     id: "audit",
@@ -41,7 +41,8 @@ function setup() {
   })
   const { app, identity } = createTestApp({
     features: [tasks, audit],
-    users: [{ id: "ada", name: "Ada Lovelace" }]
+    users: [{ id: "ada", name: "Ada Lovelace" }],
+    basePath
   })
   return { app, identity, delivered }
 }
@@ -218,5 +219,52 @@ describe("api", () => {
     await serve(request, undefined, () => api.tasks.add({ title: "Ship" }))
     expect(read).not.toHaveBeenCalled()
     expect(delivered).toHaveLength(1)
+  })
+})
+
+describe("client", () => {
+  it("calls the app in process as the user of the request being served", async () => {
+    const { app, identity } = setup("/rpc")
+    const { client } = createStartBindings(app)
+    // A form post's own body headers don't carry over to the calls.
+    const request = new Request("https://app.test/invoices", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded", ...identity.headers("ada") },
+      body: "a=1"
+    })
+    expect(await serve(request, undefined, () => client().tasks.whoami())).toEqual({
+      userId: "ada",
+      url: "https://app.test/rpc/tasks/whoami",
+      silent: false
+    })
+    expect(await serve(request, undefined, () => client().tasks.add({ title: "Ship" }))).toHaveProperty("id")
+  })
+
+  it("throws the app's errors as client errors", async () => {
+    const { app, identity } = setup()
+    const { client } = createStartBindings(app)
+    const request = new Request("https://app.test/", { headers: identity.headers("ada") })
+    await expect(serve(request, undefined, () => client().tasks.add({ title: "" }))).rejects.toMatchObject({
+      name: "BetterAppsClientError",
+      code: "INVALID_INPUT",
+      status: 400
+    })
+  })
+
+  it("hands delivery to the waitUntil it reads from the request context", async () => {
+    const { app, identity, delivered } = setup()
+    const { waitUntil, settle } = platform()
+    const { client } = createStartBindings(app, { waitUntil: (context) => context.waitUntil })
+    const request = new Request("https://app.test/", { headers: identity.headers("ada") })
+    await serve(request, { waitUntil }, () => client().tasks.add({ title: "Ship" }))
+    expect(waitUntil).toHaveBeenCalledOnce()
+    await settle()
+    expect(delivered).toMatchObject([{ type: "task.added", actor: { userId: "ada" } }])
+  })
+
+  it("explains that it needs a request", () => {
+    const { app } = setup()
+    const { client } = createStartBindings(app)
+    expect(() => client()).toThrow("can't find the request being served")
   })
 })

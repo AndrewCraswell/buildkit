@@ -42,6 +42,55 @@ export const listNotes = createServerFn({ method: "GET" }).handler(() => api.not
 export const Route = createFileRoute("/")({ loader: () => listNotes(), component: Notes })
 ```
 
+## Server rendering with feature clients
+
+Feature clients, such as `@better-apps/comments/client`, keep what the browser loaded in a store. `client()` makes a
+Better Apps client for server code that calls the app in process, as the request's user, so a server function can load a
+feature's store the way the browser would and send its snapshot:
+
+```ts
+// src/comments.functions.ts
+import { createCommentsClient } from "@better-apps/comments/client"
+import { client } from "./better-apps.server"
+
+export const loadComments = createServerFn({ method: "GET" })
+  .validator(z.object({ invoiceId: z.string() }))
+  .handler(async ({ data }) => {
+    const comments = createCommentsClient(client())
+    await comments.loadThreads({ subjectType: "invoice", subjectId: data.invoiceId })
+    return comments.dehydrate()
+  })
+```
+
+Give the router one browser client and store per router, since the server makes a router per request, and let the router
+carry the store to the browser with its own state. Loaders fill the store from the router context:
+
+```tsx
+// src/router.tsx
+export function getRouter() {
+  const client = createBetterAppsClient<typeof app>()
+  const comments = createCommentsClient(client)
+  return createRouter({
+    routeTree,
+    context: { comments },
+    dehydrate: () => ({ comments: comments.dehydrate() }),
+    hydrate: (dehydrated) => comments.hydrate(dehydrated.comments),
+    Wrap: ({ children }) => <BetterAppsProvider client={client}>{children}</BetterAppsProvider>
+  })
+}
+```
+
+```ts
+// src/routes/invoices/$invoiceId.tsx
+loader: async ({ params, context }) => {
+  context.comments.hydrate(await loadComments({ data: { invoiceId: params.invoiceId } }))
+}
+```
+
+Hooks such as `useThreads` read the same store, so the server render and the browser's first paint show the loaded
+threads, and the browser doesn't fetch them again. `typeof app` is a type-only import, so no server code reaches the
+browser.
+
 ## Delivering events after the response
 
 Events are delivered when an action finishes. Pass `waitUntil` to read the platform's `waitUntil` from Start's request
@@ -77,6 +126,9 @@ The reader gets the context the server entry passed, plus what global request mi
 - `api` has the same features and actions as `app.api`. Each call reads the request being served with Start's
   `getRequest()`, so the identity adapter sees the signed-in user. Options the caller passes win: `request`, `actor`,
   `author`, `createdAt`, `silent` and `waitUntil`.
+- `client()` sends each call to `app.handler` with the served request's headers, such as its cookies, and the app's
+  `basePath`. Errors are thrown as `BetterAppsClientError`s, as in the browser. Create it while Start serves a request;
+  outside one it throws.
 - Outside a request, such as in a script or a scheduled job, a call needs an `actor`, or it rejects. Inside global
   request middleware the request context isn't ready yet, so calls there wait for delivery.
 - The package imports `@tanstack/react-start/server`, so it's for server code only. Start removes server function bodies

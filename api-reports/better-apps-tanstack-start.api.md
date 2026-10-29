@@ -6,6 +6,7 @@
 
 import type { BetterApp } from 'better-apps';
 import type { BetterAppsApi } from 'better-apps';
+import { BetterAppsClient } from 'better-apps/client';
 import type { BetterAppsFeature } from 'better-apps';
 import { Register } from '@tanstack/react-start';
 import { RequestServerOptions } from '@tanstack/react-start';
@@ -16,6 +17,7 @@ export function createStartBindings<const Features extends readonly BetterAppsFe
 // @public
 export interface StartBindings<Features extends readonly BetterAppsFeature[]> {
     api: BetterAppsApi<Features>;
+    client(): BetterAppsClient<BetterApp<Features>>;
     handlers: StartRouteHandlers;
 }
 

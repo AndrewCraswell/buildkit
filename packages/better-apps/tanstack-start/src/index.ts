@@ -1,6 +1,7 @@
 import { getGlobalStartContext, type Register, type RequestServerOptions } from "@tanstack/react-start"
 import { getRequest } from "@tanstack/react-start/server"
 import type { ApiCallOptions, BetterApp, BetterAppsApi, BetterAppsFeature } from "better-apps"
+import { createBetterAppsClient, type BetterAppsClient } from "better-apps/client"
 
 /**
  * The request context Start gives server routes and server functions: what the server entry passes to
@@ -43,6 +44,12 @@ export interface StartBindings<Features extends readonly BetterAppsFeature[]> {
   api: BetterAppsApi<Features>
   /** Handlers for a catch-all server route at the app's base path, such as `src/routes/api/apps/$.ts`. */
   handlers: StartRouteHandlers
+  /**
+   * Creates a client for server code that calls the app in process, as the user of the request being served. Feature
+   * clients take it, so a server function can fill a feature's store the way the browser would, then send the store's
+   * `dehydrate()` to the browser for the server render.
+   */
+  client(): BetterAppsClient<BetterApp<Features>>
 }
 
 type ApiMethod = (input?: unknown, options?: ApiCallOptions) => Promise<unknown>
@@ -98,11 +105,35 @@ export function createStartBindings<const Features extends readonly BetterAppsFe
     )
   }
 
+  // Calls go to app.handler with the served request's headers, so the identity adapter reads the same cookies and
+  // tokens. Only the body's own headers are replaced.
+  const client = () => {
+    const request = currentRequest()
+    if (!request) {
+      throw new Error(
+        "Better Apps can't find the request being served. Create the client while Start serves a request, such as in a server function."
+      )
+    }
+    return createBetterAppsClient<BetterApp<Features>>({
+      basePath: app.options.basePath,
+      fetch: (url, init) => {
+        const headers = new Headers(request.headers)
+        for (const name of ["content-length", "content-encoding", "transfer-encoding"]) {
+          headers.delete(name)
+        }
+        new Headers(init.headers).forEach((value, name) => headers.set(name, value))
+        const call = new Request(new URL(url, request.url), { method: init.method, headers, body: init.body })
+        return app.handler(call, { waitUntil: options.waitUntil ? readWaitUntil(currentContext()) : undefined })
+      }
+    })
+  }
+
   return {
     api: api as BetterAppsApi<Features>,
     handlers: {
       ANY: ({ request, context }) =>
         app.handler(request, { waitUntil: readWaitUntil(context as StartRequestContext | undefined) })
-    }
+    },
+    client
   }
 }

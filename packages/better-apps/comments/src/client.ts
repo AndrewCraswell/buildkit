@@ -145,12 +145,20 @@ export type CommentsClient<Types extends CommentsTypes = CommentsTypes> = Return
   typeof createCommentsClientFor<Types>
 >
 
+const clients = new WeakMap<object, CommentsClient>()
+
 /**
  * Creates the comments store for a Better Apps client. Pass `typeof app` as the client's type to get the app's subject
- * types, anchors, formats and additional fields.
+ * types, anchors, formats and additional fields. Each Better Apps client has one store, so calling this again with the
+ * same client, as `useComments` does, returns the store already made, with whatever a server render hydrated into it.
  */
 export function createCommentsClient<App = BetterApp>(client: BetterAppsClient<App>) {
-  return createCommentsClientFor<AppCommentsTypes<App>>(client.$call)
+  let comments = clients.get(client)
+  if (!comments) {
+    comments = createCommentsClientFor((client as BetterAppsClient).$call)
+    clients.set(client, comments)
+  }
+  return comments as unknown as CommentsClient<AppCommentsTypes<App>>
 }
 
 function createCommentsClientFor<Types extends CommentsTypes>(
