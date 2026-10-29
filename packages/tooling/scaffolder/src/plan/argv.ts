@@ -1,5 +1,5 @@
-import { shortName } from "../manifest/catalog.js"
-import type { Answers, PresetManifest } from "../manifest/types.js"
+import { findTemplate, shortName } from "../manifest/catalog.js"
+import type { Answers, CatalogManifest, PresetManifest } from "../manifest/types.js"
 import { compareText } from "./json.js"
 import type { PlanRequest } from "./types.js"
 
@@ -47,12 +47,24 @@ function answersPreset(answers: Answers, preset: Answers): boolean {
   )
 }
 
+/** The optional add-ons a template selects by default. Without the catalog they aren't known, so there are none. */
+function templateDefaults(catalog: CatalogManifest | undefined, templateId: string): string[] {
+  const template = catalog ? findTemplate(catalog, templateId) : undefined
+  return Object.entries(template?.optional ?? {})
+    .filter(([, { default: preselected }]) => preselected)
+    .map(([id]) => id)
+}
+
 /**
  * The CLI arguments that make the same request, without the product's own name. With `preset`, an `init` for that
  * preset's template that answers every question the preset does is written as `init --preset <id>` plus flags for the
- * answers that differ from the preset's.
+ * answers that differ from the preset's. With `catalog`, an `init` that leaves out an add-on its template selects by
+ * default writes `--without` for it; without the catalog, those defaults aren't known.
  */
-export function requestArgv(request: PlanRequest, options: { preset?: PresetManifest } = {}): string[] {
+export function requestArgv(
+  request: PlanRequest,
+  options: { preset?: PresetManifest; catalog?: CatalogManifest } = {}
+): string[] {
   const { intent } = request
   const argv: string[] = []
   switch (intent.command) {
@@ -73,15 +85,19 @@ export function requestArgv(request: PlanRequest, options: { preset?: PresetMani
         }
         argv.push(...(answer === null ? [`--no-${slot}`] : [`--${slot}`, shortName(answer)]))
       }
-      const inPreset = new Set(preset?.answers.optional ?? [])
-      for (const id of answers.optional ?? []) {
-        if (!inPreset.has(id)) {
-          argv.push("--with", shortName(id))
+      // `--with` and `--without` change the preset's optional add-ons or, without them, the template's defaults.
+      const { optional } = answers
+      if (optional !== undefined) {
+        const start = new Set(preset?.answers.optional ?? templateDefaults(options.catalog, answers.template))
+        for (const id of optional) {
+          if (!start.has(id)) {
+            argv.push("--with", shortName(id))
+          }
         }
-      }
-      for (const id of inPreset) {
-        if (!(answers.optional ?? []).includes(id)) {
-          argv.push("--without", shortName(id))
+        for (const id of start) {
+          if (!optional.includes(id)) {
+            argv.push("--without", shortName(id))
+          }
         }
       }
       argv.push(...setFlags(changedOptions(answers.options ?? {}, preset?.answers.options ?? {})))

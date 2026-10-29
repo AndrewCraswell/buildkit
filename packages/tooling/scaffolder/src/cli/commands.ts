@@ -424,7 +424,7 @@ export class CliRuntime {
       return undefined
     }
     const folder = out === "" ? defaultArtifactFolder(root, this.#settings, plan) : resolve(this.io.cwd, out)
-    return writeArtifacts(plan, folder, { product: this.#product, diff: this.#diff(flags) })
+    return writeArtifacts(plan, folder, { product: this.#product, catalog: this.#catalog, diff: this.#diff(flags) })
   }
 
   /** Plan, ask the open decisions, show the plan, confirm once, then apply what was reviewed. */
@@ -451,7 +451,7 @@ export class CliRuntime {
         this.options.hooks ? { hooks: this.options.hooks } : {}
       )
       plan.notices.unshift(...this.#sourceNotices)
-      return this.#emit(toEnvelope(plan, { product: this.#product, status }), json)
+      return this.#emit(toEnvelope(plan, { product: this.#product, catalog: this.#catalog, status }), json)
     }
     const interactive = this.#interactive(flags)
     let current = await planProject(context, request)
@@ -476,7 +476,12 @@ export class CliRuntime {
     current.notices.unshift(...this.#sourceNotices)
     const artifacts = this.#artifacts(root, current, flags)
     const envelope = (plan: Plan, status?: EnvelopeStatus) =>
-      toEnvelope(plan, { product: this.#product, ...(status ? { status } : {}), ...(artifacts ? { artifacts } : {}) })
+      toEnvelope(plan, {
+        product: this.#product,
+        catalog: this.#catalog,
+        ...(status ? { status } : {}),
+        ...(artifacts ? { artifacts } : {})
+      })
     if (current.status !== "planned" || flags.booleans.has("dry-run") || options.applies === false) {
       return this.#emit(envelope(current), json)
     }
@@ -803,7 +808,7 @@ export class CliRuntime {
     const root = this.#root(flags)
     const plan = await planProject(await this.#context(root), { intent: { command: "sync" } })
     if (plan.status === "error" || plan.status === "needs-decision") {
-      return this.#emit(toEnvelope(plan, { product: this.#product }), json)
+      return this.#emit(toEnvelope(plan, { product: this.#product, catalog: this.#catalog }), json)
     }
     const stale = new Set([
       ...plan.operations.map((operation) => operation.path),
@@ -831,7 +836,7 @@ export class CliRuntime {
     const paths = [...stale].sort()
     return this.#emit(
       {
-        ...toEnvelope(plan, { product: this.#product }),
+        ...toEnvelope(plan, { product: this.#product, catalog: this.#catalog }),
         status: "error",
         error: {
           code: "E_DRIFT",

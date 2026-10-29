@@ -115,9 +115,17 @@ export function readPlanFile(path: string): z.infer<typeof planFileSchema> {
 export type DiffScope = "none" | "user" | "all"
 
 /** Writes `plan.json`, a patch per changed path, and each conflict's base, current and incoming versions. */
-export function writeArtifacts(plan: Plan, folder: string, options: { product: string; diff?: DiffScope }): string {
+export function writeArtifacts(
+  plan: Plan,
+  folder: string,
+  options: { product: string; catalog?: CatalogManifest; diff?: DiffScope }
+): string {
   mkdirSync(folder, { recursive: true })
-  const envelope = toEnvelope(plan, { product: options.product, artifacts: folder })
+  const envelope = toEnvelope(plan, {
+    product: options.product,
+    ...(options.catalog ? { catalog: options.catalog } : {}),
+    artifacts: folder
+  })
   writeFileSync(
     join(folder, "plan.json"),
     `${JSON.stringify(

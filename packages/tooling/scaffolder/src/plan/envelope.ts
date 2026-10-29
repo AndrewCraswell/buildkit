@@ -1,3 +1,4 @@
+import type { CatalogManifest } from "../manifest/types.js"
 import { requestArgv } from "./argv.js"
 import type { Plan, PlanErrorInfo, PlanRequest } from "./types.js"
 
@@ -43,7 +44,13 @@ function nonEmpty<T>(key: string, values: T[] | undefined): Record<string, T[]> 
 
 export function toEnvelope(
   plan: Plan,
-  options: { product: string; status?: EnvelopeStatus; artifacts?: string }
+  options: {
+    product: string
+    status?: EnvelopeStatus
+    artifacts?: string
+    /** The catalog the plan was made with, so each choice's command writes `--without` for a declined default. */
+    catalog?: CatalogManifest
+  }
 ): Envelope {
   return {
     status: options.status ?? plan.status,
@@ -57,7 +64,7 @@ export function toEnvelope(
         message: decision.message,
         choices: decision.choices.map((choice) => ({
           ...choice,
-          argv: [options.product, ...requestArgv(choice.request)]
+          argv: [options.product, ...requestArgv(choice.request, options.catalog ? { catalog: options.catalog } : {})]
         }))
       }))
     ),

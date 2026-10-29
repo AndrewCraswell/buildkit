@@ -250,8 +250,9 @@ required add-ons with options that lack defaults, unregistered facets, and any p
 
 `pairwiseAnswers(catalog, template, mode)` gives the answer sets it plans: a covering array, in which every pair of
 values of every two questions appears in at least one set, built greedily and the same every time. A product's smoke
-tests can generate and build those sets. `requestArgv(request, { preset })` turns one into the CLI command. Given a
-preset for the request's template, it writes `init --preset <id>` plus what differs from the preset, when the request
+tests can generate and build those sets. `requestArgv(request, { catalog, preset })` turns one into the CLI command.
+With the catalog, it writes `--without` for an add-on the template selects by default and the request leaves out. Given
+a preset for the request's template, it writes `init --preset <id>` plus what differs from the preset, when the request
 answers every question the preset does; a question left to the template's default can't be written as a difference.
 
 See [the architecture guide](docs/README.md) to work on the engine itself.

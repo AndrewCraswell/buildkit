@@ -952,6 +952,7 @@ export function readLock(path: string, text: string): Lock_2;
 // @public
 export function requestArgv(request: PlanRequest, options?: {
     preset?: PresetManifest;
+    catalog?: CatalogManifest;
 }): string[];
 
 // @public (undocumented)
@@ -1134,6 +1135,7 @@ export function toEnvelope(plan: Plan, options: {
     product: string;
     status?: EnvelopeStatus;
     artifacts?: string;
+    catalog?: CatalogManifest;
 }): Envelope;
 
 // @public (undocumented)
