@@ -3,7 +3,7 @@ import { decideKey } from "../merge/keys.js"
 import { applyStyle, countLines, hasConflictMarkers, hashText, normalizeText, textStyle } from "../ownership/text.js"
 import { fixtureCatalog } from "../testing/fixture.js"
 import { pendingMigrations } from "../upgrade/migrations.js"
-import { compareVersions, isValidVersion } from "../upgrade/semver.js"
+import { compareVersions, isValidVersion, satisfiesRange } from "../upgrade/semver.js"
 import { requestArgv } from "./argv.js"
 import { exitCode, toEnvelope, artifactName } from "./envelope.js"
 import { errorInfo, PlanError } from "./errors.js"
@@ -173,6 +173,32 @@ describe("versions and migrations", () => {
     expect(isValidVersion("1.0")).toBe(false)
   })
 
+  it.each([
+    ["1.4.0", "^1.2.0", true],
+    ["2.0.0", "^1.2.0", false],
+    ["0.2.5", "^0.2.1", true],
+    ["0.3.0", "^0.2.1", false],
+    ["0.0.4", "^0.0.3", false],
+    ["0.9.0", "^0", true],
+    ["1.2.9", "~1.2.3", true],
+    ["1.3.0", "~1.2.3", false],
+    ["1.9.0", "1", true],
+    ["1.3.0", "1.2", false],
+    ["2.5.0", ">=1.0.0 <3.0.0", true],
+    ["3.0.0", ">=1.0.0 <3.0.0", false],
+    ["3.1.0", "^1.0.0 || ^3.0.0", true],
+    ["1.2.3", "1.2.3", true],
+    ["7.0.0", "*", true],
+    ["1.3.0-rc.1", "^1.2.0", false],
+    ["1.3.0-rc.2", "^1.3.0-rc.1", true]
+  ])("puts %s in range %s: %s", (version, range, expected) => {
+    expect(satisfiesRange(version, range)).toBe(expected)
+  })
+
+  it("rejects text that isn't a range", () => {
+    expect(() => satisfiesRange("1.0.0", "^one")).toThrow("isn't a version range")
+  })
+
   it("selects migrations in the upgraded range", () => {
     const lint = fixtureCatalog(2).addons.find((addon) => addon.id === "@fixture/lint")
     if (!lint) {
@@ -220,7 +246,7 @@ describe("envelope", () => {
     notices: [],
     nextSteps: [],
     merged: [],
-    upgrade: { catalog: { from: "1.0.0", to: "1.0.0" }, addons: [] }
+    upgrade: { catalog: { from: "1.0.0", to: "1.0.0" }, packs: [], addons: [] }
   }
 
   it("hides secret files' line counts, adds argv to choices, and points conflicts at artifacts", () => {

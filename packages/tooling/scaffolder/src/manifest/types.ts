@@ -234,4 +234,26 @@ export interface CatalogManifest {
   slots: SlotDefinition[]
   addons: AddonManifest[]
   presets?: PresetManifest[]
+  /** Template packages merged into this catalog, keyed by package name. The engine sets it; a catalog never does. */
+  packs?: Record<string, PackRecord>
+}
+
+/** A template package version, as the catalog it's merged into and the lock record it. */
+export interface PackRecord {
+  version: string
+  /** npm's integrity for the package, checked every time it's loaded. */
+  integrity?: string
+}
+
+/**
+ * A template package's default export: templates, and the add-ons they need, for the targets, slots and points of the
+ * product catalog it extends. It can't add targets, slots or points, or replace anything the catalog defines.
+ */
+export interface TemplatePack {
+  /** The product catalog's id, and the catalog versions this pack works with, as an npm range such as `^1.0.0`. */
+  extends: { catalog: string; versions: string }
+  /** Ids are unique in the pack, without `/`, `#` or `:`. A project records one as `<package>#<id>`. */
+  templates: TemplateManifest[]
+  /** Ids start with `<package>/`, so they never collide with the catalog's or another pack's. */
+  addons?: AddonManifest[]
 }

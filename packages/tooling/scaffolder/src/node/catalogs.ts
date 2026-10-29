@@ -1,14 +1,16 @@
 import { spawn } from "node:child_process"
 import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { join } from "node:path"
+import { basename, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { z } from "zod"
+import { isTemplatePack, type LoadedPack } from "../manifest/packs.js"
 import type { CatalogManifest } from "../manifest/types.js"
 import { PlanError } from "../plan/errors.js"
 import { isRecord } from "../plan/json.js"
+import type { ErrorCode } from "../plan/types.js"
 import type { ProductSettings } from "../state/settings.js"
-import { isValidVersion } from "../upgrade/semver.js"
+import { compareVersions, isValidVersion } from "../upgrade/semver.js"
 import { withRetries } from "./fs.js"
 
 export type CommandRunner = (command: string, args: string[], cwd: string) => Promise<{ code: number; output: string }>
@@ -106,52 +108,16 @@ export class CatalogStore {
   ): Promise<{ version: string; integrity: string; folder: string }> {
     this.#check(version)
     const folder = this.folder(version)
-    const staging = `${folder}.partial`
-    rmSync(staging, { recursive: true, force: true })
-    mkdirSync(staging, { recursive: true })
-    try {
-      writeFileSync(join(staging, "package.json"), `${JSON.stringify({ private: true }, null, 2)}\n`)
-      const spec = `${this.#installed.id}@${version}`
-      const result = await this.#run(
-        "npm",
-        ["install", spec, "--ignore-scripts", "--no-audit", "--no-fund", "--save-exact"],
-        staging
-      )
-      if (result.code !== 0) {
-        throw new PlanError(
-          "E_BASELINE_UNAVAILABLE",
-          `Couldn't fetch ${spec}: ${result.output.trim().split("\n").slice(-3).join(" ")}`
-        )
-      }
-      const integrity = this.#lockedIntegrity(staging)
-      if (expectedIntegrity !== undefined && integrity !== expectedIntegrity) {
-        throw new PlanError(
-          "E_BASELINE_UNAVAILABLE",
-          `${spec} doesn't match the integrity recorded in the lock, so it wasn't used.`
-        )
-      }
-      writeFileSync(
-        join(staging, "integrity.json"),
-        `${JSON.stringify({ name: this.#installed.id, version, integrity }, null, 2)}\n`
-      )
-      rmSync(folder, { recursive: true, force: true })
-      await withRetries(() => renameSync(staging, folder))
-      this.#loaded.delete(version)
-      return { version, integrity, folder }
-    } catch (error) {
-      rmSync(staging, { recursive: true, force: true })
-      throw error
-    }
-  }
-
-  #lockedIntegrity(folder: string): string {
-    const lock: unknown = JSON.parse(readFileSync(join(folder, "package-lock.json"), "utf8"))
-    const packages = isRecord(lock) && isRecord(lock.packages) ? lock.packages : {}
-    const entry = packages[`node_modules/${this.#installed.id}`]
-    if (!isRecord(entry) || typeof entry.integrity !== "string") {
-      throw new PlanError("E_BASELINE_UNAVAILABLE", `npm didn't record an integrity for ${this.#installed.id}.`)
-    }
-    return entry.integrity
+    const integrity = await installPackage(
+      this.#run,
+      folder,
+      this.#installed.id,
+      version,
+      expectedIntegrity,
+      "E_BASELINE_UNAVAILABLE"
+    )
+    this.#loaded.delete(version)
+    return { version, integrity, folder }
   }
 
   /** Loads a cached version after checking its integrity. Returns `undefined` when it isn't cached. */
@@ -162,33 +128,198 @@ export class CatalogStore {
     }
     this.#check(version)
     const folder = this.folder(version)
-    if (!statSync(join(folder, "integrity.json"), { throwIfNoEntry: false })) {
+    const name = this.#installed.id
+    if (cachedIntegrity(folder, name, expectedIntegrity, "E_BASELINE_UNAVAILABLE") === undefined) {
       return undefined
     }
-    const recorded = integritySchema.safeParse(JSON.parse(readFileSync(join(folder, "integrity.json"), "utf8")))
-    const integrity = this.#lockedIntegrity(folder)
-    if (
-      !recorded.success ||
-      recorded.data.integrity !== integrity ||
-      (expectedIntegrity !== undefined && integrity !== expectedIntegrity)
-    ) {
-      throw new PlanError(
-        "E_BASELINE_UNAVAILABLE",
-        `The cached ${this.#installed.id}@${version} failed its integrity check. Fetch it again.`
-      )
-    }
-    const packageFolder = join(folder, "node_modules", ...this.#installed.id.split("/"))
-    const module: unknown = await import(pathToFileURL(join(packageFolder, entryFile(packageFolder))).href)
+    const module = await importPackage(folder, name)
     const catalog = isRecord(module) ? (module.default ?? module.catalog) : undefined
     if (!isCatalogManifest(catalog) || catalog.version !== version) {
-      throw new PlanError(
-        "E_BASELINE_UNAVAILABLE",
-        `${this.#installed.id}@${version} doesn't export a catalog for that version.`
-      )
+      throw new PlanError("E_BASELINE_UNAVAILABLE", `${name}@${version} doesn't export a catalog for that version.`)
     }
     this.#loaded.set(version, catalog)
     return catalog
   }
+}
+
+/**
+ * Template packages, cached like earlier catalog versions: npm installs each one into the user's cache folder, never
+ * the project, without running its scripts, and its integrity is checked every time its code is imported.
+ */
+export class PackStore {
+  readonly #cacheRoot: string
+  readonly #run: CommandRunner
+  readonly #loaded = new Map<string, LoadedPack>()
+
+  constructor(options: { cacheRoot: string; run?: CommandRunner }) {
+    this.#cacheRoot = options.cacheRoot
+    this.#run = options.run ?? runCommand
+  }
+
+  folder(name: string, version: string): string {
+    return join(this.#cacheRoot, "packs", ...name.split("/"), version)
+  }
+
+  async #view(name: string, spec: string, field: string): Promise<unknown> {
+    if (!packageNamePattern.test(name)) {
+      throw new PlanError("E_USAGE", `${name} isn't a package name.`)
+    }
+    mkdirSync(this.#cacheRoot, { recursive: true })
+    const result = await this.#run("npm", ["view", spec, field, "--json"], this.#cacheRoot)
+    if (result.code !== 0) {
+      throw new PlanError(
+        "E_PACKAGE_UNAVAILABLE",
+        `Couldn't find ${spec} on npm: ${result.output.trim().split("\n").slice(-3).join(" ")}`
+      )
+    }
+    return result.output.trim() === "" ? [] : (JSON.parse(result.output) as unknown)
+  }
+
+  /** The newest published version in a range or dist-tag, such as `^2.0.0` or `latest`. */
+  async resolve(name: string, range: string): Promise<string> {
+    const [newest] = await this.#versionsOf(name, `${name}@${range}`, "version")
+    if (newest === undefined) {
+      throw new PlanError("E_PACKAGE_UNAVAILABLE", `No version of ${name} matches ${range}.`)
+    }
+    return newest
+  }
+
+  /** Every published version, newest first. */
+  async versions(name: string): Promise<string[]> {
+    return this.#versionsOf(name, name, "versions")
+  }
+
+  async #versionsOf(name: string, spec: string, field: string): Promise<string[]> {
+    const value = await this.#view(name, spec, field)
+    const list = (Array.isArray(value) ? value : [value]).filter(
+      (entry): entry is string => typeof entry === "string" && isValidVersion(entry)
+    )
+    return list.sort((left, right) => compareVersions(right, left))
+  }
+
+  /**
+   * A template package version, from the cache or fetched into it. A version the lock records comes with its integrity,
+   * and a copy that doesn't match it is refused.
+   */
+  async load(name: string, version: string, expectedIntegrity?: string): Promise<LoadedPack> {
+    const key = `${name}@${version}`
+    const loaded = this.#loaded.get(key)
+    if (loaded && (expectedIntegrity === undefined || loaded.integrity === expectedIntegrity)) {
+      return loaded
+    }
+    if (!packageNamePattern.test(name) || !isValidVersion(version)) {
+      throw new PlanError("E_USAGE", `${key} isn't a package version.`)
+    }
+    const folder = this.folder(name, version)
+    const integrity =
+      cachedIntegrity(folder, name, expectedIntegrity, "E_PACKAGE_UNAVAILABLE") ??
+      (await installPackage(this.#run, folder, name, version, expectedIntegrity, "E_PACKAGE_UNAVAILABLE"))
+    const module = await importPackage(folder, name)
+    const pack = isRecord(module) ? module.default : undefined
+    if (!isTemplatePack(pack)) {
+      throw new PlanError(
+        "E_INVALID_PACK",
+        `${key} isn't a template package: its default export needs extends, templates and, optionally, add-ons.`
+      )
+    }
+    const result = { name, version, integrity, pack }
+    this.#loaded.set(key, result)
+    return result
+  }
+}
+
+/**
+ * Installs a package version into a cache folder and records its integrity. It installs beside the cached copy and
+ * replaces it only after the install and the integrity check pass, so a failed fetch keeps what worked offline.
+ */
+async function installPackage(
+  run: CommandRunner,
+  folder: string,
+  name: string,
+  version: string,
+  expectedIntegrity: string | undefined,
+  code: ErrorCode
+): Promise<string> {
+  const staging = `${folder}.partial`
+  rmSync(staging, { recursive: true, force: true })
+  mkdirSync(staging, { recursive: true })
+  try {
+    writeFileSync(join(staging, "package.json"), `${JSON.stringify({ private: true }, null, 2)}\n`)
+    const spec = `${name}@${version}`
+    const result = await run(
+      "npm",
+      ["install", spec, "--ignore-scripts", "--no-audit", "--no-fund", "--save-exact"],
+      staging
+    )
+    if (result.code !== 0) {
+      throw new PlanError(code, `Couldn't fetch ${spec}: ${result.output.trim().split("\n").slice(-3).join(" ")}`)
+    }
+    const integrity = lockedIntegrity(staging, name, code)
+    if (expectedIntegrity !== undefined && integrity !== expectedIntegrity) {
+      throw new PlanError(code, `${spec} doesn't match the integrity recorded in the lock, so it wasn't used.`)
+    }
+    writeFileSync(join(staging, "integrity.json"), `${JSON.stringify({ name, version, integrity }, null, 2)}\n`)
+    rmSync(folder, { recursive: true, force: true })
+    await withRetries(() => renameSync(staging, folder))
+    return integrity
+  } catch (error) {
+    rmSync(staging, { recursive: true, force: true })
+    throw error
+  }
+}
+
+function lockedIntegrity(folder: string, name: string, code: ErrorCode): string {
+  const lock: unknown = JSON.parse(readFileSync(join(folder, "package-lock.json"), "utf8"))
+  const packages = isRecord(lock) && isRecord(lock.packages) ? lock.packages : {}
+  const entry = packages[`node_modules/${name}`]
+  if (!isRecord(entry) || typeof entry.integrity !== "string") {
+    throw new PlanError(code, `npm didn't record an integrity for ${name}.`)
+  }
+  return entry.integrity
+}
+
+/** A cached package's integrity, after checking it. `undefined` when it isn't cached. */
+function cachedIntegrity(
+  folder: string,
+  name: string,
+  expectedIntegrity: string | undefined,
+  code: ErrorCode
+): string | undefined {
+  if (!statSync(join(folder, "integrity.json"), { throwIfNoEntry: false })) {
+    return undefined
+  }
+  const recorded = integritySchema.safeParse(JSON.parse(readFileSync(join(folder, "integrity.json"), "utf8")))
+  const integrity = lockedIntegrity(folder, name, code)
+  if (
+    !recorded.success ||
+    recorded.data.integrity !== integrity ||
+    (expectedIntegrity !== undefined && integrity !== expectedIntegrity)
+  ) {
+    throw new PlanError(code, `The cached ${name}@${basename(folder)} failed its integrity check. Fetch it again.`)
+  }
+  return integrity
+}
+
+/** A template package in a folder on disk, as its author checks it before publishing. Build it first. */
+export async function loadLocalPack(folder: string): Promise<LoadedPack> {
+  const manifest: unknown = JSON.parse(readFileSync(join(folder, "package.json"), "utf8"))
+  if (!isRecord(manifest) || typeof manifest.name !== "string" || typeof manifest.version !== "string") {
+    throw new PlanError("E_INVALID_PACK", `${join(folder, "package.json")} needs a name and a version.`)
+  }
+  const module: unknown = await import(pathToFileURL(join(folder, entryFile(folder))).href)
+  const pack = isRecord(module) ? module.default : undefined
+  if (!isTemplatePack(pack)) {
+    throw new PlanError(
+      "E_INVALID_PACK",
+      `${manifest.name} isn't a template package: its default export needs extends, templates and, optionally, add-ons.`
+    )
+  }
+  return { name: manifest.name, version: manifest.version, pack }
+}
+
+async function importPackage(folder: string, name: string): Promise<unknown> {
+  const packageFolder = join(folder, "node_modules", ...name.split("/"))
+  return import(pathToFileURL(join(packageFolder, entryFile(packageFolder))).href) as Promise<unknown>
 }
 
 function entryFile(packageFolder: string): string {

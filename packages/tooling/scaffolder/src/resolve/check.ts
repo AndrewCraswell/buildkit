@@ -4,6 +4,7 @@ import {
   findSlot,
   findTarget,
   findTemplate,
+  packOf,
   parseOptions,
   slotAddons,
   targetInfo,
@@ -33,9 +34,12 @@ function duplicates(ids: readonly string[]): string[] {
 
 /**
  * Catalog CI: checks references, slot defaults, required add-on options and facets. With `matrix`, it also plans
- * every pair of answers for each template and mode, and reports any that fail.
+ * every pair of answers for each template and mode, or for the `templates` listed, and reports any that fail.
  */
-export function checkCatalog(catalog: CatalogManifest, options: { matrix?: boolean } = {}): string[] {
+export function checkCatalog(
+  catalog: CatalogManifest,
+  options: { matrix?: boolean; templates?: readonly string[] } = {}
+): string[] {
   const problems: string[] = []
   if (!isValidVersion(catalog.version)) {
     problems.push(`Catalog version "${catalog.version}" isn't a semantic version.`)
@@ -49,6 +53,14 @@ export function checkCatalog(catalog: CatalogManifest, options: { matrix?: boole
   ] as const) {
     for (const id of duplicates(ids)) {
       problems.push(`More than one ${kind} has the id ${id}.`)
+    }
+  }
+  // A template argument that looks like a package is fetched from npm, so built-in ids can't look like one.
+  for (const template of catalog.templates) {
+    const pack = packOf(template.id)
+    const own = pack === undefined ? template.id : template.id.slice(pack.length + 1)
+    if ((pack !== undefined && !catalog.packs?.[pack]) || /[/#:]/.test(own) || own.startsWith("@")) {
+      problems.push(`Template id ${template.id} can't contain /, # or :, or start with @.`)
     }
   }
   for (const target of catalog.targets) {
@@ -170,7 +182,9 @@ export function checkCatalog(catalog: CatalogManifest, options: { matrix?: boole
     problems.push(...planAnswers(catalog, { ...preset.answers, name: "catalog-check" }, `Preset ${preset.id}`))
   }
   if (options.matrix && problems.length === 0) {
-    for (const template of catalog.templates) {
+    for (const template of catalog.templates.filter(
+      (candidate) => options.templates === undefined || options.templates.includes(candidate.id)
+    )) {
       for (const mode of templateModes(catalog, template)) {
         for (const answers of pairwiseAnswers(catalog, template.id, mode)) {
           problems.push(

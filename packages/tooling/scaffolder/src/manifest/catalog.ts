@@ -2,6 +2,7 @@ import { isRecord } from "../plan/json.js"
 import type {
   AddonManifest,
   CatalogManifest,
+  PackRecord,
   PresetManifest,
   SlotDefinition,
   TargetInfo,
@@ -127,4 +128,32 @@ function editDistance(left: string, right: string): number {
     previous = current
   }
   return previous[right.length] ?? 0
+}
+
+/** The template package a catalog template comes from: `<package>#<id>`. Built-in templates have none. */
+export function packOf(templateId: string): string | undefined {
+  const hash = templateId.indexOf("#")
+  return hash === -1 ? undefined : templateId.slice(0, hash)
+}
+
+/** Whether two catalogs, or a catalog and a lock, record the same catalog version and the same pack versions. */
+export function sameCatalogVersion(
+  left: { version: string; packs?: Record<string, PackRecord> | undefined },
+  right: { version: string; packs?: Record<string, PackRecord> | undefined }
+): boolean {
+  const versions = (packs: Record<string, PackRecord> | undefined) =>
+    Object.entries(packs ?? {})
+      .map(([name, pack]) => `${name}@${pack.version}`)
+      .sort()
+      .join(" ")
+  return left.version === right.version && versions(left.packs) === versions(right.packs)
+}
+
+/** `1.0.0`, or `1.0.0 with @acme/tower-defense@1.2.0` when packs are merged in. */
+export function catalogVersionText(catalog: {
+  version: string
+  packs?: Record<string, PackRecord> | undefined
+}): string {
+  const packs = Object.entries(catalog.packs ?? {}).map(([name, pack]) => `${name}@${pack.version}`)
+  return packs.length === 0 ? catalog.version : `${catalog.version} with ${packs.sort().join(", ")}`
 }

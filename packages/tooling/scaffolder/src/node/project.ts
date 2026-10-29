@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { createTwoFilesPatch } from "diff"
 import { z } from "zod"
-import type { CatalogManifest } from "../manifest/types.js"
+import type { CatalogManifest, PackRecord } from "../manifest/types.js"
 import { artifactName, toEnvelope } from "../plan/envelope.js"
 import { PlanError } from "../plan/errors.js"
 import { plan } from "../plan/plan.js"
@@ -17,7 +17,7 @@ export interface ProjectContext {
   root: string
   catalog: CatalogManifest
   settings: ProductSettings
-  catalogs?: (version: string) => CatalogManifest | undefined
+  catalogs?: (version: string, packs?: Record<string, PackRecord>) => CatalogManifest | undefined
   catalogIntegrity?: string
 }
 
