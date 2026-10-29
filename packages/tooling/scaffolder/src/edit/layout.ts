@@ -25,7 +25,8 @@ type Layout =
   | { kind: "array"; items: Layout[] }
   | { kind: "object"; entries: [key: string, value: Layout][]; expanded: boolean }
 
-interface Position {
+/** Where a value starts on its line. */
+export interface Position {
   /** The width of the line before the value. */
   column: number
   /** The indentation of the value's line. */
@@ -34,20 +35,23 @@ interface Position {
   trailing: number
 }
 
+/** How `printJson` prints a value, and where it starts. */
+export interface PrintJsonOptions extends Partial<Position> {
+  /** Defaults to `json` at 80 columns. */
+  layout?: JsonLayout
+  /** One level of indentation. Defaults to two spaces. */
+  unit?: string
+  /** Defaults to `\n`. */
+  eol?: string
+  /** `inline` puts each object on one line when it fits, as the formatters keep an object written that way. */
+  objects?: "expanded" | "inline"
+}
+
 /**
  * A value printed as the formatters print it, starting at `column` on a line indented by `indent`. Objects go across
- * lines; `objects: "inline"` puts each on one line instead when it fits, as the formatters keep an object written that
- * way.
+ * lines unless `objects` is `inline`.
  */
-export function printJson(
-  value: unknown,
-  options: {
-    layout?: JsonLayout
-    unit?: string
-    eol?: string
-    objects?: "expanded" | "inline"
-  } & Partial<Position> = {}
-): string {
+export function printJson(value: unknown, options: PrintJsonOptions = {}): string {
   const layout = options.layout ?? defaultJsonLayout
   return print(fromValue(value, options.objects === "inline"), layout, options.unit ?? "  ", options.eol ?? "\n", {
     column: options.column ?? 0,

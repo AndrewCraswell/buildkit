@@ -53,6 +53,13 @@ export type JsonParseResult = {
 export type JsonPath = (string | number)[];
 
 // @public
+export interface JsonPosition {
+    column: number;
+    indent: string;
+    trailing: number;
+}
+
+// @public
 export function mergeText(current: string, base: string, incoming: string): TextMerge;
 
 // @public
@@ -61,15 +68,16 @@ export function parseJsonc(text: string): JsonParseResult;
 // @public
 export function parseYaml(text: string): JsonParseResult;
 
-// Warning: (ae-forgotten-export) The symbol "Position" needs to be exported by the entry point edit.d.ts
-//
 // @public
-export function printJson(value: unknown, options?: {
-    layout?: JsonLayout;
-    unit?: string;
+export function printJson(value: unknown, options?: PrintJsonOptions): string;
+
+// @public
+export interface PrintJsonOptions extends Partial<JsonPosition> {
     eol?: string;
+    layout?: JsonLayout;
     objects?: "expanded" | "inline";
-} & Partial<Position>): string;
+    unit?: string;
+}
 
 // @public
 export function readEnv(text: string | undefined): Map<string, string>;
