@@ -4,6 +4,8 @@
 - [TypeScript](typescript.md)
 - [React](react.md)
 - [Hooks](hooks.md)
+- [Recommended stack](platform-planning/stack.md)
+- [Build plans: packages, services and pipelines we will build](platform-planning/build-plans.md)
 - [Preferred tools](tech-stack.md)
 - [Package lifecycle](packages.md)
 - [Releases](releases.md)
