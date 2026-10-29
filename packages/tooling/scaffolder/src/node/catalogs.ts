@@ -172,7 +172,7 @@ export class PackStore {
         `Couldn't find ${spec} on npm: ${result.output.trim().split("\n").slice(-3).join(" ")}`
       )
     }
-    return result.output.trim() === "" ? [] : (JSON.parse(result.output) as unknown)
+    return viewOutput(spec, result.output)
   }
 
   /** The newest published version in a range or dist-tag, such as `^2.0.0` or `latest`. */
@@ -226,6 +226,30 @@ export class PackStore {
     this.#loaded.set(key, result)
     return result
   }
+}
+
+/**
+ * The JSON `npm view --json` printed. The runner merges stdout and stderr, so npm's warnings can surround it: the JSON
+ * is the lines from the first that starts a JSON value to the last that ends one.
+ */
+function viewOutput(spec: string, output: string): unknown {
+  const lines = output.trim().split(/\r?\n/)
+  if (lines.length === 1 && lines[0] === "") {
+    return []
+  }
+  const start = lines.findIndex((line) => /^\s*["[{]/.test(line))
+  const end = lines.findLastIndex((line) => /["\]}]\s*$/.test(line))
+  try {
+    if (start !== -1 && end >= start) {
+      return JSON.parse(lines.slice(start, end + 1).join("\n")) as unknown
+    }
+  } catch {
+    // Reported below, with what npm printed.
+  }
+  throw new PlanError(
+    "E_PACKAGE_UNAVAILABLE",
+    `npm printed something other than JSON for ${spec}: ${lines.slice(-3).join(" ")}`
+  )
 }
 
 /**

@@ -97,20 +97,30 @@ export function mergePacks(catalog: CatalogManifest, packs: readonly LoadedPack[
     if (pack.templates.length === 0) {
       throw new PlanError("E_INVALID_PACK", `${label} has no templates.`)
     }
+    // A pack comes from a dynamic import, so its ids are checked as well as typed.
     for (const template of pack.templates) {
-      if (!localId.test(template.id)) {
+      const id: unknown = template.id
+      if (typeof id !== "string" || !localId.test(id)) {
         throw new PlanError(
           "E_INVALID_PACK",
-          `${label} has a template with the id "${template.id}". Use letters, digits, ., - and _.`
+          `${label} has a template with the id ${JSON.stringify(id)}. Use letters, digits, ., - and _.`
         )
       }
-      merged.templates.push({ ...template, id: `${name}#${template.id}` })
+      merged.templates.push({ ...template, id: `${name}#${id}` })
     }
     for (const addon of pack.addons ?? []) {
-      if (!addon.id.startsWith(`${name}/`)) {
+      const id: unknown = addon.id
+      if (typeof id !== "string" || !id.startsWith(`${name}/`)) {
         throw new PlanError(
           "E_INVALID_PACK",
-          `${label} has an add-on with the id ${addon.id}. Its ids start with ${name}/.`
+          `${label} has an add-on with the id ${JSON.stringify(id)}. Its ids start with ${name}/.`
+        )
+      }
+      // Points belong to the catalog's targets and add-ons. One from a pack could rewire the product's own files.
+      if ((addon.points ?? []).length > 0) {
+        throw new PlanError(
+          "E_INVALID_PACK",
+          `${label}'s add-on ${id} defines points. A template package can't add them.`
         )
       }
       merged.addons.push(addon)

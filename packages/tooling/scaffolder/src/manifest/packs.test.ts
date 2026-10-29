@@ -105,6 +105,28 @@ describe("mergePacks", () => {
       { templates: [{ id: "tower", title: "Tower", description: "", target: "native" }] },
       "E_INVALID_PACK",
       "uses target native"
+    ],
+    [{ templates: [{ title: "Tower", description: "", target: "web" }] }, "E_INVALID_PACK", "id undefined"],
+    [
+      { addons: [{ version: "1.0.0", title: "T", description: "", contribute: () => [] }] },
+      "E_INVALID_PACK",
+      "add-on with the id undefined"
+    ],
+    [
+      {
+        addons: [
+          {
+            id: "@acme/tower/turrets",
+            version: "1.0.0",
+            title: "T",
+            description: "",
+            points: [{ id: "app.providers", version: 1, kind: "wrap", file: "src/providers.ts", export: "providers" }],
+            contribute: () => []
+          }
+        ]
+      },
+      "E_INVALID_PACK",
+      "defines points"
     ]
   ] as const)("refuses a pack with %j", (overrides, code, message) => {
     const result = failure(() => mergePacks(fixtureCatalog(), [loaded(towerPack(overrides as Partial<TemplatePack>))]))

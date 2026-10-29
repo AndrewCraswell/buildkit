@@ -241,16 +241,25 @@ export class CliRuntime {
       })
       return current
     }
+    // Like npm ranges, an upgrade moves to a prerelease only from a prerelease.
+    const prereleases = recorded.version.includes("-")
     for (const version of versions) {
       if (compareVersions(version, recorded.version) <= 0) {
         break
       }
-      const candidate = await store.load(name, version)
-      if (
-        candidate.pack.extends.catalog === this.options.catalog.id &&
-        satisfiesRange(this.options.catalog.version, candidate.pack.extends.versions)
-      ) {
-        return candidate
+      if (version.includes("-") && !prereleases) {
+        continue
+      }
+      try {
+        const candidate = await store.load(name, version)
+        if (
+          candidate.pack.extends.catalog === this.options.catalog.id &&
+          satisfiesRange(this.options.catalog.version, candidate.pack.extends.versions)
+        ) {
+          return candidate
+        }
+      } catch {
+        // A version that won't install, isn't a pack or has an unreadable range isn't a candidate. Try the next one.
       }
     }
     return current
@@ -535,8 +544,8 @@ export class CliRuntime {
       const planned = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.template : undefined
       const pack = planned === undefined ? undefined : packOf(planned)
       // A saved plan names the package but not its version. The plan's fingerprint stops it if the package changed.
-      if (pack !== undefined && source === undefined) {
-        await this.#usePackage({ package: pack, range: "latest" }, false)
+      if (planned !== undefined && pack !== undefined && source === undefined) {
+        await this.#usePackage({ package: pack, range: "latest", template: planned.slice(pack.length + 1) }, false)
       }
       const name = reviewed.request.intent.command === "init" ? reviewed.request.intent.answers.name : undefined
       // The name picks the folder, and a lock is read there before planning, so check it first.

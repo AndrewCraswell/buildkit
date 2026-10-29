@@ -145,6 +145,46 @@ describe("template packages", () => {
     expect(envelope(unchecked.out).notices?.[0]?.text).toContain("@acme/tower stays at 1.1.0")
   })
 
+  it("upgrades past prereleases and versions it can't load", async () => {
+    await run(["init", "@acme/tower", "demo", "--yes", "--json"], fakeNpm({ "1.0.0": packSource("1.0.0") }))
+    const newer = fakeNpm({
+      "1.0.0": packSource("1.0.0"),
+      "1.1.0": packSource("1.1.0"),
+      "1.2.0-rc.1": packSource("1.2.0-rc.1"),
+      "1.3.0": "export default {}\n"
+    })
+    const upgraded = await run(["upgrade", "--cwd", "demo", "--yes", "--json"], newer)
+    expect(envelope(upgraded.out).upgrade?.packs).toEqual([{ name: "@acme/tower", from: "1.0.0", to: "1.1.0" }])
+  })
+
+  it("applies a saved plan for a package's template", async () => {
+    const npm = fakeNpm({ "1.0.0": packSource("1.0.0", { templates: ["tower", "siege"] }) })
+    const saved = await run(["init", "@acme/tower#siege", "demo", "--json", "--out", "plans"], npm)
+    expect(envelope(saved.out).status).toBe("planned")
+    const applied = await run(["init", "--plan", "plans/plan.json", "--json"], npm)
+    expect(envelope(applied.out).status).toBe("applied")
+    expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain('"template": "@acme/tower#siege"')
+  })
+
+  it("reads npm's JSON past the warnings around it", async () => {
+    const npm = fakeNpm({ "1.0.0": packSource("1.0.0") })
+    const noisy: CommandRunner = async (command, args, cwd) => {
+      const result = await npm.run(command, args, cwd)
+      return args[0] === "view"
+        ? {
+            ...result,
+            output: `npm warn config production Use --omit=dev instead.\n${result.output}\nnpm notice A new npm is available!\n`
+          }
+        : result
+    }
+    expect((await run(["init", "@acme/tower", "demo", "--yes", "--json"], { run: noisy })).code).toBe(0)
+    const garbled: CommandRunner = async (command, args, cwd) =>
+      args[0] === "view" ? { code: 0, output: "npm warn config\nnot json\n" } : npm.run(command, args, cwd)
+    const refused = await run(["init", "@acme/tower", "other", "--json"], { run: garbled })
+    expect(envelope(refused.out).error).toMatchObject({ code: "E_PACKAGE_UNAVAILABLE" })
+    expect(envelope(refused.out).error?.message).toContain("npm printed something other than JSON")
+  })
+
   it("refuses a cached package whose integrity doesn't match the lock", async () => {
     const npm = fakeNpm({ "1.0.0": packSource("1.0.0") })
     await run(["init", "@acme/tower", "demo", "--yes", "--json"], npm)
