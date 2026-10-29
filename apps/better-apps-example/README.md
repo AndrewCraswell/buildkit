@@ -1,0 +1,45 @@
+# Better Apps example
+
+A [TanStack Start](https://tanstack.com/start) app that runs
+[Better Apps](../../packages/better-apps/better-apps/README.md) features on SQLite, wired with
+[`@better-apps/tanstack-start`](../../packages/better-apps/tanstack-start/README.md). It has no sign-in:
+`localIdentity()` makes every request act as one local user.
+
+Build the packages it uses once, then start it:
+
+```sh
+pnpm turbo run build --filter=@better-apps/example^...
+pnpm --filter @better-apps/example dev
+```
+
+Then open <http://127.0.0.1:4190>. `build` and `preview` run the production build at <http://127.0.0.1:4191>.
+
+## What's in it
+
+- **Notes**, on the home page, is a tiny feature in `src/features.ts`. Its loader calls a server function that calls
+  `api.notes.list()` as the request's user, and the form posts to `/api/apps/notes/add` from the browser.
+- **Invoices** is the app's own table, in `src/db/schema.ts`, with a list page and a detail page. The app adds five
+  sample invoices on start. Comments will attach to invoices as their subject.
+- `src/better-apps.server.ts` creates the app and its Start bindings. `src/routes/api/apps/$.ts` serves the actions.
+- `src/start.ts` only lets same-origin requests call server functions.
+
+## Database
+
+The app stores its data in `.data/example.db`, which it creates on start. Set `DATABASE_FILE` to use another file, or
+`:memory:` for a database that lasts until the server stops. Delete the file to start over.
+
+Tables come from migrations in `drizzle/`, which the app applies on start with Drizzle's migrator. The migrations cover
+the app's tables and the features' tables, which `better-apps generate` writes to `src/db/better-apps-schema.ts`. After
+adding a feature or changing a table, run:
+
+```sh
+pnpm --filter @better-apps/example db:generate
+```
+
+It regenerates the features' schema from `better-apps.config.ts`, then writes a new migration with `drizzle-kit`. Commit
+both.
+
+## Times and dates
+
+Pages are rendered on the server and again in the browser, so dates and times use a fixed locale and time zone. Times
+are shown in UTC.
