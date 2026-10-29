@@ -47,6 +47,14 @@ function answersPreset(answers: Answers, preset: Answers): boolean {
   )
 }
 
+/** Whether a preset's slot answer is the request's: the same add-on, by id or short name, or both "no". */
+function sameAnswer(preset: string | null | undefined, answer: string | null): boolean {
+  if (preset === undefined || preset === null || answer === null) {
+    return preset === answer
+  }
+  return shortName(preset) === shortName(answer)
+}
+
 /** The optional add-ons a template selects by default. Without the catalog they aren't known, so there are none. */
 function templateDefaults(catalog: CatalogManifest | undefined, templateId: string): string[] {
   const template = catalog ? findTemplate(catalog, templateId) : undefined
@@ -79,24 +87,27 @@ export function requestArgv(
       if (answers.mode !== undefined && answers.mode !== preset?.answers.mode) {
         argv.push("--mode", answers.mode)
       }
+      // Add-ons are compared by the short names the flags use, since a preset can name one either way.
       for (const [slot, answer] of Object.entries(answers.slots ?? {})) {
-        if (preset && preset.answers.slots?.[slot] === answer) {
+        if (preset && sameAnswer(preset.answers.slots?.[slot], answer)) {
           continue
         }
         argv.push(...(answer === null ? [`--no-${slot}`] : [`--${slot}`, shortName(answer)]))
       }
       // `--with` and `--without` change the preset's optional add-ons or, without them, the template's defaults.
-      const { optional } = answers
-      if (optional !== undefined) {
-        const start = new Set(preset?.answers.optional ?? templateDefaults(options.catalog, answers.template))
-        for (const id of optional) {
-          if (!start.has(id)) {
-            argv.push("--with", shortName(id))
+      if (answers.optional !== undefined) {
+        const chosen = new Set(answers.optional.map((id) => shortName(id)))
+        const start = new Set(
+          (preset?.answers.optional ?? templateDefaults(options.catalog, answers.template)).map((id) => shortName(id))
+        )
+        for (const name of chosen) {
+          if (!start.has(name)) {
+            argv.push("--with", name)
           }
         }
-        for (const id of start) {
-          if (!optional.includes(id)) {
-            argv.push("--without", shortName(id))
+        for (const name of start) {
+          if (!chosen.has(name)) {
+            argv.push("--without", name)
           }
         }
       }

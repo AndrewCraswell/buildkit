@@ -443,5 +443,13 @@ describe("envelope", () => {
         "app"
       ])
     }
+    // A preset can name its add-ons by short name, and they're still the request's.
+    const short = { ...preset, answers: { ...preset.answers, slots: { database: "db-postgres" }, optional: ["i18n"] } }
+    expect(requestArgv({ intent: { command: "init", answers } }, { preset: short })).toEqual([
+      "init",
+      "--preset",
+      "saas",
+      "demo"
+    ])
   })
 })
