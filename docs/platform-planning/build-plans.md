@@ -403,7 +403,8 @@ CI/CD pipelines.
 `add`, `composition`, `scaffold` and `cli` in `packages/cli`.
 
 Engine comparison and full design: [scaffolder-research.md](scaffolder-research.md). Phase 0 plan (building the engine):
-[scaffolder-phase-0.md](scaffolder-phase-0.md).
+[scaffolder-phase-0.md](scaffolder-phase-0.md). Phase 1 plan (SpawnKit on the engine):
+[scaffolder-phase-1.md](scaffolder-phase-1.md).
 
 ---
 
