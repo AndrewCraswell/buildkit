@@ -90,6 +90,20 @@ describe("comments hooks", () => {
     expect(result.current.create).toMatchObject({ status: "idle", error: null })
   })
 
+  it("describe only the latest run, ignoring one that settles after a reset", async () => {
+    const { wrapper } = rendered()
+    const { result } = renderHook(() => useCreateThread(), { wrapper })
+    let writing: Promise<unknown> = Promise.resolve()
+    act(() => {
+      writing = result.current.mutate({ ...onInvoice, body: "Hi" })
+    })
+    act(() => result.current.reset())
+    await act(async () => {
+      await writing
+    })
+    expect(result.current).toMatchObject({ status: "idle", error: null })
+  })
+
   it("load a thread with its comments, and reply", async () => {
     const { api, as, wrapper } = rendered()
     const { thread } = await api.createThread({ ...onInvoice, body: "First" }, as("ada"))
