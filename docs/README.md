@@ -46,8 +46,9 @@ Configuration: [core and provider contract](../packages/core/configuration-core/
 
 [Shadcn localization, RTL, and class merging](shadcn/localization.md).
 
-[Better Apps](../packages/better-apps/better-apps/README.md): app features that declare their own tables. Its
-[CLI](../packages/better-apps/cli/README.md) generates the schema for your ORM, using
+[Better Apps](../packages/better-apps/better-apps/README.md): app features with their own tables, actions and events.
+Its [CLI](../packages/better-apps/cli/README.md) generates the schema for your ORM, using
 [vendored Better Auth source](../packages/better-apps/cli/docs/vendoring.md), and its
 [Drizzle adapter](../packages/better-apps/drizzle/README.md) reads and writes the tables, using
 [forked Better Auth source](../packages/better-apps/drizzle/docs/fork.md).
+[`@better-apps/testing`](../packages/better-apps/testing/README.md) runs features against in-memory SQLite.
