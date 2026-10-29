@@ -537,6 +537,9 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@better-apps/react':
+        specifier: workspace:*
+        version: link:../react
       '@better-apps/testing':
         specifier: workspace:*
         version: link:../testing
@@ -546,9 +549,18 @@ importers:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript-config
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@types/node':
         specifier: 24.13.2
         version: 24.13.2
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: 5.0.5
         version: 5.0.5(vitest@5.0.5)
@@ -558,6 +570,15 @@ importers:
       drizzle-orm:
         specifier: 0.45.4
         version: 0.45.4(@neondatabase/serverless@1.2.0)(@types/pg@8.23.1)(kysely@0.29.7)(mysql2@3.24.6(@types/node@24.13.2))(pg@8.23.1)
+      happy-dom:
+        specifier: ^21.0.4
+        version: 21.0.4
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: 19.3.1
+        version: 19.3.1(react@19.3.1)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -601,6 +622,49 @@ importers:
       pg:
         specifier: 8.23.1
         version: 8.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@types/node@24.13.2)(@vitest/coverage-v8@5.0.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+
+  packages/better-apps/react:
+    dependencies:
+      better-apps:
+        specifier: workspace:*
+        version: link:../better-apps
+    devDependencies:
+      '@repo/oxlint-config':
+        specifier: workspace:*
+        version: link:../../tooling/oxlint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript-config
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/node':
+        specifier: 24.13.2
+        version: 24.13.2
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: 5.0.5
+        version: 5.0.5(vitest@5.0.5)
+      happy-dom:
+        specifier: ^21.0.4
+        version: 21.0.4
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: 19.3.1
+        version: 19.3.1(react@19.3.1)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

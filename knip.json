@@ -146,7 +146,7 @@
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
     "packages/better-apps/better-apps": {
-      "entry": ["src/index.ts"],
+      "entry": ["src/index.ts", "src/client.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
     "packages/better-apps/cli": {
@@ -162,7 +162,11 @@
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
     "packages/better-apps/comments": {
-      "entry": ["src/index.ts"],
+      "entry": ["src/index.ts", "src/client.ts", "src/react.tsx"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/react": {
+      "entry": ["src/index.tsx"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     }
   }
