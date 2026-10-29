@@ -15,10 +15,6 @@ export const CreateAnApp: StoryObj<typeof meta> = {
       title="Create a Buildkit app"
       summary="In a terminal, the CLI shows the plan and asks before it writes. --yes or a reviewed --plan applies without asking; other runs without a terminal write nothing."
     >
-      <p>
-        <strong>Not available yet:</strong> <code>@buildkitgg/cli</code> and <code>@buildkitgg/catalog</code> aren’t on
-        npm. These commands work once their first release is published.
-      </p>
       <h2>Answer the questions</h2>
       <Code>{"npx @buildkitgg/cli init app my-app"}</Code>
       <p>

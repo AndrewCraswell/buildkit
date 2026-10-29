@@ -57,7 +57,7 @@ export const packages = [
       "runBuildkit(argv, options): run one command from your own tools and get its exit code."
     ],
     notes:
-      "Not on npm yet: these commands work once @buildkitgg/cli and @buildkitgg/catalog publish their first release. Requires Node.js 24 or later. New apps pin the CLI as a dev dependency, so later commands run through pnpm inside the project. Without a terminal, a command plans and writes nothing unless you pass --yes or apply a reviewed plan with --plan. With --json, planning commands print one JSON envelope, and read commands such as status print their own JSON.",
+      "Requires Node.js 24 or later. New apps pin the CLI as a dev dependency, so later commands run through pnpm inside the project. Without a terminal, a command plans and writes nothing unless you pass --yes or apply a reviewed plan with --plan. With --json, planning commands print one JSON envelope, and read commands such as status print their own JSON.",
     example: "tooling-cli--create-an-app"
   },
   {
@@ -72,7 +72,7 @@ export const packages = [
       "Presets: saas answers ssr with a database, sign-in and localization."
     ],
     notes:
-      "Not on npm yet: its first release is pending. Run it through the buildkit CLI; import it directly only to plan Buildkit apps in your own tools. Apps name no cloud: no Wrangler config, bindings or cloud names. The database, sign-in and deploy add-ons use Better Apps packages that aren't on npm yet.",
+      "Run it through the buildkit CLI; import it directly only to plan Buildkit apps in your own tools. Apps name no cloud: no Wrangler config, bindings or cloud names. The database, sign-in and deploy add-ons use Better Apps packages that aren't on npm yet.",
     example: "tooling-catalog--the-app-template"
   },
   {
