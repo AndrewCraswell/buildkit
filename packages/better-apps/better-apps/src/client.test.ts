@@ -193,6 +193,20 @@ describe("createBetterAppsClient", () => {
     await expect(reading).rejects.toMatchObject({ code: "ABORTED" })
   })
 
+  it("handles a fetch that rejects after cancelling its own call", async () => {
+    const controller = new AbortController()
+    const client = createBetterAppsClient({
+      fetch: () => {
+        controller.abort()
+        return Promise.reject(new TypeError("Aborted by the fetch"))
+      }
+    })
+    await expect(client.$call("notes", "ping", undefined, { signal: controller.signal })).rejects.toMatchObject({
+      code: "ABORTED"
+    })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+
   it("rejects a call cancelled under way, whether or not its fetch stops", async () => {
     const controller = new AbortController()
     const stops = createBetterAppsClient({

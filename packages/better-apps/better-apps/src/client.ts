@@ -113,14 +113,15 @@ function unlessAborted<Value>(value: Value | Promise<Value>, signal: AbortSignal
   }
   return new Promise<Value>((resolve, reject) => {
     const stop = () => reject(signal.reason)
-    if (signal.aborted) {
-      stop()
-      return
-    }
-    signal.addEventListener("abort", stop, { once: true })
+    // Handled even after an abort, so a value that rejects late isn't left as an unhandled rejection.
     Promise.resolve(value)
       .then(resolve, reject)
       .finally(() => signal.removeEventListener("abort", stop))
+    if (signal.aborted) {
+      stop()
+    } else {
+      signal.addEventListener("abort", stop, { once: true })
+    }
   })
 }
 
