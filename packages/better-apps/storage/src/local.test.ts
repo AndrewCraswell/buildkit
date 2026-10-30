@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, it } from "vitest"
+import { expect, it } from "vite-plus/test"
 import { fileStorage } from "./local.js"
 
 it("publishes consistent records across independent filesystem adapters", async () => {

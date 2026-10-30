@@ -1,5 +1,5 @@
 import { createConfiguration } from "@buildkitgg/configuration-core"
-import { afterEach, expect, it } from "vitest"
+import { afterEach, expect, it } from "vite-plus/test"
 
 afterEach(() => {
   localStorage.clear()

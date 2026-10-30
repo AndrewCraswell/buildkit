@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process"
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
+import { createRequire } from "node:module"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -22,6 +23,13 @@ export function pnpmCommand(args) {
 export function pnpm(args, cwd = root, options = {}) {
   const [command, commandArgs] = pnpmCommand(args)
   return execFileSync(command, commandArgs, { cwd, stdio: "inherit", ...options })
+}
+// Runs a package's bin with Node: vp run starts tasks without pnpm's environment, and no shell is needed.
+export function runBin(packageName, binName, args, cwd) {
+  const manifest = createRequire(resolve(cwd, "package.json")).resolve(`${packageName}/package.json`)
+  const { bin } = readJson(manifest)
+  const entry = resolve(dirname(manifest), typeof bin === "string" ? bin : bin[binName])
+  return execFileSync(process.execPath, [entry, ...args], { cwd, stdio: "inherit" })
 }
 export function snapshot() {
   return readJson(resolve(tool, "upstream/snapshot.json"))

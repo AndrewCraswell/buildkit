@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { insertJsonArrayItem, removeJson, replaceJsonArrayItem, setJson, stringifyJson } from "./json.js"
 import { jsonLayoutFor, printJson } from "./layout.js"
 

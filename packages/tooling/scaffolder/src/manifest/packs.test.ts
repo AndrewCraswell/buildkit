@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { PlanError } from "../plan/errors.js"
 import { checkCatalog } from "../resolve/check.js"
 import { fixtureCatalog } from "../testing/fixture.js"

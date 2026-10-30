@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { z } from "zod"
 import { definePoint } from "../manifest/define.js"
 import { PlanError } from "../plan/errors.js"

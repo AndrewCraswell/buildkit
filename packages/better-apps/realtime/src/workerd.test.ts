@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs"
 import { stripTypeScriptTypes } from "node:module"
 import { Miniflare } from "miniflare"
-import { afterAll, describe, expect, it, vi } from "vitest"
+import { afterAll, describe, expect, it, vi } from "vite-plus/test"
 import { joinRoom, type RoomConnection } from "./client.js"
 import type { Peer } from "./protocol.js"
 

@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, expect, it } from "vitest"
+import { afterEach, expect, it } from "vite-plus/test"
 import { createModalManager, ModalRenderer } from "./index.js"
 import type { ModalSurfaceProps } from "./index.js"
 

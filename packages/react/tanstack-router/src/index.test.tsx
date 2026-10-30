@@ -1,6 +1,6 @@
 import { createRootRoute, createRoute, createRouter, createMemoryHistory } from "@tanstack/react-router"
 import { act, renderHook } from "@testing-library/react"
-import { expect, it } from "vitest"
+import { expect, it } from "vite-plus/test"
 import { createRouterAdapter, useRoutePanel, useRouteTabs } from "./index.js"
 function setup() {
   const root = createRootRoute()

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { renderConfig, updateConfig } from "./files.js"
 import type { ProjectConfig } from "./schemas.js"
 import { defineSettings } from "./settings.js"

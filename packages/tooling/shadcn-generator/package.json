@@ -7,8 +7,7 @@
     "update:shadcn": "node src/update.mjs",
     "validate": "node src/validate.mjs",
     "test": "node --test src/*.test.mjs",
-    "test:coverage": "node --experimental-test-coverage --test src/*.test.mjs",
-    "lint": "oxlint --max-warnings=0"
+    "test:coverage": "node --experimental-test-coverage --test src/*.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

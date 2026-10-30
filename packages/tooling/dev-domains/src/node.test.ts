@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
-import { expect, it } from "vitest"
+import { expect, it } from "vite-plus/test"
 import { getEndpoint } from "./node.js"
 
 it("resolves configured addresses for tooling without starting a server", async () => {

@@ -3,7 +3,7 @@ import { ShadcnLocalizationProvider } from "@buildkitgg/shadcn-baseui-kit"
 import * as Radix from "@radix-ui/react-dialog"
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { StrictMode } from "react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vite-plus/test"
 import { baseUiComponents, createModalManager, ModalRenderer, radixComponents } from "./index.js"
 import type { BaseUiModalComponents, RadixModalComponents } from "./index.js"
 

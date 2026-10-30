@@ -5,13 +5,10 @@
   "scripts": {
     "api:check": "node src/reports.ts",
     "api:update": "node src/reports.ts --update",
-    "check:types": "tsc --noEmit",
-    "lint": "oxlint --max-warnings=0",
     "release:check": "node src/check-release.mjs"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.60.0",
-    "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "24.19.2",
     "typescript": "catalog:"

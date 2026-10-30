@@ -5,12 +5,26 @@ nodeLinker: hoisted
 verifyDepsBeforeRun: error
 catalog:
   typescript: 7.0.2
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
+  vitest: 5.0.5
+  vite-plus: 1.4.0
+  "@vitest/coverage-v8": 5.0.5
 overrides:
   react: 19.3.1
   react-dom: 19.3.1
+  vite@*: "catalog:"
+  vitest@*: "catalog:"
+  # VitePress 1 builds with Rollup; on Vite+'s Rolldown its output plugins are ignored.
+  vitepress>vite: 5.4.21
 allowBuilds:
   esbuild: true
-  lefthook: true
   unrs-resolver: true
   "@parcel/watcher": false
   workerd: false
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: "*"
+    vitest: "*"

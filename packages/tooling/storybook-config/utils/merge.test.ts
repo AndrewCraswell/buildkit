@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { deepMerge } from "./merge.js"
 
 describe("shared Storybook configuration", () => {

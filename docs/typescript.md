@@ -2,7 +2,7 @@
 
 Type conventions for all TypeScript in the monorepo, and a catalog of the type-helper libraries we install so you
 **don't reinvent them**. Many rules here are enforced by `oxlint` (see
-[`packages/tooling/oxlint-config/base.json`](../packages/tooling/oxlint-config/base.json)).
+[`packages/tooling/oxlint-config/base.ts`](../packages/tooling/oxlint-config/base.ts)).
 
 ## Conventions
 

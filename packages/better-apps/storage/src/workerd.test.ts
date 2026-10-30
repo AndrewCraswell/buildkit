@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs"
 import { stripTypeScriptTypes } from "node:module"
 import { Miniflare } from "miniflare"
-import { afterAll, describe, expect, it } from "vitest"
+import { afterAll, describe, expect, it } from "vite-plus/test"
 import type { R2BucketLike } from "./cloudflare.js"
 
 function compile(file: string): string {

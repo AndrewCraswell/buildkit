@@ -6,7 +6,6 @@
   "description": "Upstream shadcn Base UI components in the maia style, with compiled CSS and TypeScript declarations.",
   "scripts": {
     "build": "node ../../tooling/shadcn-generator/src/build.mjs maia",
-    "check:types": "pnpm build",
     "prepack": "pnpm build"
   },
   "peerDependencies": {

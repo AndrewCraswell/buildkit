@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest"
+import { expect, it, vi } from "vite-plus/test"
 import { configSchema } from "../config/schema.js"
 import { resolveEndpoints } from "../domains/resolve.js"
 import { runProcess } from "../runtime/process.js"

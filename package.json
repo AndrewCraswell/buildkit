@@ -4,25 +4,24 @@
   "license": "MIT",
   "packageManager": "pnpm@12.10.1",
   "engines": {
-    "node": ">=24",
+    "node": "^24.11.0 || >=26.0.0",
     "pnpm": ">=12 <13"
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "verify": "run-s check:format check:lint check:types check:unused check:api test:coverage build",
-    "check:api": "turbo run build --filter=\"./packages/**\" && pnpm --filter @repo/api-tools api:check",
-    "api:update": "turbo run build --filter=\"./packages/**\" && pnpm --filter @repo/api-tools api:update",
-    "format": "oxfmt",
-    "check:format": "oxfmt --check",
-    "check:lint": "turbo run lint",
-    "check:types": "turbo run check:types",
+    "build": "vp run --cache --filter \"./packages/**\" --filter \"./apps/**\" build",
+    "build:packages": "vp run --cache --filter \"./packages/**\" build",
+    "dev": "vp run --parallel --filter \"./apps/**\" dev",
+    "verify": "pnpm check && pnpm check:unused && pnpm check:api && pnpm test:coverage && pnpm build",
+    "check": "pnpm build:packages && vp check",
+    "check:api": "pnpm build:packages && pnpm --filter @repo/api-tools api:check",
+    "api:update": "pnpm build:packages && pnpm --filter @repo/api-tools api:update",
+    "format": "vp fmt",
     "check:unused": "knip",
-    "test": "turbo run test",
-    "test:coverage": "turbo run test:coverage",
+    "test": "pnpm build:packages && vp run --cache --filter \"./packages/**\" --filter \"./apps/**\" test",
+    "test:coverage": "pnpm build:packages && vp run --cache --filter \"./packages/**\" --filter \"./apps/**\" test:coverage",
     "change": "beachball change",
     "check:change": "beachball check",
-    "prepare": "lefthook install",
+    "prepare": "vp config --no-agent",
     "update:shadcn": "pnpm --filter @repo/shadcn-generator update:shadcn",
     "generate": "pnpm --filter @repo/shadcn-generator generate && pnpm install",
     "validate": "pnpm verify && pnpm --filter @repo/shadcn-generator validate"
@@ -30,10 +29,6 @@
   "devDependencies": {
     "beachball": "^2.65.5",
     "knip": "^6.43.0",
-    "lefthook": "^2.1.9",
-    "npm-run-all2": "^9.0.4",
-    "oxfmt": "^0.75.0",
-    "oxlint": "^1.90.0",
-    "turbo": "^2.11.10"
+    "vite-plus": "catalog:"
   }
 }

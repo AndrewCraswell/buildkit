@@ -12,12 +12,9 @@ The tools we reach for **first**. Prefer them before introducing an alternative 
 ## Developer experience
 
 - **pnpm** — package manager (workspaces, catalog, hoisted linker).
-- **Turborepo** — task runner + caching.
-- **Vite** — bundler / dev server.
-- **oxlint** — linter; **oxfmt** — formatter.
+- **Vite+** — one toolchain (`vp`): Vite for builds and the dev server, Vitest, Oxlint, Oxfmt, type checks, git hooks
+  and a cached task runner.
 - **knip** — unused files / deps / exports.
-- **npm-run-all2** — script orchestration (`run-s` / `run-p`).
-- **lefthook** — git hooks.
 - **Dependabot** — dependency update PRs.
 - **beachball** — versioning + changelogs (`pnpm change` to add change files; release automation deferred).
 

@@ -1,4 +1,0 @@
-{
-  "extends": ["./packages/tooling/oxlint-config/base.json"],
-  "ignorePatterns": ["**/src/vendor/**"]
-}

@@ -6,7 +6,6 @@
   "description": "Upstream shadcn Base UI components in the vega style, with compiled CSS and TypeScript declarations.",
   "scripts": {
     "build": "node ../../tooling/shadcn-generator/src/build.mjs vega",
-    "check:types": "pnpm build",
     "prepack": "pnpm build"
   },
   "peerDependencies": {

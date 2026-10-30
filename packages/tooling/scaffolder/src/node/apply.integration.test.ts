@@ -13,7 +13,7 @@ import {
 } from "node:fs"
 import { hostname, tmpdir } from "node:os"
 import { join } from "node:path"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test"
 import { PlanError } from "../plan/errors.js"
 import type { Plan } from "../plan/types.js"
 import { addRequest, fixtureCatalog, initRequest, settings } from "../testing/fixture.js"

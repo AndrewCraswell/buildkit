@@ -1,5 +1,5 @@
 import { checkCatalog, describeCatalog, type Plan } from "@buildkitgg/scaffolder"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { catalog } from "./catalog.js"
 import { settings } from "./settings.js"
 import {
