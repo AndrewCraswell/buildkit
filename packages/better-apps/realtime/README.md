@@ -44,7 +44,8 @@ const cleanup = () => room.leave()
 ```
 
 Declare rooms at module top level with a literal name, and export the handle: the name is the room's identity, and the
-deploy service finds rooms by reading the code. Room names use lowercase letters, digits and hyphens.
+deploy service finds rooms by reading the code. Room names start with a lowercase letter, contain only lowercase
+letters, digits and hyphens, and are at most 63 characters long.
 
 - **Keys are instances.** `invoiceRoom` is a kind of room; each key, such as an invoice id, is its own room.
 - **`canJoin`** decides who may join an instance. Without it, anyone who reaches the URL joins, so rooms about an app's

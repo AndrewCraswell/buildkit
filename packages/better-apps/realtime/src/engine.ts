@@ -157,6 +157,11 @@ async function handle(
   state: ConnectionState,
   data: string | ArrayBuffer
 ): Promise<void> {
+  const live = host.entries().find((entry) => entry.state.id === state.id)
+  if (!live) {
+    return
+  }
+  state = live.state
   const text = typeof data === "string" ? data : decoder.decode(data)
   if (text === ping) {
     socket.send(pong)

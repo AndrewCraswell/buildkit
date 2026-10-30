@@ -325,6 +325,20 @@ describe("connect", () => {
 })
 
 describe("handleRooms", () => {
+  it("accepts same-origin and explicitly allowed browser origins", async () => {
+    for (const origin of ["https://app.test", "https://admin.test"]) {
+      const room = defineRoom("origin")
+      nextSocket = new FakeSocket()
+      const response = await handleRooms(
+        new Request("https://app.test/api/rooms/origin/key", {
+          headers: { origin, upgrade: "websocket" }
+        }),
+        { rooms: [room], getActor: () => alice, allowedOrigins: origin === "https://admin.test" ? [origin] : undefined }
+      )
+      expect(response?.status).toBe(200)
+      await flush()
+    }
+  })
   const chat = defineRoom("chat")
   const getActor = (request: Request): Actor | null => {
     const user = new URL(request.url).searchParams.get("user")

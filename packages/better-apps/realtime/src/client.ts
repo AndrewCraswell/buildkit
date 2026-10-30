@@ -119,6 +119,9 @@ export function joinRoom<Incoming = unknown, Outgoing = unknown, Presence = unkn
   }
 
   function connect(): void {
+    if (left) {
+      return
+    }
     const current = new Socket(target)
     socket = current
     current.addEventListener("message", (event: MessageEvent) => {
@@ -145,6 +148,9 @@ export function joinRoom<Incoming = unknown, Outgoing = unknown, Presence = unkn
       store.setState((state) => ({ ...state, status: "connecting", id: null, peers: [] }))
       const delay = Math.min(maxBackoff, 500 * 2 ** attempts) * (0.5 + Math.random() / 2)
       attempts += 1
+      if (left) {
+        return
+      }
       retry = setTimeout(connect, delay)
     })
     const interval = options.pingInterval ?? 30_000
