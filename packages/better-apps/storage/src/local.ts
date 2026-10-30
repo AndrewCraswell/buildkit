@@ -132,12 +132,11 @@ export interface FileStorageOptions {
 
 interface StoredFile extends Omit<StoredObject, "uploadedAt"> {
   uploadedAt: string
-  body: string
 }
 
 /**
  * Keeps buckets in a folder on Node's filesystem, for local development without Cloudflare's runtime. Files are named
- * by a hash of their key, so any key works on any filesystem; each JSON record holds its body and metadata and is published with an atomic rename.
+ * by a hash of their key, so any key works on any filesystem; each record holds a length-prefixed metadata header and its body, published with an atomic rename.
  */
 export function fileStorage(options: FileStorageOptions): StorageAdapter {
   return {
@@ -152,24 +151,54 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
         const dataDir = path.join(root, "objects")
         const metaDir = dataDir
         const id = (key: string) => crypto.createHash("sha256").update(key).digest("hex")
-        const readMeta = async (file: string): Promise<(StoredObject & { body: string }) | null> => {
+        const readRecord = async (file: string, includeBody = false) => {
+          let handle
           try {
-            const stored = JSON.parse(await fs.readFile(file, "utf8")) as StoredFile
-            return { ...stored, uploadedAt: new Date(stored.uploadedAt) }
+            handle = await fs.open(file, "r")
+            const length = Buffer.alloc(4)
+            await handle.read(length, 0, 4, 0)
+            const header = Buffer.alloc(length.readUInt32BE())
+            let offset = 0
+            while (offset < header.length) {
+              const { bytesRead } = await handle.read(header, offset, header.length - offset, 4 + offset)
+              if (bytesRead === 0) {
+                throw new Error("Truncated storage header")
+              }
+              offset += bytesRead
+            }
+            const stored = JSON.parse(header.toString("utf8")) as StoredFile
+            const object = { ...stored, uploadedAt: new Date(stored.uploadedAt) }
+            if (!includeBody) {
+              return { object, bytes: new Uint8Array() }
+            }
+            const bytes = Buffer.alloc(object.size)
+            offset = 0
+            while (offset < bytes.length) {
+              const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, 4 + header.length + offset)
+              if (bytesRead === 0) {
+                throw new Error("Truncated storage body")
+              }
+              offset += bytesRead
+            }
+            return { object, bytes }
           } catch (error) {
             if ((error as NodeJS.ErrnoException).code === "ENOENT") {
               return null
             }
             throw error
+          } finally {
+            await handle?.close()
           }
         }
+        const readMeta = async (file: string) => (await readRecord(file))?.object ?? null
         return {
           fs,
-          dataFile: (key: string) => path.join(dataDir, `${id(key)}.json`),
-          metaFile: (key: string) => path.join(metaDir, `${id(key)}.json`),
+          dataFile: (key: string) => path.join(dataDir, `${id(key)}.object`),
+          metaFile: (key: string) => path.join(metaDir, `${id(key)}.object`),
           dataDir,
           metaDir,
           readMeta,
+          readRecord,
           async all(): Promise<StoredObject[]> {
             const names = await fs.readdir(metaDir).catch((error: NodeJS.ErrnoException) => {
               if (error.code === "ENOENT") {
@@ -178,12 +207,9 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
               throw error
             })
             const objects = await Promise.all(
-              names.filter((file) => file.endsWith(".json")).map(async (file) => readMeta(path.join(metaDir, file)))
+              names.filter((file) => file.endsWith(".object")).map(async (file) => readMeta(path.join(metaDir, file)))
             )
-            return objects
-              .filter((object) => object !== null)
-              .map(({ body: _body, ...metadata }) => metadata)
-              .sort(byKey)
+            return objects.filter((object) => object !== null).sort(byKey)
           }
         }
       }
@@ -196,12 +222,14 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
           await store.fs.mkdir(store.metaDir, { recursive: true })
           const stored: StoredFile = {
             ...object,
-            uploadedAt: object.uploadedAt.toISOString(),
-            body: Buffer.from(bytes).toString("base64")
+            uploadedAt: object.uploadedAt.toISOString()
           }
           const temporary = `${store.dataFile(key)}.${crypto.randomUUID()}.tmp`
           try {
-            await store.fs.writeFile(temporary, JSON.stringify(stored), { flag: "wx" })
+            const header = Buffer.from(JSON.stringify(stored))
+            const length = Buffer.alloc(4)
+            length.writeUInt32BE(header.length)
+            await store.fs.writeFile(temporary, Buffer.concat([length, header, bytes]), { flag: "wx" })
             for (let attempt = 0; ; attempt++) {
               try {
                 await store.fs.rename(temporary, store.dataFile(key))
@@ -226,12 +254,8 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
         },
         async get(key) {
           const store = await files()
-          const object = await store.readMeta(store.metaFile(key))
-          if (!object) {
-            return null
-          }
-          const { body, ...metadata } = object
-          return { object: metadata, body: streamOf(Buffer.from(body, "base64")) }
+          const record = await store.readRecord(store.metaFile(key), true)
+          return record ? { object: record.object, body: streamOf(record.bytes) } : null
         },
         async head(key) {
           const store = await files()
@@ -239,8 +263,7 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
           if (!record) {
             return null
           }
-          const { body: _body, ...metadata } = record
-          return metadata
+          return record
         },
         async delete(keys) {
           const store = await files()
