@@ -6,8 +6,17 @@ upgrades the project without overwriting your edits.
 
 Requires Node.js 24 or later. Until 1.0, minor versions may change the catalog and manifest types.
 
+```sh
+npm install -g @buildkitgg/scaffolder
+scaffold @acme/catalog my-app
+```
+
+`scaffold` creates a project from any published catalog or template package. Products such as Buildkit build their own
+CLI on the engine instead, and create projects with `<product> create`.
+
 ## Table of contents
 
+- [The scaffold command](#the-scaffold-command)
 - [Exports](#exports)
 - [Concepts](#concepts)
 - [Writing a catalog](#writing-a-catalog)
@@ -19,6 +28,20 @@ Requires Node.js 24 or later. Until 1.0, minor versions may change the catalog a
 - [Upgrades](#upgrades)
 - [Template packages](#template-packages)
 - [Catalog CI](#catalog-ci)
+
+## The scaffold command
+
+`scaffold <package>[@version][#template] [folder]` fetches the package from npm into your user cache, never the project,
+without running its scripts, and creates a project from it. It takes every option `create` takes: `--mode`, `--preset`,
+`--name`, `--with`, `--without`, `--set`, `--adopt`, `--dry-run`, `--json` and `--yes`.
+
+- **A catalog package** exports its catalog as `catalog` or by default, and its product settings as `settings`. The
+  project gets the product's file names, so the product's own CLI manages it later. Without `settings`, the files are
+  named for scaffold: `scaffold.jsonc` and `.scaffold/`. With several templates, `#<template>` picks one, and in a
+  terminal `scaffold` asks.
+- **A [template package](#template-packages)** brings the catalog version it extends, and `scaffold` fetches that too.
+
+An unscoped name needs no `npm:` here: `scaffold acme-catalog my-app`.
 
 ## Exports
 
@@ -36,7 +59,7 @@ Requires Node.js 24 or later. Until 1.0, minor versions may change the catalog a
 | ---------------- | --------------------------------------------------------------------------------------------------- |
 | **Catalog**      | A product's versioned package of targets, templates, slots, add-ons and presets                     |
 | **Target**       | A framework and its modes, such as `web/ssr`. It provides base files and owns extension points      |
-| **Template**     | What `init` offers: required add-ons (never asked about), optional add-ons and slot questions       |
+| **Template**     | What `create` offers: required add-ons (never asked about), optional add-ons and slot questions     |
 | **Slot**         | A one-of choice, such as the database. A template makes it optional ("Add a database?") or required |
 | **Add-on**       | A manifest whose `contribute()` returns data-only contributions                                     |
 | **Point**        | A typed extension point, rendered into a generated file that your code imports                      |
@@ -162,7 +185,8 @@ await runMain(createCli({ name: "acme", version: "1.0.0", catalog, settings: def
 ```
 
 `defineSettings` picks the product's file names: `acme.jsonc`, `.acme/` and `.env` for secrets, unless you set them.
-`runCli(argv, options)` runs one command and returns its exit code, for tests and embedding tools.
+`runCli(argv, options)` runs one command and returns its exit code, for tests and embedding tools. `runScaffold` is the
+`scaffold` command, for tools that fetch a catalog package rather than install one.
 
 Set `printWidth` to the line width of your apps' formatter. The JSON the engine writes, the config file included, is
 laid out as oxfmt and Prettier lay it out with trailing commas off: short lists on one line, objects as they're written,
@@ -173,7 +197,7 @@ exclude them. `printJson` and `jsonLayoutFor` in `@buildkitgg/scaffolder/edit` p
 
 | Command                                    | What it does                                                         |
 | ------------------------------------------ | -------------------------------------------------------------------- |
-| `init [template] [folder]`                 | Create a project, from a template or a package. `--adopt` adopts one |
+| `create [template] [folder]`               | Create a project, from a template or a package. `--adopt` adopts one |
 | `add <add-on or slot…>`                    | Add add-ons, or answer a slot question: `add database`. `--replace`  |
 | `config`, `config get`, `config set`       | Show the config, get an option, or set options                       |
 | `upgrade [--list]`                         | Move to the installed catalog version, running migrations            |
@@ -191,11 +215,11 @@ Every planning command takes `--dry-run`, `--json`, `--out [folder]`, `--plan <f
 and writes nothing unless you pass `--yes` or apply a reviewed plan with `--plan`. A reviewed plan applies only if the
 project hasn't changed since; applying it twice is a no-op. It records the template packages it was made with, and
 applying it loads those exact versions, so a newer release never runs first. `--cwd` sets where the project is for every
-command, and `init`'s folder is relative to it.
+command, and `create`'s folder is relative to it. `init` still runs `create`, unlisted, until 0.7.
 
 ## The JSON envelope and exit codes
 
-With `--json`, the commands that plan or change the project (`init`, `add`, `config set`, `upgrade`, `sync`, `check`,
+With `--json`, the commands that plan or change the project (`create`, `add`, `config set`, `upgrade`, `sync`, `check`,
 `plan show`, `catalog fetch` and `recover`) print one JSON envelope: `status`, `fingerprint`, `operations` (path,
 action, class and line counts), `decisions` (each choice with its `request` and `argv`), `conflicts`, `packages`, `env`,
 `commands`, `migrations`, `notices`, `nextSteps` and `error`. Files that may hold secrets show no contents or line
@@ -237,9 +261,10 @@ that are only listed.
 ## Template packages
 
 Anyone can publish templates for a product's catalog as an npm package, and the product's CLI installs one by name:
-`npx <cli> init @acme/tower-defense my-game`. A scoped name, or any name after `npm:`, is a package. Add a version or a
-range (`@acme/tower-defense@^2`), and `#<id>` to pick one of several templates (`@acme/starters#tower`). Built-in
-template ids can't look like a package, so a typo is never fetched.
+`npx <cli> create @acme/tower-defense my-game`, or `scaffold @acme/tower-defense my-game` without the product's CLI. A
+scoped name, or any name after `npm:`, is a package. Add a version or a range (`@acme/tower-defense@^2`), and `#<id>` to
+pick one of several templates (`@acme/starters#tower`). Built-in template ids can't look like a package, so a typo is
+never fetched.
 
 A template package's default export is a pack:
 
@@ -276,7 +301,8 @@ required add-ons with options that lack defaults, unregistered facets, and any p
 values of every two questions appears in at least one set, built greedily and the same every time. A product's smoke
 tests can generate and build those sets. `requestArgv(request, { catalog, preset })` turns one into the CLI command.
 With the catalog, it writes `--without` for an add-on the template selects by default and the request leaves out. Given
-a preset for the request's template, it writes `init --preset <id>` plus what differs from the preset, when the request
-answers every question the preset does; a question left to the template's default can't be written as a difference.
+a preset for the request's template, it writes `create --preset <id>` plus what differs from the preset, when the
+request answers every question the preset does; a question left to the template's default can't be written as a
+difference.
 
 See [the architecture guide](docs/README.md) to work on the engine itself.

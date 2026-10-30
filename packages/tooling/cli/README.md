@@ -8,15 +8,15 @@ Requires Node.js 24 or later.
 ## Create an app
 
 ```sh
-npx @buildkitgg/cli init app my-app
+npx @buildkitgg/cli create app my-app
 ```
 
 In a terminal it asks for the mode, a database, sign-in and localization, shows the plan, and asks once before it writes
 anything. The same answers work as flags:
 
 ```sh
-npx @buildkitgg/cli init app my-app --mode ssr --with i18n --set i18n.locales=en,fr --yes
-npx @buildkitgg/cli init app my-app --preset saas --yes
+npx @buildkitgg/cli create app my-app --mode ssr --with i18n --set i18n.locales=en,fr --yes
+npx @buildkitgg/cli create app my-app --preset saas --yes
 ```
 
 `--yes` accepts every default but never makes a decision for you, and `--json` prints one JSON envelope without
