@@ -33,7 +33,8 @@ as Buildkit build their own CLI on the engine instead, and create projects with 
 
 `scaffold [package][@version][#template] [folder]` fetches the package from npm into your user cache, never the project,
 without running its scripts, and creates a project from it. It takes every option `create` takes: `--mode`, `--preset`,
-`--name`, `--with`, `--without`, `--set`, `--adopt`, `--dry-run`, `--json` and `--yes`.
+`--name`, `--with`, `--without`, `--set`, `--adopt`, `--dry-run`, `--json` and `--yes`. npm's install scripts never run,
+but the package's own code does, on your machine and with your permissions, so scaffold only from packages you trust.
 
 - **A catalog package** exports its catalog as `catalog` or by default, and its product settings as `settings`. The
   project gets the product's file names, so the product's own CLI manages it later. Without `settings`, the files are
@@ -43,8 +44,8 @@ without running its scripts, and creates a project from it. It takes every optio
 
 A scoped name, or any name after `npm:`, is a package, as `create` reads it. Without one, `scaffold` uses
 `@buildkitgg/catalog`, and its first argument is a template or, when it isn't one, the folder: `scaffold my-app` and
-`scaffold app my-app` both work. `runScaffold` takes `defaultPackage` to use another catalog. With `--plan`, name the
-catalog's exact version, `@acme/catalog@1.2.0`, since a plan records template package versions but not the catalog's.
+`scaffold app my-app` both work. `runScaffold` takes `defaultPackage` to use another catalog. A saved plan records the
+catalog and template package versions it was made with, and `--plan` loads exactly those.
 
 ## Exports
 

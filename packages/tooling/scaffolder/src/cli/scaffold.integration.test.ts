@@ -223,17 +223,33 @@ describe("scaffold", () => {
     expect(unasked.out).toContain("has more than one template")
   })
 
-  it("applies a saved plan with the catalog version named, never a newer one", async () => {
+  it("applies a saved plan with the catalog version it records, never a newer one", async () => {
     const npm = fakeNpm({ "@fixture/catalog": { "1.0.0": catalogSource("1.0.0") } })
     const saved = await scaffold(["@fixture/catalog#app", "demo", "--mode", "ssr", "--json", "--out", "plans"], npm)
     expect(saved.code).toBe(0)
     const newer = fakeNpm({ "@fixture/catalog": { "1.0.0": catalogSource("1.0.0"), "2.0.0": catalogSource("2.0.0") } })
-    const unnamed = await scaffold(["@fixture/catalog", "--plan", "plans/plan.json", "--json"], newer)
-    expect(envelope(unnamed.out).error?.code).toBe("E_USAGE")
-    const applied = await scaffold(["@fixture/catalog@1.0.0", "--plan=plans/plan.json", "--json"], newer)
+    const applied = await scaffold(["@fixture/catalog", "--plan=plans/plan.json", "--json"], newer)
     expect(applied.code).toBe(0)
     expect(lock().catalog.version).toBe("1.0.0")
+    expect(newer.calls.some(([verb]) => verb === "view")).toBe(false)
     expect(newer.calls.some(([verb, spec]) => verb === "install" && spec === "@fixture/catalog@2.0.0")).toBe(false)
+  })
+
+  it("applies a template package's saved plan with the package and catalog versions it records", async () => {
+    const npm = fakeNpm({
+      "@acme/tower": { "1.0.0": packSource("^1.0.0") },
+      "@fixture/catalog": { "1.0.0": catalogSource("1.0.0") }
+    })
+    const saved = await scaffold(["@acme/tower", "demo", "--json", "--out", "plans"], npm)
+    expect(saved.code).toBe(0)
+    const newer = fakeNpm({
+      "@acme/tower": { "1.0.0": packSource("^1.0.0"), "1.1.0": packSource("^1.0.0") },
+      "@fixture/catalog": { "1.0.0": catalogSource("1.0.0"), "1.5.0": catalogSource("1.5.0") }
+    })
+    const applied = await scaffold(["@acme/tower", "--plan", "plans/plan.json", "--json"], newer)
+    expect(applied.code).toBe(0)
+    expect(lock().catalog).toMatchObject({ version: "1.0.0", packs: { "@acme/tower": { version: "1.0.0" } } })
+    expect(newer.calls.some(([verb]) => verb === "view" || verb === "install")).toBe(false)
   })
 
   it("reports what it can't use, and prints usage", async () => {

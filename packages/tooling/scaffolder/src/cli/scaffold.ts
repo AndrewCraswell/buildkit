@@ -71,9 +71,8 @@ export async function runScaffold(argv: readonly string[], options: ScaffoldOpti
     // A saved plan names the versions it was reviewed with, so no newer package's code runs before it's checked.
     const planPath = flagValue(rest, "plan")
     const reviewed = planPath === undefined ? undefined : readPlanFile(resolve(io.cwd, planPath))
-    const recorded = reviewed?.packs?.[source.package]
-    const version =
-      recorded?.version ?? (reviewed ? plannedVersion(source) : await store.resolve(source.package, source.range))
+    const recorded = reviewed ? recordedVersion(reviewed, source) : undefined
+    const version = recorded?.version ?? (await store.resolve(source.package, source.range))
     const { integrity, module } = await store.import(source.package, version, recorded?.integrity)
     const cli = {
       name: "scaffold",
@@ -84,10 +83,12 @@ export async function runScaffold(argv: readonly string[], options: ScaffoldOpti
     }
     const pack = isRecord(module) ? module.default : undefined
     if (isTemplatePack(pack)) {
+      const planned = reviewed?.catalog?.id === pack.extends.catalog ? reviewed.catalog : undefined
       const base = await loadCatalog(
         store,
         pack.extends.catalog,
-        await store.resolve(pack.extends.catalog, pack.extends.versions)
+        planned?.version ?? (await store.resolve(pack.extends.catalog, pack.extends.versions)),
+        planned?.integrity
       )
       if (reviewed) {
         // create loads the template package version the plan records.
@@ -131,26 +132,33 @@ function flagValue(args: readonly string[], name: string): string | undefined {
 }
 
 /**
- * The catalog package version to apply a saved plan with. A plan records template package versions but not the catalog's,
- * so the argument names it exactly, and a newer release's code never runs before the plan is checked.
+ * The version of the named package that a saved plan was made with: a template package's from the plan's packages, a
+ * catalog's from its catalog, or the exact version the argument names, for a plan that records neither.
  */
-function plannedVersion(source: TemplateSource): string {
-  const version = isValidVersion(source.range) ? source.range : undefined
-  if (version === undefined) {
-    throw new PlanError(
-      "E_USAGE",
-      `A plan doesn't record the catalog's version. Name the version it was made with: ${source.package}@<version>.`
-    )
+function recordedVersion(
+  reviewed: ReturnType<typeof readPlanFile>,
+  source: TemplateSource
+): { version: string; integrity?: string } {
+  const recorded =
+    reviewed.packs?.[source.package] ?? (reviewed.catalog?.id === source.package ? reviewed.catalog : undefined)
+  if (recorded) {
+    return recorded
   }
-  return version
+  if (isValidVersion(source.range)) {
+    return { version: source.range }
+  }
+  throw new PlanError(
+    "E_USAGE",
+    `The plan doesn't record which version of ${source.package} it was made with. Name it: ${source.package}@<version>.`
+  )
 }
 
 function specPrefix(name: string): string {
   return name.startsWith("@") ? "" : "npm:"
 }
 
-async function loadCatalog(store: PackStore, name: string, version: string) {
-  const { integrity, module } = await store.import(name, version)
+async function loadCatalog(store: PackStore, name: string, version: string, expectedIntegrity?: string) {
+  const { integrity, module } = await store.import(name, version, expectedIntegrity)
   return { ...catalogModule(module, `${name}@${version}`), catalogIntegrity: integrity }
 }
 
