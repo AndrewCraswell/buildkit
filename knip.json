@@ -176,6 +176,10 @@
       "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
+    "packages/better-apps/anchors": {
+      "entry": ["src/index.ts", "src/dom.ts", "src/react.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
     "packages/better-apps/comments": {
       "entry": ["src/index.ts", "src/client.ts", "src/react.tsx"],
       "ignoreDependencies": ["@repo/oxlint-config"]

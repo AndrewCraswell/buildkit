@@ -324,6 +324,9 @@ importers:
 
   apps/better-apps-example:
     dependencies:
+      '@better-apps/anchors':
+        specifier: workspace:*
+        version: link:../../packages/better-apps/anchors
       '@better-apps/better-auth':
         specifier: workspace:*
         version: link:../../packages/better-apps/better-auth
@@ -549,6 +552,48 @@ importers:
         specifier: ^8.3.5
         version: 8.3.5(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
 
+  packages/better-apps/anchors:
+    devDependencies:
+      '@repo/oxlint-config':
+        specifier: workspace:*
+        version: link:../../tooling/oxlint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript-config
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/node':
+        specifier: 24.13.2
+        version: 24.13.2
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: 5.0.5
+        version: 5.0.5(vitest@5.0.5)
+      better-apps:
+        specifier: workspace:*
+        version: link:../better-apps
+      happy-dom:
+        specifier: ^21.0.4
+        version: 21.0.4
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: 19.3.1
+        version: 19.3.1(react@19.3.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@types/node@24.13.2)(@vitest/coverage-v8@5.0.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
   packages/better-apps/better-apps:
     devDependencies:
       '@repo/oxlint-config':
@@ -668,6 +713,9 @@ importers:
 
   packages/better-apps/comments:
     dependencies:
+      '@better-apps/anchors':
+        specifier: workspace:*
+        version: link:../anchors
       zod:
         specifier: ^4.6.7
         version: 4.6.7
