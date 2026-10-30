@@ -2,6 +2,21 @@
   "name": "@buildkitgg/shadcn-runtime",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 23:40:15 GMT",
+      "version": "0.1.1",
+      "tag": "@buildkitgg/shadcn-runtime_v0.1.1",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-runtime",
+            "commit": "063d609caa08375fd9bc535186db4d5e38a4cf79",
+            "comment": "Build, lint and test with Vite+; published code is unchanged"
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 30 Oct 2026 04:56:17 GMT",
       "version": "0.1.1",
       "tag": "@buildkitgg/shadcn-runtime_v0.1.1",
