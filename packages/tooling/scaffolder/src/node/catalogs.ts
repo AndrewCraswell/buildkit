@@ -226,16 +226,13 @@ export class PackStore {
     return list.sort((left, right) => compareVersions(right, left))
   }
 
-  /**
-   * A template package version, from the cache or fetched into it. A version the lock records comes with its integrity,
-   * and a copy that doesn't match it is refused.
-   */
-  async load(name: string, version: string, expectedIntegrity?: string): Promise<LoadedPack> {
+  /** Any package version's entry module, from the cache or fetched into it, after checking its integrity. */
+  async import(
+    name: string,
+    version: string,
+    expectedIntegrity?: string
+  ): Promise<{ integrity: string; module: unknown }> {
     const key = `${name}@${version}`
-    const loaded = this.#loaded.get(key)
-    if (loaded && (expectedIntegrity === undefined || loaded.integrity === expectedIntegrity)) {
-      return loaded
-    }
     if (!packageNamePattern.test(name) || !isValidVersion(version)) {
       throw new PlanError("E_USAGE", `${key} isn't a package version.`)
     }
@@ -249,7 +246,20 @@ export class PackStore {
         // No command fetches the same version again, so the cached copy has to go.
         `Delete ${folder} and run the command again.`
       ) ?? (await installPackage(this.#run, folder, name, version, expectedIntegrity, "E_PACKAGE_UNAVAILABLE"))
-    const module = await importPackage(folder, name, "E_PACKAGE_UNAVAILABLE")
+    return { integrity, module: await importPackage(folder, name, "E_PACKAGE_UNAVAILABLE") }
+  }
+
+  /**
+   * A template package version, from the cache or fetched into it. A version the lock records comes with its integrity,
+   * and a copy that doesn't match it is refused.
+   */
+  async load(name: string, version: string, expectedIntegrity?: string): Promise<LoadedPack> {
+    const key = `${name}@${version}`
+    const loaded = this.#loaded.get(key)
+    if (loaded && (expectedIntegrity === undefined || loaded.integrity === expectedIntegrity)) {
+      return loaded
+    }
+    const { integrity, module } = await this.import(name, version, expectedIntegrity)
     const pack = isRecord(module) ? module.default : undefined
     if (!isTemplatePack(pack)) {
       throw new PlanError(

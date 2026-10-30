@@ -73,9 +73,9 @@ export class CliRuntime {
     // (undocumented)
     config(argv: string[]): Promise<number>;
     // (undocumented)
-    explain(argv: string[]): Promise<number>;
+    create(argv: string[]): Promise<number>;
     // (undocumented)
-    init(argv: string[]): Promise<number>;
+    explain(argv: string[]): Promise<number>;
     // (undocumented)
     readonly io: CliIo;
     // (undocumented)
@@ -204,12 +204,26 @@ export interface Prompter {
 export function runCli(argv: readonly string[], options: CliOptions): Promise<number>;
 
 // @public
+export function runScaffold(argv: readonly string[], options: ScaffoldOptions): Promise<number>;
+
+// @public
 export function runWizard(input: {
     catalog: CatalogManifest;
     partial: PartialAnswers;
     prompter: Prompter;
     askName: boolean;
 }): Promise<Answers | Cancelled>;
+
+// @public (undocumented)
+export interface ScaffoldOptions {
+    cacheDir?: string;
+    defaultPackage?: string;
+    // (undocumented)
+    io?: Partial<CliIo>;
+    runCommand?: CommandRunner;
+    // (undocumented)
+    version: string;
+}
 
 // @public (undocumented)
 export interface SelectOption {

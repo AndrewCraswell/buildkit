@@ -2,6 +2,27 @@
   "name": "@buildkitgg/catalog",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 08:23:50 GMT",
+      "version": "0.2.1",
+      "tag": "@buildkitgg/catalog_v0.2.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/catalog",
+            "commit": "78d7ac9c856991b46eebc4eec5bb9cebffa0a74b",
+            "comment": "Say buildkit create, not buildkit init, in the README."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/catalog",
+            "comment": "Bump @buildkitgg/scaffolder to v0.6.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 30 Oct 2026 04:56:17 GMT",
       "version": "0.2.0",
       "tag": "@buildkitgg/catalog_v0.2.0",

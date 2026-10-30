@@ -16,8 +16,8 @@ function print(line: string) {
 
 interface SmokeCase {
   name: string
-  /** `buildkit init` arguments after the folder. */
-  init: string[]
+  /** `buildkit create` arguments after the folder. */
+  create: string[]
   /** Later `buildkit` commands run in the app, such as `add i18n`. */
   after: string[][]
   /** Package scripts to run after the standard checks. */
@@ -34,7 +34,7 @@ const waitsOnBetterApps =
 const cases: SmokeCase[] = [
   {
     name: "ssr",
-    init: ["--mode", "ssr"],
+    create: ["--mode", "ssr"],
     after: [],
     scripts: [],
     probes: [
@@ -42,10 +42,10 @@ const cases: SmokeCase[] = [
       { path: "/missing", status: 404, contains: "Page not found" }
     ]
   },
-  { name: "spa", init: ["--mode", "spa"], after: [], scripts: [] },
+  { name: "spa", create: ["--mode", "spa"], after: [], scripts: [] },
   {
     name: "ssr-i18n",
-    init: ["--mode", "ssr", "--with", "i18n", "--set", "i18n.locales=en,fr"],
+    create: ["--mode", "ssr", "--with", "i18n", "--set", "i18n.locales=en,fr"],
     after: [],
     scripts: ["i18n:check"],
     probes: [
@@ -54,15 +54,15 @@ const cases: SmokeCase[] = [
       { path: "/", headers: { "accept-language": "fr-CA,fr;q=0.9" }, status: 307 }
     ]
   },
-  { name: "spa-add-i18n", init: ["--mode", "spa"], after: [["add", "i18n"]], scripts: ["i18n:check"] },
+  { name: "spa-add-i18n", create: ["--mode", "spa"], after: [["add", "i18n"]], scripts: ["i18n:check"] },
   {
     name: "ssr-database",
-    init: ["--mode", "ssr", "--database", "sql"],
+    create: ["--mode", "ssr", "--database", "sql"],
     after: [],
     scripts: [],
     skip: waitsOnBetterApps
   },
-  { name: "ssr-auth", init: ["--preset", "saas"], after: [], scripts: [], skip: waitsOnBetterApps }
+  { name: "ssr-auth", create: ["--preset", "saas"], after: [], scripts: [], skip: waitsOnBetterApps }
 ]
 
 const { values: flags } = parseArgs({
@@ -80,7 +80,7 @@ if (selected.length === 0) {
 if (flags.list) {
   for (const entry of selected) {
     print(
-      `${entry.name.padEnd(14)} buildkit init app ${entry.init.join(" ")}${entry.skip ? ` (skipped: ${entry.skip})` : ""}`
+      `${entry.name.padEnd(14)} buildkit create app ${entry.create.join(" ")}${entry.skip ? ` (skipped: ${entry.skip})` : ""}`
     )
   }
   process.exit(0)
@@ -176,7 +176,7 @@ async function check(entry: SmokeCase): Promise<Result> {
   const buildkit = (args: string[], cwd: string) =>
     run(`buildkit ${args.join(" ")}`, process.execPath, [bin, ...args, "--yes", "--json"], cwd, log)
   try {
-    await buildkit(["init", "app", project, "--name", entry.name, ...entry.init], work)
+    await buildkit(["create", "app", project, "--name", entry.name, ...entry.create], work)
     for (const args of entry.after) {
       await buildkit([...args, "--cwd", project], work)
     }

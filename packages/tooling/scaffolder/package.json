@@ -1,6 +1,6 @@
 {
   "name": "@buildkitgg/scaffolder",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publishConfig": {
     "access": "public"
   },
@@ -8,6 +8,9 @@
   "description": "Plan-first project scaffolding engine: catalogs of targets, templates and add-ons, with safe upgrades",
   "type": "module",
   "sideEffects": false,
+  "bin": {
+    "scaffold": "./dist/bin.js"
+  },
   "engines": {
     "node": ">=24"
   },
