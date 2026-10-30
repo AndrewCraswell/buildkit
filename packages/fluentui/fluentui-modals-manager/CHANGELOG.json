@@ -2,6 +2,21 @@
   "name": "@buildkitgg/fluentui-modals-manager",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 04:56:17 GMT",
+      "version": "1.0.1",
+      "tag": "@buildkitgg/fluentui-modals-manager_v1.0.1",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/fluentui-modals-manager",
+            "commit": "8cd3e0a83dbc90525a22d96b83bd17ae3cf69c78",
+            "comment": "Move @types/node to 24.19.2, the newest types for Node.js 24."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 29 Oct 2026 04:54:16 GMT",
       "version": "1.0.1",
       "tag": "@buildkitgg/fluentui-modals-manager_v1.0.1",

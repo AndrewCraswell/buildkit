@@ -1,7 +1,0 @@
-{
-  "type": "none",
-  "comment": "Move @types/node to 24.19.2, the newest types for Node.js 24.",
-  "packageName": "@buildkitgg/fluentui-theme",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "none"
-}
