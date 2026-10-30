@@ -180,7 +180,13 @@ describe("mentions", () => {
   it("caps excerpts at 280 characters", async () => {
     const { write, rows } = setup()
     await write("acme/n1", "y".repeat(400), ["ada"])
-    expect((await rows())[0]?.excerpt).toHaveLength(280)
+    await write("acme/n2", `${"y".repeat(270)} ${mentionToken("ada")}`, ["ada"])
+    await write("acme/n3", `${"y".repeat(270)} \\@[ and more text`, ["ada"])
+    expect((await rows()).map((row) => row.excerpt)).toEqual([
+      "y".repeat(280),
+      "y".repeat(270),
+      `${"y".repeat(270)} \\@[ and m`
+    ])
   })
 
   it("refuses signed-out callers and bad cursors, and removes a user's mentions from server code", async () => {
