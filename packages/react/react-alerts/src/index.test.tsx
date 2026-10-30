@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { renderToString } from "react-dom/server"
-import { afterEach, expect, it, vi } from "vitest"
+import { afterEach, expect, it, vi } from "vite-plus/test"
 import { AlertRegion, createAlertManager, useAlerts } from "./index.js"
 import type { AlertRendererProps } from "./index.js"
 afterEach(cleanup)

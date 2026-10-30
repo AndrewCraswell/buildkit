@@ -6,13 +6,10 @@
     "generate": "node scripts/generate.ts",
     "dev": "vitepress dev content --host 127.0.0.1 --port 4180",
     "build": "pnpm generate && vitepress build content",
-    "preview": "vitepress preview content --host 127.0.0.1 --port 4181",
-    "check:types": "tsc --noEmit",
-    "lint": "oxlint --max-warnings=0"
+    "preview": "vitepress preview content --host 127.0.0.1 --port 4181"
   },
   "devDependencies": {
     "@microsoft/api-documenter": "^7.30.18",
-    "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "24.19.2",
     "typescript": "catalog:",

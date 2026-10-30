@@ -3,16 +3,13 @@
   "ignore": ["**/src/vendor/**"],
   "workspaces": {
     "apps/docs": {
-      "entry": ["scripts/generate.ts", "content/.vitepress/config.ts", "content/.vitepress/theme/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["scripts/generate.ts", "content/.vitepress/config.ts", "content/.vitepress/theme/index.ts"]
     },
     "apps/site": {
-      "entry": ["src/main.tsx", "src/prerender.tsx", "vite.config.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/main.tsx", "src/prerender.tsx", "vite.config.ts"]
     },
     "packages/tooling/api-tools": {
-      "entry": ["src/reports.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/reports.ts"]
     },
     ".": {
       "entry": ["beachball.config.js"]
@@ -21,94 +18,73 @@
       "ignoreDependencies": ["@chromatic-com/storybook", "@storybook/addon-a11y", "@storybook/addon-vitest"]
     },
     "packages/tooling/scaffolder": {
-      "entry": ["src/core.ts", "src/edit.ts", "src/edit-code.ts", "src/node.ts", "src/cli.ts", "src/bin.ts"]
+      "entry": [
+        "src/core.ts",
+        "src/edit.ts",
+        "src/edit-code.ts",
+        "src/node.ts",
+        "src/cli.ts",
+        "src/bin.ts",
+        "vitest.integration.config.ts"
+      ]
     },
     "packages/tooling/catalog": {
       "entry": ["src/index.ts"],
       "ignore": ["templates/**"]
     },
     "packages/tooling/cli": {
-      "entry": ["src/index.ts", "src/bin.ts"]
+      "entry": ["src/index.ts", "src/bin.ts", "vitest.integration.config.ts"]
     },
     "packages/tooling/dev-domains": {
-      "entry": ["src/cli/main.ts", "src/config/schema.ts", "src/node.ts", "src/playwright.ts"]
-    },
-    "packages/core/theme-core": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
-    "packages/react/react-theme": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
-    "packages/shadcn/shadcn-theme": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
-    "packages/core/preferences-core": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
-    "packages/react/react-preferences": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
-    "apps/behavior-storybook": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
-    "packages/fluentui/fluentui-theme": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": [
+        "src/cli/main.ts",
+        "src/config/schema.ts",
+        "src/node.ts",
+        "src/playwright.ts",
+        "vitest.integration.config.ts"
+      ]
     },
     "packages/core/modal-core": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/react/react-modals": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/fluentui/fluentui-modals-manager": {
-      "entry": ["src/index.tsx"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.tsx"]
     },
     "packages/shadcn/shadcn-modals-manager": {
-      "entry": ["src/index.tsx", "src/styles.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.tsx", "src/styles.ts"]
     },
     "packages/core/alert-core": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/react/react-alerts": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/shadcn/shadcn-alerts-manager": {
-      "entry": ["src/index.tsx", "src/styles.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.tsx", "src/styles.ts"]
     },
     "packages/fluentui/fluentui-alerts-manager": {
-      "entry": ["src/index.tsx"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.tsx"]
     },
     "packages/core/router-core": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/react/react-routing": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/react/react-router": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/react/tanstack-router": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/core/configuration-core": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/react/react-configuration": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/tooling/shadcn-generator": {
       "entry": ["src/*.mjs"],
@@ -146,71 +122,52 @@
       "entry": [".generated/index.ts"],
       "ignoreDependencies": ["@repo/shadcn-generator", "lucide-react", "next-themes"]
     },
-    "apps/shadcn-catalog": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
-    "packages/shadcn/shadcn-runtime": {
-      "ignoreDependencies": ["@repo/oxlint-config"]
-    },
     "packages/better-apps/better-apps": {
-      "entry": ["src/index.ts", "src/client.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts", "src/client.ts"]
     },
     "packages/better-apps/better-auth": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/better-apps/clerk": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/better-apps/cli": {
-      "entry": ["src/index.ts", "src/bin.ts", "test/fixtures/*.config.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts", "src/bin.ts", "test/fixtures/*.config.ts"]
     },
     "packages/better-apps/drizzle": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/better-apps/testing": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/better-apps/anchors": {
-      "entry": ["src/index.ts", "src/dom.ts", "src/react.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts", "src/dom.ts", "src/react.ts"]
     },
     "packages/better-apps/mentions": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/better-apps/comments": {
-      "entry": ["src/index.ts", "src/client.ts", "src/react.tsx"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts", "src/client.ts", "src/react.tsx"]
     },
     "packages/better-apps/realtime": {
       "entry": ["src/index.ts", "src/cloudflare.ts", "src/local.ts", "src/client.ts", "test/cloudflare-workers.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config", "cloudflare"]
+      "ignoreDependencies": ["cloudflare"]
     },
     "packages/better-apps/storage": {
       "entry": ["src/index.ts", "src/cloudflare.ts", "src/local.ts", "test/cloudflare-workers.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config", "cloudflare"]
+      "ignoreDependencies": ["cloudflare"]
     },
     "packages/better-apps/react": {
-      "entry": ["src/index.tsx"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.tsx"]
     },
     "packages/better-apps/tanstack-start": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "packages/better-apps/workos": {
-      "entry": ["src/index.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["src/index.ts"]
     },
     "apps/better-apps-example": {
-      "entry": ["better-apps.config.ts"],
-      "ignoreDependencies": ["@repo/oxlint-config"]
+      "entry": ["better-apps.config.ts"]
     }
   }
 }

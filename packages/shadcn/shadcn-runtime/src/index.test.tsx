@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { createCn } from "cn/config"
 import { createPortal } from "react-dom"
 import { renderToStaticMarkup } from "react-dom/server"
-import { afterEach, expect, expectTypeOf, it } from "vitest"
+import { afterEach, expect, expectTypeOf, it } from "vite-plus/test"
 import type { ShadcnStrings, ShadcnLocalization, ShadcnLocalizationProviderProps } from "./index.js"
 import { ShadcnLocalizationProvider, useShadcnLocalization, cn, setCn, defaultShadcnStrings } from "./index.js"
 

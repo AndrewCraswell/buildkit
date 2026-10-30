@@ -1,6 +1,6 @@
 import { FluentProvider, webLightTheme } from "@fluentui/react-components"
 import { act, cleanup, render, screen } from "@testing-library/react"
-import { afterEach, expect, it, vi } from "vitest"
+import { afterEach, expect, it, vi } from "vite-plus/test"
 import { AlertRegion, createAlertManager } from "./index.js"
 afterEach(cleanup)
 it("renders Fluent actions, persistent notices, and dismissal", () => {

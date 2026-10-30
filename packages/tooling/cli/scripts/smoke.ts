@@ -8,7 +8,7 @@ import { parseArgs } from "node:util"
 // pnpm --filter @buildkitgg/cli test:smoke [--case <name>,...] [--out <folder>] [--list]
 // Generates Buildkit apps with the built CLI, then installs, checks, lints, formats, builds and type-checks each one.
 // The Buildkit packages come from tarballs packed from this checkout, so each app installs what npm would ship.
-// Build first: pnpm turbo run build --filter=@buildkitgg/cli...
+// Build first: pnpm exec vp run --cache --filter @buildkitgg/cli... build
 
 function print(line: string) {
   process.stdout.write(`${line}\n`)
@@ -90,7 +90,7 @@ const cliFolder = fileURLToPath(new URL("../", import.meta.url))
 const tooling = resolve(cliFolder, "..")
 const bin = join(cliFolder, "dist/bin.js")
 if (!existsSync(bin)) {
-  throw new Error("Build the CLI first: pnpm turbo run build --filter=@buildkitgg/cli...")
+  throw new Error("Build the CLI first: pnpm exec vp run --cache --filter @buildkitgg/cli... build")
 }
 const pnpmScript = process.env.npm_execpath
 if (!pnpmScript) {

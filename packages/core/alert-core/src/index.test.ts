@@ -1,4 +1,4 @@
-import { describe, expect, expectTypeOf, it, vi } from "vitest"
+import { describe, expect, expectTypeOf, it, vi } from "vite-plus/test"
 import { createAlertStore } from "./index.js"
 describe("alert store", () => {
   it("keeps a new subscription when an old unsubscribe is called twice", () => {

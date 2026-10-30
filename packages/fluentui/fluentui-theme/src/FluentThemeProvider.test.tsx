@@ -3,7 +3,7 @@ import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { StrictMode } from "react"
 import { renderToString } from "react-dom/server"
-import { afterEach, expect, it, vi } from "vitest"
+import { afterEach, expect, it, vi } from "vite-plus/test"
 import { createFluentTheme, FluentThemeProvider, useTheme } from "./index.js"
 
 afterEach(() => {

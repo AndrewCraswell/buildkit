@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react"
-import { expect, it, vi } from "vitest"
+import { expect, it, vi } from "vite-plus/test"
 import { useRouteTabs, useRoutePanel } from "./index.js"
 it("subscribes to the router, follows external changes, and unsubscribes", () => {
   let path = "/one"

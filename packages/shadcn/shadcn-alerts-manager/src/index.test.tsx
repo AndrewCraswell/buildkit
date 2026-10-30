@@ -1,7 +1,7 @@
 import { ShadcnLocalizationProvider } from "@buildkitgg/shadcn-baseui-kit"
 import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, expect, it, vi } from "vitest"
+import { afterEach, expect, it, vi } from "vite-plus/test"
 import { AlertRegion, createAlertManager } from "./index.js"
 afterEach(cleanup)
 it("inherits reactive region and dismissal labels with explicit override precedence", () => {

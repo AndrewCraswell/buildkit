@@ -1,7 +1,7 @@
 import { configureBackends } from "better-apps"
 import { env } from "cloudflare:workers"
 import { Miniflare } from "miniflare"
-import { afterAll, afterEach, describe, expect, it } from "vitest"
+import { afterAll, afterEach, describe, expect, it } from "vite-plus/test"
 import { storageBindingName } from "./cloudflare.js"
 import { defineBucket, handleUpload } from "./index.js"
 

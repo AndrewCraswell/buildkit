@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it, vi } from "vite-plus/test"
 import { createRoutePanel, createRouteTabs, type RouteTarget } from "./index.js"
 function target(isActive = false): RouteTarget {
   return { href: "/", isActive: () => isActive, navigate: vi.fn<() => void>() }

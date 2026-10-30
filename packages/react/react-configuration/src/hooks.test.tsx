@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook } from "@testing-library/react"
 import { hydrateRoot } from "react-dom/client"
 import { renderToString } from "react-dom/server"
-import { afterEach, expect, expectTypeOf, it } from "vitest"
+import { afterEach, expect, expectTypeOf, it } from "vite-plus/test"
 import { createConfiguration } from "./index.js"
 
 afterEach(cleanup)

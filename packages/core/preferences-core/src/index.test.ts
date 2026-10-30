@@ -1,4 +1,4 @@
-import { expect, expectTypeOf, it, vi } from "vitest"
+import { expect, expectTypeOf, it, vi } from "vite-plus/test"
 import { createPreferences } from "./index.js"
 
 it("infers preference types and preserves explicit generic keys", () => {

@@ -1,24 +1,15 @@
-{
-  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "eslint",
-    "typescript",
-    "react",
-    "vitest",
-    "jsx-a11y",
-    "import",
-    "oxc",
-    "unicorn",
-    "promise",
-    "react-perf"
-  ],
-  "categories": {
-    "correctness": "error"
+// The shared lint rules, extended by the root vite.config.ts.
+import type { OxlintConfig } from "vite-plus/lint"
+
+export default {
+  plugins: ["eslint", "typescript", "react", "vitest", "jsx-a11y", "import", "oxc", "unicorn", "promise", "react-perf"],
+  categories: {
+    correctness: "error"
   },
-  "options": {
-    "reportUnusedDisableDirectives": "error"
+  options: {
+    reportUnusedDisableDirectives: "error"
   },
-  "ignorePatterns": [
+  ignorePatterns: [
     "**/dist/**",
     "**/node_modules/**",
     "**/storybook-static/**",
@@ -28,7 +19,7 @@
     "*.snap",
     "*.md"
   ],
-  "rules": {
+  rules: {
     "typescript/no-explicit-any": "error",
     "typescript/no-inferrable-types": "error",
     "typescript/no-non-null-assertion": "off",
@@ -46,13 +37,13 @@
     "typescript/triple-slash-reference": "error",
     "typescript/restrict-plus-operands": "error",
     "typescript/no-for-in-array": "error",
-    "curly": "error",
+    curly: "error",
     "no-unused-vars": [
       "error",
       {
-        "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_",
-        "caughtErrorsIgnorePattern": "^_"
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_"
       }
     ],
     "no-extra-boolean-cast": "error",
@@ -66,9 +57,9 @@
     "no-new": "error",
     "no-var": "error",
     "prefer-const": "error",
-    "radix": "error",
+    radix: "error",
     "use-isnan": "error",
-    "eqeqeq": "error",
+    eqeqeq: "error",
     "no-new-func": "error",
     "prefer-rest-params": "error",
     "prefer-spread": "error",
@@ -111,7 +102,7 @@
     "no-console": [
       "error",
       {
-        "allow": ["warn", "error"]
+        allow: ["warn", "error"]
       }
     ],
     "unicorn/prefer-array-find": "error",
@@ -172,4 +163,4 @@
     "jsx-a11y/scope": "error",
     "jsx-a11y/tabindex-no-positive": "error"
   }
-}
+} satisfies OxlintConfig
