@@ -88,8 +88,9 @@ export default {
 }
 ```
 
-It returns `null` for other paths, 404 for rooms it doesn't serve, 426 for requests that aren't upgrades and 403 when
-`canJoin` refuses. Apps that route rooms themselves call `invoiceRoom.connect(request, { key, actor })` instead.
+It returns `null` for other paths, 404 for rooms it doesn't serve, 405 for non-GET requests, 426 for GET requests
+without a WebSocket upgrade and 403 when `canJoin` refuses. Apps that route rooms themselves call
+`invoiceRoom.connect(request, { key, actor })` instead.
 
 ## Adapters
 
