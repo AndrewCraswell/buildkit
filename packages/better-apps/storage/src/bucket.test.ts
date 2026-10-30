@@ -273,6 +273,21 @@ describe.each(adapters)("a bucket on %s", (_name, makeAdapter) => {
     expect(tooLong?.status).toBe(400)
     expect(await images.head("a.png")).toBeNull()
 
+    // The header matches the grant, but the body runs over or stops short.
+    const overrun = await send({
+      method: "PUT",
+      headers: { "content-type": "image/png", "content-length": "4" },
+      body: "abcdef"
+    })
+    expect(overrun?.status).toBe(413)
+    const underrun = await send({
+      method: "PUT",
+      headers: { "content-type": "image/png", "content-length": "4" },
+      body: "ab"
+    })
+    expect(underrun?.status).toBe(400)
+    expect(await images.head("a.png")).toBeNull()
+
     await expect(images.createUpload({ key: "b.png", contentType: "image/png", size: 11 })).rejects.toMatchObject({
       code: "LIMIT_EXCEEDED"
     })
