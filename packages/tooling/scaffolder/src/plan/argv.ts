@@ -103,9 +103,9 @@ function templateDefaults(catalog: CatalogManifest | undefined, templateId: stri
 }
 
 /**
- * The CLI arguments that make the same request, without the product's own name. With `preset`, an `init` for that
- * preset's template that answers every question the preset does is written as `init --preset <id>` plus flags for the
- * answers that differ from the preset's. With `catalog`, an `init` that leaves out an add-on its template selects by
+ * The CLI arguments that make the same request, without the product's own name. With `preset`, a `create` for that
+ * preset's template that answers every question the preset does is written as `create --preset <id>` plus flags for the
+ * answers that differ from the preset's. With `catalog`, a `create` that leaves out an add-on its template selects by
  * default writes `--without` for it, and an add-on whose short name another add-on shares is written by its full id.
  * A catalog of another version than the request's isn't used, since its defaults and add-ons can differ.
  */
@@ -128,7 +128,7 @@ export function requestArgv(
           ? options.preset
           : undefined
       const name = answers.name === undefined ? [] : [answers.name]
-      argv.push("init", ...(preset ? ["--preset", preset.id] : [answers.template]), ...name)
+      argv.push("create", ...(preset ? ["--preset", preset.id] : [answers.template]), ...name)
       if (answers.mode !== undefined && answers.mode !== preset?.answers.mode) {
         argv.push("--mode", answers.mode)
       }

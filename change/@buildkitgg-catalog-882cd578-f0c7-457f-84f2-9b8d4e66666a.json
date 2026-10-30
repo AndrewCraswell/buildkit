@@ -1,0 +1,7 @@
+{
+  "type": "patch",
+  "comment": "Say buildkit create, not buildkit init, in the README.",
+  "packageName": "@buildkitgg/catalog",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

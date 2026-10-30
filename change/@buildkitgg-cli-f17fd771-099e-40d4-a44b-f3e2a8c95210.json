@@ -1,0 +1,7 @@
+{
+  "type": "patch",
+  "comment": "Create projects with buildkit create. buildkit init still works, unlisted, for a release.",
+  "packageName": "@buildkitgg/cli",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

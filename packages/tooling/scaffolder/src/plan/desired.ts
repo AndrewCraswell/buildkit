@@ -40,7 +40,7 @@ function requireConfig(config: ProjectConfig | undefined, command: string): Proj
   if (!config) {
     throw new PlanError(
       "E_NOT_INITIALIZED",
-      `This folder isn't a project yet, so ${command} has nothing to change. Run init first.`
+      `This folder isn't a project yet, so ${command} has nothing to change. Run create first.`
     )
   }
   return config
@@ -63,7 +63,7 @@ export function desiredSelection(
       }
       const name = intent.answers.name
       if (name === undefined) {
-        throw new PlanError("E_USAGE", "init needs a project name.")
+        throw new PlanError("E_USAGE", "create needs a project name.")
       }
       const result = selectionFromAnswers(catalog, intent.answers, name)
       if (!result.ok) {
@@ -117,7 +117,7 @@ function addSelection(
   const replaced: string[] = []
   for (const name of intent.replace) {
     if (findTarget(catalog, name) || name === config.target.id) {
-      throw new PlanError("E_USAGE", "The target can't be replaced. Start a new project with init instead.")
+      throw new PlanError("E_USAGE", "The target can't be replaced. Start a new project with create instead.")
     }
     const id = requireAddonId(catalog, name)
     if (!Object.hasOwn(selection.addons, id)) {

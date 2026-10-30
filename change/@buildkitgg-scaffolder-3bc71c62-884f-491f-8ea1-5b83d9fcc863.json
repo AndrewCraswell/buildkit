@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "Add the scaffold command, which creates a project from @buildkitgg/catalog or any catalog or template package on npm. Product CLIs now create projects with create; init still works, unlisted, until 0.7.",
+  "packageName": "@buildkitgg/scaffolder",
+  "email": "ajcraswell@gmail.com",
+  "dependentChangeType": "patch"
+}

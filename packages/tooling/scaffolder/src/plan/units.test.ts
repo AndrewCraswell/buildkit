@@ -282,7 +282,7 @@ describe("envelope", () => {
     )
     expect(envelope.decisions?.[0]?.choices[0]?.argv).toEqual([
       "x",
-      "init",
+      "create",
       "app",
       "demo",
       "--without",
@@ -371,7 +371,7 @@ describe("envelope", () => {
         }
       })
     ).toEqual([
-      "init",
+      "create",
       "app",
       "demo",
       "--mode",
@@ -406,7 +406,7 @@ describe("envelope", () => {
     const catalog = { ...fixture, addons: [...fixture.addons, { ...i18n, id: "@other/i18n" }] }
     const answers = { template: "app", name: "demo", optional: ["@fixture/i18n", "@fixture/storybook"] }
     expect(requestArgv({ intent: { command: "init", answers } }, { catalog })).toEqual([
-      "init",
+      "create",
       "app",
       "demo",
       "--with",
@@ -421,14 +421,14 @@ describe("envelope", () => {
     }
     // The installed catalog is 1.0.0, so its defaults aren't the request's.
     expect(requestArgv(request, { catalog: fixtureCatalog() })).toEqual([
-      "init",
+      "create",
       "app",
       "demo",
       "--catalog-version",
       "2.0.0"
     ])
     expect(requestArgv(request, { catalog: fixtureCatalog(2) })).toEqual([
-      "init",
+      "create",
       "app",
       "demo",
       "--without",
@@ -452,7 +452,7 @@ describe("envelope", () => {
     }
     const answers = { ...preset.answers, name: "demo" }
     expect(requestArgv({ intent: { command: "init", answers } }, { preset })).toEqual([
-      "init",
+      "create",
       "--preset",
       "saas",
       "demo"
@@ -474,7 +474,7 @@ describe("envelope", () => {
         { preset }
       )
     ).toEqual([
-      "init",
+      "create",
       "--preset",
       "saas",
       "demo",
@@ -492,7 +492,7 @@ describe("envelope", () => {
     // A preset for another template is ignored.
     expect(
       requestArgv({ intent: { command: "init", answers: { template: "bare", name: "demo" } } }, { preset })
-    ).toEqual(["init", "bare", "demo"])
+    ).toEqual(["create", "bare", "demo"])
     // So is one that answers a question the request leaves to the template's default.
     const { mode, slots, optional, options, ...rest } = answers
     for (const partial of [
@@ -502,14 +502,14 @@ describe("envelope", () => {
       { ...rest, mode, slots, optional }
     ]) {
       expect(requestArgv({ intent: { command: "init", answers: partial } }, { preset }).slice(0, 2)).toEqual([
-        "init",
+        "create",
         "app"
       ])
     }
     // A preset can name its add-ons by short name, and without the catalog they're compared by short name.
     const short = { ...preset, answers: { ...preset.answers, slots: { database: "db-postgres" }, optional: ["i18n"] } }
     expect(requestArgv({ intent: { command: "init", answers } }, { preset: short })).toEqual([
-      "init",
+      "create",
       "--preset",
       "saas",
       "demo"

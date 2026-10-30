@@ -57,7 +57,7 @@ export async function applyReviewed(
 ): Promise<{ plan: Plan; status: "applied" | "unchanged" }> {
   if (lastApplied(context) === reviewed.fingerprint) {
     // The lock now records this apply, so the fingerprint differs even with no change. The status is what counts. An
-    // init can't be planned twice, so a sync checks that the project still matches what it created.
+    // create can't be planned twice, so a sync checks that the project still matches what it created.
     const again: PlanRequest =
       reviewed.request.intent.command === "init" ? { intent: { command: "sync" } } : reviewed.request
     const current = await planProject(context, again)
@@ -88,7 +88,9 @@ const planFileSchema = z.object({
   fingerprint: z.string(),
   request: planRequestSchema,
   /** The template packages the plan was made with, so applying it loads those exact versions. */
-  packs: z.record(z.string(), z.object({ version: z.string(), integrity: z.string() })).optional()
+  packs: z.record(z.string(), z.object({ version: z.string(), integrity: z.string() })).optional(),
+  /** The catalog version the plan was made with, so a tool that fetches the catalog can load that copy. */
+  catalog: z.object({ id: z.string(), version: z.string(), integrity: z.string().optional() }).optional()
 })
 
 /**
@@ -139,6 +141,15 @@ export function writeArtifacts(
         fingerprint: plan.fingerprint,
         request: plan.request,
         ...(plan.lock?.catalog.packs ? { packs: plan.lock.catalog.packs } : {}),
+        ...(plan.lock
+          ? {
+              catalog: {
+                id: plan.lock.catalog.id,
+                version: plan.lock.catalog.version,
+                ...(plan.lock.catalog.integrity ? { integrity: plan.lock.catalog.integrity } : {})
+              }
+            }
+          : {}),
         envelope
       },
       null,
