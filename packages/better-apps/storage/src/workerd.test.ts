@@ -1,0 +1,79 @@
+// Runs the R2 adapter inside workerd, where `cloudflare:workers` and `FixedLengthStream` exist, so streamed puts take
+// the path they take in production. Tests run before the package builds, so the adapter's source loads with its types
+// stripped.
+import { readFileSync } from "node:fs"
+import { stripTypeScriptTypes } from "node:module"
+import { Miniflare } from "miniflare"
+import { afterAll, describe, expect, it } from "vitest"
+import type { R2BucketLike } from "./cloudflare.js"
+
+function compile(file: string): string {
+  return stripTypeScriptTypes(readFileSync(new URL(file, import.meta.url), "utf8"))
+}
+
+const worker = `
+import { r2Storage } from "./cloudflare.js"
+
+function chunks(parts, failAfter) {
+  let index = 0
+  return new ReadableStream({
+    pull(controller) {
+      if (index === failAfter) {
+        controller.error(new Error("past the limit"))
+        return
+      }
+      if (index === parts.length) {
+        controller.close()
+        return
+      }
+      controller.enqueue(new TextEncoder().encode(parts[index++]))
+    }
+  })
+}
+
+export default {
+  async fetch(request) {
+    const files = r2Storage().bucket("files")
+    const options = { size: 9, contentType: "text/plain", cacheControl: null, metadata: {} }
+    if (new URL(request.url).pathname === "/fail") {
+      try {
+        await files.put("broken.txt", chunks(["abc", "def", "ghi"], 1), options)
+        return new Response("stored")
+      } catch (error) {
+        return new Response(error.message)
+      }
+    }
+    const stored = await files.put("streamed.txt", chunks(["abc", "def", "ghi"]), options)
+    const read = await files.get("streamed.txt")
+    return Response.json({ size: stored.size, text: await new Response(read.body).text() })
+  }
+}
+`
+
+const miniflare = new Miniflare({
+  compatibilityDate: "2026-07-01",
+  modules: [
+    { type: "ESModule", path: "worker.js", contents: worker },
+    { type: "ESModule", path: "cloudflare.js", contents: compile("./cloudflare.ts") },
+    { type: "ESModule", path: "bytes.js", contents: compile("./bytes.ts") }
+  ],
+  r2Buckets: ["STORAGE_FILES"]
+})
+
+afterAll(() => miniflare.dispose())
+
+describe("the R2 adapter in workerd", () => {
+  it("streams a body of known size into the bucket bound by its derived name", async () => {
+    const response = await miniflare.dispatchFetch("http://worker.test/")
+
+    expect(await response.json()).toEqual({ size: 9, text: "abcdefghi" })
+  })
+
+  it("reports the body's own error when the stream fails", async () => {
+    const response = await miniflare.dispatchFetch("http://worker.test/fail")
+
+    expect(await response.text()).toBe("past the limit")
+    const bucket = (await miniflare.getR2Bucket("STORAGE_FILES")) as unknown as R2BucketLike
+    expect(await bucket.head("broken.txt")).toBeNull()
+  })
+})

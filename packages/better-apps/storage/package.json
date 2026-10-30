@@ -1,0 +1,75 @@
+{
+  "name": "@better-apps/storage",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Object storage for Better Apps: buckets declared in code, browser uploads with limits, and adapters for Cloudflare R2, memory and the filesystem.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cloudflare": {
+      "types": "./dist/cloudflare.d.ts",
+      "import": "./dist/cloudflare.js"
+    },
+    "./local": {
+      "types": "./dist/local.d.ts",
+      "import": "./dist/local.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check:types": "pnpm build && tsc --noEmit",
+    "lint": "oxlint --max-warnings=0",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "better-apps": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/oxlint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.5",
+    "better-apps": "workspace:*",
+    "miniflare": "4.20260730.0",
+    "typescript": "catalog:",
+    "vitest": "5.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndrewCraswell/buildkit.git",
+    "directory": "packages/better-apps/storage"
+  },
+  "homepage": "https://github.com/AndrewCraswell/buildkit/tree/main/packages/better-apps/storage#readme",
+  "bugs": {
+    "url": "https://github.com/AndrewCraswell/buildkit/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "better-apps",
+    "storage",
+    "uploads",
+    "r2",
+    "cloudflare"
+  ]
+}
