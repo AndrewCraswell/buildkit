@@ -13,6 +13,7 @@ function compile(file: string): string {
 
 const worker = `
 import { r2Storage } from "./cloudflare.js"
+import { exactLength } from "./limits.js"
 
 function chunks(parts, failAfter) {
   let index = 0
@@ -35,7 +36,17 @@ export default {
   async fetch(request) {
     const files = r2Storage().bucket("files")
     const options = { size: 9, contentType: "text/plain", cacheControl: null, metadata: {} }
-    if (new URL(request.url).pathname === "/fail") {
+    const path = new URL(request.url).pathname
+    if (path === "/overrun") {
+      // Every promised byte arrives before the extra ones, as from a client that sends more than it declared.
+      try {
+        await files.put("overrun.txt", exactLength(chunks(["abcd", "ef"]), 4), { ...options, size: 4 })
+        return new Response("stored")
+      } catch (error) {
+        return new Response(error.code)
+      }
+    }
+    if (path === "/fail") {
       try {
         await files.put("broken.txt", chunks(["abc", "def", "ghi"], 1), options)
         return new Response("stored")
@@ -55,7 +66,15 @@ const miniflare = new Miniflare({
   modules: [
     { type: "ESModule", path: "worker.js", contents: worker },
     { type: "ESModule", path: "cloudflare.js", contents: compile("./cloudflare.ts") },
-    { type: "ESModule", path: "bytes.js", contents: compile("./bytes.ts") }
+    { type: "ESModule", path: "bytes.js", contents: compile("./bytes.ts") },
+    { type: "ESModule", path: "limits.js", contents: compile("./limits.ts") },
+    {
+      type: "ESModule",
+      path: "better-apps",
+      contents: `export class BetterAppsError extends Error {
+        constructor(code, message) { super(message); this.code = code }
+      }`
+    }
   ],
   r2Buckets: ["STORAGE_FILES"]
 })
@@ -67,6 +86,14 @@ describe("the R2 adapter in workerd", () => {
     const response = await miniflare.dispatchFetch("http://worker.test/")
 
     expect(await response.json()).toEqual({ size: 9, text: "abcdefghi" })
+  })
+
+  it("stores nothing when an upload runs past its length after the last promised byte", async () => {
+    const response = await miniflare.dispatchFetch("http://worker.test/overrun")
+
+    expect(await response.text()).toBe("LIMIT_EXCEEDED")
+    const bucket = (await miniflare.getR2Bucket("STORAGE_FILES")) as unknown as R2BucketLike
+    expect(await bucket.head("overrun.txt")).toBeNull()
   })
 
   it("reports the body's own error when the stream fails", async () => {

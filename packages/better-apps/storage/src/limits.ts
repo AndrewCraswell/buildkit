@@ -44,9 +44,14 @@ export function atMost(body: ReadableStream<Uint8Array>, maxSize: number): Reada
   )
 }
 
-/** Passes a stream through, erroring unless it sends exactly `size` bytes. */
+/**
+ * Passes a stream through, erroring unless it sends exactly `size` bytes. It holds each chunk back until the next one
+ * arrives or the stream ends, so a body that runs over errors before the backend has every byte. R2 stores an object as
+ * soon as it has the length it was promised, and a later error wouldn't undo that.
+ */
 export function exactLength(body: ReadableStream<Uint8Array>, size: number): ReadableStream<Uint8Array> {
   let total = 0
+  let held: Uint8Array | undefined
   return body.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -55,11 +60,18 @@ export function exactLength(body: ReadableStream<Uint8Array>, size: number): Rea
           controller.error(tooLarge(size))
           return
         }
-        controller.enqueue(chunk)
+        if (held) {
+          controller.enqueue(held)
+        }
+        held = chunk
       },
       flush(controller) {
         if (total !== size) {
           controller.error(new BetterAppsError("INVALID_INPUT", `The upload must be exactly ${size} bytes.`))
+          return
+        }
+        if (held) {
+          controller.enqueue(held)
         }
       }
     })
