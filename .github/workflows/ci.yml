@@ -76,4 +76,4 @@ jobs:
       actions: write
       statuses: write
     # Run the reviewed implementation, never a workflow from the dispatched branch.
-    uses: AndrewCraswell/buildkit/.github/workflows/merge-release.yml@8cd3e0a83dbc90525a22d96b83bd17ae3cf69c78
+    uses: betterapps-hq/buildkit/.github/workflows/merge-release.yml@8cd3e0a83dbc90525a22d96b83bd17ae3cf69c78
