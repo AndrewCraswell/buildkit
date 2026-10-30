@@ -58,7 +58,8 @@ Its [CLI](../packages/better-apps/cli/README.md) generates the schema for your O
 adapters read users from [Better Auth](../packages/better-apps/better-auth/README.md),
 [Clerk](../packages/better-apps/clerk/README.md) and [WorkOS](../packages/better-apps/workos/README.md).
 [`@better-apps/comments`](../packages/better-apps/comments/README.md) adds comment threads to any record an app owns,
-pinned to spots from [`@better-apps/anchors`](../packages/better-apps/anchors/README.md).
+pinned to spots from [`@better-apps/anchors`](../packages/better-apps/anchors/README.md), and
+[`@better-apps/mentions`](../packages/better-apps/mentions/README.md) lists where each user was mentioned.
 [`@better-apps/react`](../packages/better-apps/react/README.md) binds the Better Apps client and its stores to React.
 [`@better-apps/tanstack-start`](../packages/better-apps/tanstack-start/README.md) serves an app from TanStack Start, and
 the [example app](../apps/better-apps-example/README.md) runs features on SQLite with it.

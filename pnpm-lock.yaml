@@ -716,6 +716,9 @@ importers:
       '@better-apps/anchors':
         specifier: workspace:*
         version: link:../anchors
+      '@better-apps/mentions':
+        specifier: workspace:*
+        version: link:../mentions
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -805,6 +808,40 @@ importers:
       pg:
         specifier: 8.23.1
         version: 8.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@types/node@24.19.2)(@vitest/coverage-v8@5.0.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/better-apps/mentions:
+    dependencies:
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@better-apps/testing':
+        specifier: workspace:*
+        version: link:../testing
+      '@repo/oxlint-config':
+        specifier: workspace:*
+        version: link:../../tooling/oxlint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript-config
+      '@types/node':
+        specifier: 24.19.2
+        version: 24.19.2
+      '@vitest/coverage-v8':
+        specifier: 5.0.5
+        version: 5.0.5(vitest@5.0.5)
+      better-apps:
+        specifier: workspace:*
+        version: link:../better-apps
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(@neondatabase/serverless@1.2.0)(@types/pg@8.23.1)(kysely@0.29.7)(mysql2@3.24.6(@types/node@24.19.2))(pg@8.23.1)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
