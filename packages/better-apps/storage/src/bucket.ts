@@ -2,7 +2,7 @@ import { BetterAppsError } from "better-apps"
 import type { ListResult, StoredObject, StoredObjectBody } from "./adapter.js"
 import { storageAdapter } from "./backends.js"
 import { readAll } from "./bytes.js"
-import { atMost, checkKey, matchesContentType, tooLarge } from "./limits.js"
+import { atMost, checkKey, exactLength, matchesContentType, tooLarge } from "./limits.js"
 import { createUploadUrl, type Upload } from "./uploads.js"
 
 /** Limits a bucket enforces on `put` and uploads. Literals, so the build plugin can read them. */
@@ -23,7 +23,10 @@ export interface PutOptions {
   cacheControl?: string | undefined
   /** String metadata stored with the object. */
   metadata?: Record<string, string> | undefined
-  /** A stream's size in bytes, when known. Some backends, such as R2, otherwise read it into memory first. */
+  /**
+   * A stream's size in bytes, when known. The stream must send exactly this many. Without it, some backends, such as
+   * R2, read the stream into memory first.
+   */
   size?: number | undefined
 }
 
@@ -169,8 +172,13 @@ export function defineBucket(name: string, options: BucketOptions = {}): Bucket 
       let data: Uint8Array | ReadableStream<Uint8Array>
       let size: number | undefined
       if (body instanceof ReadableStream) {
-        data = options.maxSize === undefined ? body : atMost(body, options.maxSize)
         size = putOptions.size
+        // A declared size is checked against the limit below, and the stream must match it exactly.
+        if (size !== undefined) {
+          data = exactLength(body, size)
+        } else {
+          data = options.maxSize === undefined ? body : atMost(body, options.maxSize)
+        }
       } else if (body instanceof Blob) {
         data = options.maxSize === undefined ? body.stream() : atMost(body.stream(), options.maxSize)
         size = body.size

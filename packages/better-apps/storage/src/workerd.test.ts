@@ -40,7 +40,8 @@ export default {
     if (path === "/overrun") {
       // Every promised byte arrives before the extra ones, as from a client that sends more than it declared.
       try {
-        await files.put("overrun.txt", exactLength(chunks(["abcd", "ef"]), 4), { ...options, size: 4 })
+        const parts = new URL(request.url).searchParams.has("empty") ? ["abcd", "", "ef"] : ["abcd", "ef"]
+        await files.put("overrun.txt", exactLength(chunks(parts), 4), { ...options, size: 4 })
         return new Response("stored")
       } catch (error) {
         return new Response(error.code)
@@ -89,11 +90,13 @@ describe("the R2 adapter in workerd", () => {
   })
 
   it("stores nothing when an upload runs past its length after the last promised byte", async () => {
-    const response = await miniflare.dispatchFetch("http://worker.test/overrun")
-
-    expect(await response.text()).toBe("LIMIT_EXCEEDED")
     const bucket = (await miniflare.getR2Bucket("STORAGE_FILES")) as unknown as R2BucketLike
-    expect(await bucket.head("overrun.txt")).toBeNull()
+    for (const url of ["http://worker.test/overrun", "http://worker.test/overrun?empty"]) {
+      const response = await miniflare.dispatchFetch(url)
+
+      expect(await response.text()).toBe("LIMIT_EXCEEDED")
+      expect(await bucket.head("overrun.txt")).toBeNull()
+    }
   })
 
   it("reports the body's own error when the stream fails", async () => {

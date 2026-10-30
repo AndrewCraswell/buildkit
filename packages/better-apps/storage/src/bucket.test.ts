@@ -108,6 +108,19 @@ describe.each(adapters)("a bucket on %s", (_name, makeAdapter) => {
     expect(await (await files.get("unsized"))!.text()).toBe("no size")
   })
 
+  it("holds streams to their declared size", async () => {
+    await expect(files.put("long", streamOf("longer than declared"), { size: 4 })).rejects.toMatchObject({
+      code: "LIMIT_EXCEEDED",
+      status: 413
+    })
+    await expect(files.put("short", streamOf("ab"), { size: 4 })).rejects.toMatchObject({ code: "INVALID_INPUT" })
+    await expect(images.put("big.png", streamOf("png"), { size: 11, contentType: "image/png" })).rejects.toMatchObject({
+      code: "LIMIT_EXCEEDED"
+    })
+
+    expect((await files.list()).objects).toEqual([])
+  })
+
   it("replaces and deletes objects", async () => {
     await files.put("a", "one")
     await files.put("a", "two")
