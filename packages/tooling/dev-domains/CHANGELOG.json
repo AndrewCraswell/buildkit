@@ -2,6 +2,21 @@
   "name": "@buildkitgg/dev-domains",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 01:29:24 GMT",
+      "version": "0.1.2",
+      "tag": "@buildkitgg/dev-domains_v0.1.2",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/dev-domains",
+            "commit": "8cd3e0a83dbc90525a22d96b83bd17ae3cf69c78",
+            "comment": "Move @types/node to 24.19.2, the newest types for Node.js 24."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 29 Oct 2026 04:54:16 GMT",
       "version": "0.1.2",
       "tag": "@buildkitgg/dev-domains_v0.1.2",
