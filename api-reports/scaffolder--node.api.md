@@ -126,6 +126,10 @@ export class PackStore {
     });
     // (undocumented)
     folder(name: string, version: string): string;
+    import(name: string, version: string, expectedIntegrity?: string): Promise<{
+        integrity: string;
+        module: unknown;
+    }>;
     load(name: string, version: string, expectedIntegrity?: string): Promise<LoadedPack>;
     resolve(name: string, range: string): Promise<string>;
     versions(name: string): Promise<string[]>;

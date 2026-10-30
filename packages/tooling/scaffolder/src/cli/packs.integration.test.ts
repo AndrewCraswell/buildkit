@@ -112,7 +112,7 @@ const lock = () => JSON.parse(readFileSync(join(root, "demo/.fixture/lock.json")
 describe("template packages", () => {
   it("creates a project from a package, keeps using that version, and upgrades it", async () => {
     const npm = fakeNpm({ "1.0.0": packSource("1.0.0") })
-    const created = await run(["init", "@acme/tower", "demo", "--yes", "--json"], npm)
+    const created = await run(["create", "@acme/tower", "demo", "--yes", "--json"], npm)
     expect(created.code).toBe(0)
     expect(envelope(created.out).notices?.[0]?.text).toBe(
       "The template comes from @acme/tower@1.0.0 on npm, not from fixture. Applying it runs code from its author."
@@ -150,7 +150,7 @@ describe("template packages", () => {
   })
 
   it("upgrades past prereleases and versions it can't load", async () => {
-    await run(["init", "@acme/tower", "demo", "--yes", "--json"], fakeNpm({ "1.0.0": packSource("1.0.0") }))
+    await run(["create", "@acme/tower", "demo", "--yes", "--json"], fakeNpm({ "1.0.0": packSource("1.0.0") }))
     const newer = fakeNpm({
       "1.0.0": packSource("1.0.0"),
       "1.1.0": packSource("1.1.0"),
@@ -176,7 +176,7 @@ describe("template packages", () => {
 
   it("applies a saved plan for a package's template", async () => {
     const npm = fakeNpm({ "1.0.0": packSource("1.0.0", { templates: ["tower", "siege"] }) })
-    const saved = await run(["init", "@acme/tower#siege", "demo", "--json", "--out", "plans"], npm)
+    const saved = await run(["create", "@acme/tower#siege", "demo", "--json", "--out", "plans"], npm)
     expect(envelope(saved.out).status).toBe("planned")
     const planFile = JSON.parse(readFileSync(join(root, "plans/plan.json"), "utf8"))
     expect(planFile.packs).toEqual({ "@acme/tower": { version: "1.0.0", integrity: "sha512-1.0.0" } })
@@ -186,7 +186,7 @@ describe("template packages", () => {
       "1.0.0": packSource("1.0.0", { templates: ["tower", "siege"] }),
       "1.1.0": 'throw new Error("1.1.0 ran")\n'
     })
-    const applied = await run(["init", "--plan", "plans/plan.json", "--json"], newer)
+    const applied = await run(["create", "--plan", "plans/plan.json", "--json"], newer)
     expect(envelope(applied.out).status).toBe("applied")
     expect(envelope(applied.out).notices?.[0]?.text).toContain("@acme/tower@1.0.0 on npm")
     expect(newer.calls).toEqual([])
@@ -194,7 +194,7 @@ describe("template packages", () => {
 
     delete planFile.packs
     writeFileSync(join(root, "plans/plan.json"), JSON.stringify(planFile))
-    const unpinned = await run(["init", "--plan", "plans/plan.json", "other", "--json"], newer)
+    const unpinned = await run(["create", "--plan", "plans/plan.json", "other", "--json"], newer)
     expect(envelope(unpinned.out).error?.message).toContain("doesn't record which version of @acme/tower")
   })
 
@@ -209,17 +209,17 @@ describe("template packages", () => {
           }
         : result
     }
-    expect((await run(["init", "@acme/tower", "demo", "--yes", "--json"], { run: noisy })).code).toBe(0)
+    expect((await run(["create", "@acme/tower", "demo", "--yes", "--json"], { run: noisy })).code).toBe(0)
     const garbled: CommandRunner = async (command, args, cwd) =>
       args[0] === "view" ? { code: 0, output: "npm warn config\nnot json\n" } : npm.run(command, args, cwd)
-    const refused = await run(["init", "@acme/tower", "other", "--json"], { run: garbled })
+    const refused = await run(["create", "@acme/tower", "other", "--json"], { run: garbled })
     expect(envelope(refused.out).error).toMatchObject({ code: "E_PACKAGE_UNAVAILABLE" })
     expect(envelope(refused.out).error?.message).toContain("npm printed something other than JSON")
   })
 
   it("refuses a cached package whose integrity doesn't match the lock", async () => {
     const npm = fakeNpm({ "1.0.0": packSource("1.0.0") })
-    await run(["init", "@acme/tower", "demo", "--yes", "--json"], npm)
+    await run(["create", "@acme/tower", "demo", "--yes", "--json"], npm)
     const record = join(root, "cache/packs/@acme/tower/1.0.0/integrity.json")
     writeFileSync(record, JSON.stringify({ name: "@acme/tower", version: "1.0.0", integrity: "sha512-other" }))
     const result = await run(["sync", "--cwd", "demo", "--json"], npm)
@@ -262,25 +262,25 @@ describe("template packages", () => {
   it("explains packages it can't use, and never fetches a built-in name", async () => {
     const npm = fakeNpm({ "1.0.0": packSource("1.0.0"), "2.0.0": packSource("2.0.0", { range: "^2.0.0" }) })
     const cases: [string[], string][] = [
-      [["init", "@acme/tower@2.0.0", "a"], "E_CATALOG_MISMATCH"],
-      [["init", "@acme/tower@1.0.0#siege", "b"], "E_UNKNOWN_TEMPLATE"],
-      [["init", "@acme/nothing", "c"], "E_PACKAGE_UNAVAILABLE"],
-      [["init", "@acme/tower@^9", "d"], "E_PACKAGE_UNAVAILABLE"],
-      [["init", "@acme", "e"], "E_USAGE"]
+      [["create", "@acme/tower@2.0.0", "a"], "E_CATALOG_MISMATCH"],
+      [["create", "@acme/tower@1.0.0#siege", "b"], "E_UNKNOWN_TEMPLATE"],
+      [["create", "@acme/nothing", "c"], "E_PACKAGE_UNAVAILABLE"],
+      [["create", "@acme/tower@^9", "d"], "E_PACKAGE_UNAVAILABLE"],
+      [["create", "@acme", "e"], "E_USAGE"]
     ]
     for (const [argv, code] of cases) {
       const result = await run([...argv, "--json"], npm)
       expect({ argv, code: envelope(result.out).error?.code }).toEqual({ argv, code })
     }
     npm.calls.length = 0
-    expect(envelope((await run(["init", "tower", "f", "--json"], npm)).out).error?.code).toBe("E_UNKNOWN_TEMPLATE")
+    expect(envelope((await run(["create", "tower", "f", "--json"], npm)).out).error?.code).toBe("E_UNKNOWN_TEMPLATE")
     expect(npm.calls).toEqual([])
     expect(existsSync(join(root, "a"))).toBe(false)
   })
 
   it("asks which template when a package has several, and describes them", async () => {
     const npm = fakeNpm({ "1.0.0": packSource("1.0.0", { templates: ["tower", "siege"] }) })
-    const unattended = await run(["init", "@acme/tower", "demo", "--json"], npm)
+    const unattended = await run(["create", "@acme/tower", "demo", "--json"], npm)
     expect(envelope(unattended.out).error?.message).toContain("Pick one: @acme/tower#tower, @acme/tower#siege.")
     // Picks siege, takes each default the wizard offers, and applies.
     const answer: ScriptedAnswer = (question) => {
@@ -293,7 +293,7 @@ describe("template packages", () => {
       return question.kind === "multiselect" ? [] : String(question.initial ?? question.options?.[0])
     }
     const asked = await run(
-      ["init", "@acme/tower", "demo"],
+      ["create", "@acme/tower", "demo"],
       npm,
       Array.from({ length: 8 }, () => answer)
     )

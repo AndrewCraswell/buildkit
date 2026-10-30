@@ -24,6 +24,7 @@
         "src/edit-code.ts",
         "src/node.ts",
         "src/cli.ts",
+        "src/bin.ts",
         "vitest.integration.config.ts"
       ]
     },

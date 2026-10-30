@@ -16,16 +16,16 @@ export const CreateAnApp: StoryObj<typeof meta> = {
       summary="In a terminal, the CLI shows the plan and asks before it writes. --yes or a reviewed --plan applies without asking; other runs without a terminal write nothing."
     >
       <h2>Answer the questions</h2>
-      <Code>{"npx @buildkitgg/cli init app my-app"}</Code>
+      <Code>{"npx @buildkitgg/cli create app my-app"}</Code>
       <p>
         The CLI asks for the mode, a database, sign-in and localization, shows the plan, and asks once before it writes
         anything. Installed globally with <code>npm install -g @buildkitgg/cli</code>, the command is{" "}
-        <code>buildkit init app my-app</code>.
+        <code>buildkit create app my-app</code>.
       </p>
       <h2>Or pass the answers as flags</h2>
       <Code>
         {
-          "npx @buildkitgg/cli init app my-app --mode ssr --with i18n --set i18n.locales=en,fr --yes\nnpx @buildkitgg/cli init app my-app --preset saas --yes"
+          "npx @buildkitgg/cli create app my-app --mode ssr --with i18n --set i18n.locales=en,fr --yes\nnpx @buildkitgg/cli create app my-app --preset saas --yes"
         }
       </Code>
       <p>
@@ -54,11 +54,11 @@ const addons = [
   ["i18n", "Optional add-on", "Lingui catalogs, localized URLs and the html lang and dir attributes"],
   ["better-apps-deploy", "buildkit add only", "The Better Apps Vite plugin and a staging deploy workflow"]
 ] as const
-export const WhatInitAsks: StoryObj<typeof meta> = {
-  name: "What init asks",
+export const WhatCreateAsks: StoryObj<typeof meta> = {
+  name: "What create asks",
   render: () => (
     <Documentation
-      title="What buildkit init asks"
+      title="What buildkit create asks"
       summary="The app template is a React app on TanStack Start, in ssr or spa mode."
     >
       <h2>Questions and add-ons</h2>

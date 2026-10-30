@@ -9,7 +9,7 @@ import { catalogVersion } from "./version.js"
 import { versions } from "./versions.js"
 
 /**
- * Buildkit's catalog: what `buildkit init` can make, and what `buildkit add` can add. The database and sign-in slots
+ * Buildkit's catalog: what `buildkit create` can make, and what `buildkit add` can add. The database and sign-in slots
  * default to "no" while the Better Apps packages they use are unpublished, so a new app installs from npm today.
  */
 export const catalog = defineCatalog({

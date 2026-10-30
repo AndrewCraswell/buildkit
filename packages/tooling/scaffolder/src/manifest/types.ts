@@ -177,11 +177,11 @@ export interface TargetManifest {
   description: string
   family: string
   modes: TargetMode[]
-  /** Points this target owns. Each one is wired at `init`, so `add` never edits your files. */
+  /** Points this target owns. Each one is wired at `create`, so `add` never edits your files. */
   points?: PointDefinition[]
   /** Base files, dependencies and wiring for a new project. */
   base(ctx: TargetContext): Contribution[]
-  /** Codemods that wire an existing project once, when it's adopted with `init --adopt`. */
+  /** Codemods that wire an existing project once, when it's adopted with `create --adopt`. */
   adopt?(tree: MutableTree, ctx: TargetContext): void
 }
 

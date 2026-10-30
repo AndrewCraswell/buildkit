@@ -41,7 +41,7 @@ function write(path: string, content: string) {
 }
 
 const project = (path: string) => join(root, "demo", path)
-const init = ["init", "app", "demo", "--mode", "ssr", "--yes", "--json"]
+const create = ["create", "app", "demo", "--mode", "ssr", "--yes", "--json"]
 
 /** The catalog as an earlier release: its router starter has no `defaultPreload`. */
 function previousCatalog(): CatalogManifest {
@@ -62,9 +62,9 @@ function previousCatalog(): CatalogManifest {
   }
 }
 
-describe("buildkit init", () => {
+describe("buildkit create", () => {
   it("creates a TanStack Start app that check accepts, and planning it again changes nothing", async () => {
-    const result = await run(init)
+    const result = await run(create)
     expect(result.code).toBe(0)
     expect(envelope(result.out)).toMatchObject({ status: "applied", required: ["@buildkit/ci"] })
     const expected = ["buildkit.jsonc", ".buildkit/lock.json", "src/start.ts", "src/router.tsx", "vite.config.ts"]
@@ -91,7 +91,7 @@ describe("buildkit init", () => {
 
 describe("buildkit add", () => {
   it("asks for a database before sign-in, and adds both when the choice is given", async () => {
-    await run(init)
+    await run(create)
     const asked = await run(["add", "auth", "--cwd", "demo", "--yes", "--json"])
     expect(asked.code).toBe(1)
     const [decision] = envelope(asked.out).decisions ?? []
@@ -113,7 +113,7 @@ describe("buildkit add", () => {
   })
 
   it("adds localization without touching your starter files or your package.json keys", async () => {
-    await run(init)
+    await run(create)
     const router = `${read("src/router.tsx")}\n// My note.\n`
     write("src/router.tsx", router)
     const manifest = JSON.parse(read("package.json"))
@@ -139,7 +139,7 @@ describe("buildkit add", () => {
 describe("buildkit upgrade", () => {
   it("moves an app made with an earlier catalog version to the installed one, keeping your edits", async () => {
     const previous = previousCatalog()
-    expect((await run(init, { catalog: previous })).code).toBe(0)
+    expect((await run(create, { catalog: previous })).code).toBe(0)
     expect(read("src/router.tsx")).not.toContain("defaultPreload")
     const styles = `${read("src/styles.css")}\n.mine {\n  color: red;\n}\n`
     write("src/styles.css", styles)
@@ -160,7 +160,7 @@ describe("buildkit upgrade", () => {
 
   it("never overwrites a starter file you edited when the old version can't be rendered", async () => {
     const previous = previousCatalog()
-    await run(init, { catalog: previous })
+    await run(create, { catalog: previous })
     const router = read("src/router.tsx").replace(
       "export function getRouter() {",
       "// Mine.\nexport function getRouter() {"
