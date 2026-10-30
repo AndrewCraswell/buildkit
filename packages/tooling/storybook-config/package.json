@@ -18,18 +18,15 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "@repo/oxlint-config": "workspace:*",
-    "oxlint": "^1.89.0",
     "typescript": "catalog:",
-    "vitest": "5.0.5",
-    "@vitest/coverage-v8": "5.0.5",
-    "@types/react": "^19.3.0"
+    "vitest": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@types/react": "^19.3.0",
+    "vite-plus": "catalog:"
   },
   "scripts": {
-    "lint": "oxlint --max-warnings=0",
-    "check:types": "tsc --noEmit",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "vp test run",
+    "test:coverage": "vp test run --coverage"
   },
   "peerDependencies": {
     "react": "^19.2.0"

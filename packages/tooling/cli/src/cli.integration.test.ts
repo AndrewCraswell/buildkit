@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { catalog } from "@buildkitgg/catalog"
 import type { CatalogManifest, Envelope } from "@buildkitgg/scaffolder"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test"
 import { runBuildkit } from "./index.js"
 
 let root: string

@@ -15,13 +15,16 @@ export const writeJson = (file, value) => write(file, JSON.stringify(value, null
 export function pnpmCommand(args) {
   const entry = process.env.npm_execpath
   if (!entry) {
-    throw new Error("Run this command through pnpm.")
+    // vp run starts tasks without pnpm's environment, so use the pnpm on PATH.
+    return ["pnpm", args]
   }
   return /\.[cm]?js$/.test(entry) ? [process.execPath, [entry, ...args]] : [entry, args]
 }
 export function pnpm(args, cwd = root, options = {}) {
   const [command, commandArgs] = pnpmCommand(args)
-  return execFileSync(command, commandArgs, { cwd, stdio: "inherit", ...options })
+  // Windows runs pnpm through its .cmd shim, which needs a shell.
+  const shell = command === "pnpm" && process.platform === "win32"
+  return execFileSync(command, commandArgs, { cwd, stdio: "inherit", shell, ...options })
 }
 export function snapshot() {
   return readJson(resolve(tool, "upstream/snapshot.json"))

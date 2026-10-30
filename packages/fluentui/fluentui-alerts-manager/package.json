@@ -26,29 +26,27 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "test:coverage": "vitest run --coverage",
-    "lint": "oxlint --max-warnings=0",
+    "test:coverage": "vp test run --coverage",
     "prepack": "pnpm build",
-    "test": "vitest run",
-    "build": "tsc -p tsconfig.build.json",
-    "check:types": "pnpm build && tsc --noEmit"
+    "test": "vp test run",
+    "build": "tsc -p tsconfig.build.json"
   },
   "version": "0.0.0",
   "type": "module",
   "devDependencies": {
     "react-dom": "19.3.1",
     "@testing-library/react": "^16.3.3",
-    "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-v8": "catalog:",
     "typescript": "catalog:",
-    "vitest": "5.0.5",
+    "vitest": "catalog:",
     "@types/react": "^19.3.0",
     "@types/node": "^24.19.2",
     "react": "19.3.1",
     "happy-dom": "^21.0.4",
     "@types/react-dom": "^19.3.0",
-    "@fluentui/react-components": "^9.74.11"
+    "@fluentui/react-components": "^9.74.11",
+    "vite-plus": "catalog:"
   },
   "types": "./dist/index.d.ts",
   "repository": {

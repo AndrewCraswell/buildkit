@@ -2,13 +2,13 @@
 
 The agent-facing project summary lives in [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) and
 links here. These conventions apply to all TypeScript/React code in the monorepo. Many are enforced by `oxlint` (see
-[`packages/tooling/oxlint-config/base.json`](../packages/tooling/oxlint-config/base.json)).
+[`packages/tooling/oxlint-config/base.ts`](../packages/tooling/oxlint-config/base.ts)).
 
 ## Quality gates
 
 - **Run `pnpm verify` before finishing.** It checks formatting, lint, types, unused code, coverage, and builds.
 - **New code ships with co-located tests** and must keep the relevant app or package's Vitest coverage thresholds green.
-- Git hooks (lefthook) run `oxlint --fix` + `oxfmt` on commit and `check:types` on push. Don't bypass with
+- Git hooks (Vite+) lint and format staged files on commit and run `pnpm check` on push. Don't bypass with
   `--no-verify`.
 
 ## TypeScript & type helpers

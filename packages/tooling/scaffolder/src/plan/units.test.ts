@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { decideKey } from "../merge/keys.js"
 import { applyStyle, countLines, hasConflictMarkers, hashText, normalizeText, textStyle } from "../ownership/text.js"
 import { fixtureCatalog } from "../testing/fixture.js"

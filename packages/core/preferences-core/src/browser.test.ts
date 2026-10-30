@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest"
+import { afterEach, expect, it, vi } from "vite-plus/test"
 import { connectPreferencesStorage } from "./browser.js"
 import { createPreferences } from "./index.js"
 

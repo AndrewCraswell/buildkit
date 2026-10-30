@@ -23,7 +23,7 @@ import {
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { createCn } from "cn/config"
-import { afterEach, expect, it } from "vitest"
+import { afterEach, expect, it } from "vite-plus/test"
 
 afterEach(() => {
   cleanup()

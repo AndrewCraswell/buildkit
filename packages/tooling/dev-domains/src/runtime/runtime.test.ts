@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
-import { afterEach, expect, it } from "vitest"
+import { afterEach, expect, it } from "vite-plus/test"
 import { configSchema } from "../config/schema.js"
 import { resolveEndpoints } from "../domains/resolve.js"
 import { serverCommand, serverEnvironment } from "./command.js"

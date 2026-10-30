@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react"
 import { createMemoryRouter } from "react-router"
-import { expect, it } from "vitest"
+import { expect, it } from "vite-plus/test"
 import { createRouterAdapter, useRoutePanel, useRouteTabs } from "./index.js"
 it("follows native navigation, preserves search on request, and handles direct-link dismissal and history", async () => {
   const router = createMemoryRouter([{ path: "*", element: null }], { initialEntries: ["/people/42?filter=active"] })

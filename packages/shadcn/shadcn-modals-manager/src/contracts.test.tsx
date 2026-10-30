@@ -12,7 +12,7 @@ import type {
 import { cleanup, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useEffect } from "react"
-import { afterEach, expect, expectTypeOf, it } from "vitest"
+import { afterEach, expect, expectTypeOf, it } from "vite-plus/test"
 import { createModalManager, ModalRenderer } from "./index.js"
 import type {
   ModalAdapter,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { defineAddon } from "../manifest/define.js"
 import type { Contribution } from "../manifest/types.js"
 import { readLock } from "../state/files.js"

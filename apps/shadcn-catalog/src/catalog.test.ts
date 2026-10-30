@@ -1,5 +1,5 @@
 import * as root from "@buildkitgg/shadcn-baseui-kit"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import upstream from "../../../packages/shadcn/shadcn-baseui-nova/upstream.json"
 
 describe("component catalog contract", () => {

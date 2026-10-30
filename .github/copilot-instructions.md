@@ -1,16 +1,19 @@
 # Buildkit Monorepo — Project Guidelines
 
-A Turborepo + pnpm monorepo with React 19 and TypeScript applications. UI systems are selected at the app or
+A Vite+ and pnpm monorepo with React 19 and TypeScript applications. UI systems are selected at the app or
 product-surface boundary. Shared config lives in `@repo/*` packages under `packages/`. See [README.md](../README.md) for
 setup and the [docs index](../docs/README.md) for conventions.
 
 ## Tooling (differs from common defaults)
 
-- **Lint:** `oxlint` (not eslint) · **Format:** `oxfmt` (not prettier).
-- **Type-check:** `tsc` from a pinned native TypeScript — keep the version aligned across packages.
-- **Test:** Vitest (jsdom unit + Storybook browser tests) · **Bundler/dev server:** Vite · **Workshop:** Storybook.
+- **Toolchain:** [Vite+](https://viteplus.dev) (`vp`). `vp lint` runs Oxlint (not eslint), `vp fmt` runs Oxfmt (not
+  prettier), and `vp check` runs both plus type checks. Lint and format config lives in the root `vite.config.ts`.
+- **Type-check:** `vp check` type-checks every workspace with the pinned native TypeScript; packages build with `tsc`.
+  Keep the TypeScript version aligned across packages.
+- **Test:** Vitest through `vp test`, importing from `vite-plus/test` (jsdom unit and Storybook browser tests).
+  **Bundler/dev server:** Vite. **Workshop:** Storybook.
 - **Package manager:** pnpm (`>=12`) on Node `>=24`, enforced via root `engines` + `engine-strict`.
-- **Task runner:** Turborepo.
+- **Task runner:** `vp run`, which runs workspace scripts in dependency order and caches them with `--cache`.
 
 ## Build / verify loop
 
@@ -21,8 +24,8 @@ before rerunning that check.
 
 Run `pnpm verify` before declaring work done. It checks format, lint, types, unused code, test coverage, and builds.
 
-Git hooks (lefthook): **pre-commit** runs `oxlint --fix` + `oxfmt` on staged files; **pre-push** runs
-`pnpm check:types`. Do not bypass them with `--no-verify`.
+Git hooks (Vite+, in `.vite-hooks/`): **pre-commit** runs `vp staged`, which lints and formats staged files;
+**pre-push** runs `pnpm check`. Do not bypass them with `--no-verify`.
 
 ## Workspace layout
 

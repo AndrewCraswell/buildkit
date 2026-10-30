@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { StrictMode, useState } from "react"
 import { renderToString } from "react-dom/server"
-import { afterEach, expect, expectTypeOf, it, vi } from "vitest"
+import { afterEach, expect, expectTypeOf, it, vi } from "vite-plus/test"
 import { createModalManager, ModalRenderer, useModalExit, useModals } from "./index.js"
 import type { ModalSlotProps, ModalSurfaceProps } from "./index.js"
 

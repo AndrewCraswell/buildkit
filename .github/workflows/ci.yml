@@ -40,7 +40,7 @@ jobs:
       - uses: betterapps-hq/pipelines/github/actions/setup@8b4311a69b28ad7423898dceda366cee6644f92c # v1.1.1
       - run: pnpm --filter @buildkitgg/dev-domains test:integration
       - run: pnpm --filter @buildkitgg/scaffolder test:integration
-      - run: pnpm turbo run build --filter=@buildkitgg/cli^...
+      - run: pnpm exec vp run --cache --filter "@buildkitgg/cli^..." build
       - run: pnpm --filter @buildkitgg/cli test:integration
   databases:
     runs-on: ubuntu-latest
@@ -48,13 +48,15 @@ jobs:
     steps:
       - uses: betterapps-hq/pipelines/github/actions/setup@8b4311a69b28ad7423898dceda366cee6644f92c # v1.1.1
       - name: Test the Drizzle adapter on PostgreSQL, Neon and MySQL servers
-        run: pnpm turbo run test:servers --filter=@better-apps/drizzle
+        run:
+          pnpm exec vp run --cache --filter "@better-apps/drizzle^..." build && pnpm --filter @better-apps/drizzle
+          test:servers
   templates:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: betterapps-hq/pipelines/github/actions/setup@8b4311a69b28ad7423898dceda366cee6644f92c # v1.1.1
-      - run: pnpm turbo run build --filter=@buildkitgg/cli...
+      - run: pnpm exec vp run --cache --filter "@buildkitgg/cli..." build
       - name: Generate Buildkit apps, then install, check, lint, build and type-check each one
         run: pnpm --filter @buildkitgg/cli test:smoke
   release:

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vite-plus/test"
 import { mergeText } from "../merge/text.js"
 import { readEnv, removeEnvKey, setEnvValue } from "./env.js"
 import {

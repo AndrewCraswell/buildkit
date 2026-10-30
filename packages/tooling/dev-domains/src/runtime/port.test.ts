@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises"
 import { createServer } from "node:net"
 import os from "node:os"
 import path from "node:path"
-import { expect, it, vi } from "vitest"
+import { expect, it, vi } from "vite-plus/test"
 import { reservePort } from "./port.js"
 
 it("holds distinct ports until release and allows repeated cleanup", async () => {

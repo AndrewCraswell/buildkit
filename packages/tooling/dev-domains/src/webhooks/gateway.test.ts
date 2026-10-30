@@ -1,5 +1,5 @@
 import { createServer } from "node:http"
-import { expect, it } from "vitest"
+import { expect, it } from "vite-plus/test"
 import { startGateway } from "./gateway.js"
 
 it("forwards exact POST paths and unmodified bytes, rejects other exposure, and closes its listener", async () => {

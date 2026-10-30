@@ -61,5 +61,5 @@ const code = await runBuildkit(["add", "i18n", "--json", "--yes"], { io: { cwd: 
 
 `pnpm --filter @buildkitgg/cli test:smoke` generates apps with the built CLI, installs them with the Buildkit packages
 packed from the checkout, then runs `buildkit check`, lint, format check, build and type-check, and requests pages from
-the built server. Build first with `pnpm turbo run build --filter=@buildkitgg/cli...`. Cases that need unpublished
-Better Apps packages are skipped and say why.
+the built server. Build first with `pnpm exec vp run --cache --filter "@buildkitgg/cli..." build`. Cases that need
+unpublished Better Apps packages are skipped and say why.

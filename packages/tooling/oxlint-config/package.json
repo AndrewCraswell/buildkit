@@ -4,10 +4,10 @@
   "private": true,
   "license": "MIT",
   "files": [
-    "base.json"
+    "base.ts"
   ],
   "exports": {
-    "./base": "./base.json"
+    "./base": "./base.ts"
   },
   "scripts": {}
 }
