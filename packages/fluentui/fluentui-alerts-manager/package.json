@@ -10,7 +10,7 @@
   "license": "MIT",
   "peerDependencies": {
     "react": "^19.2.0",
-    "@fluentui/react-components": "^9.74.11",
+    "@fluentui/react-components": "^9.75.0",
     "react-dom": "^19.2.0"
   },
   "sideEffects": false,
@@ -48,7 +48,7 @@
     "react": "19.3.1",
     "happy-dom": "^21.0.4",
     "@types/react-dom": "^19.3.0",
-    "@fluentui/react-components": "^9.74.11"
+    "@fluentui/react-components": "^9.75.0"
   },
   "types": "./dist/index.d.ts",
   "repository": {

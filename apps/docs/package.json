@@ -11,7 +11,7 @@
     "lint": "oxlint --max-warnings=0"
   },
   "devDependencies": {
-    "@microsoft/api-documenter": "^7.30.18",
+    "@microsoft/api-documenter": "^7.30.19",
     "@repo/oxlint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "24.19.2",
