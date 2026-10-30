@@ -2,6 +2,33 @@
   "name": "@buildkitgg/cli",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 08:23:50 GMT",
+      "version": "0.2.1",
+      "tag": "@buildkitgg/cli_v0.2.1",
+      "comments": {
+        "patch": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/cli",
+            "commit": "78d7ac9c856991b46eebc4eec5bb9cebffa0a74b",
+            "comment": "Create projects with buildkit create. buildkit init still works, unlisted, for a release."
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/cli",
+            "comment": "Bump @buildkitgg/catalog to v0.2.1",
+            "commit": "not available"
+          },
+          {
+            "author": "beachball",
+            "package": "@buildkitgg/cli",
+            "comment": "Bump @buildkitgg/scaffolder to v0.6.0",
+            "commit": "not available"
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 30 Oct 2026 04:56:17 GMT",
       "version": "0.2.0",
       "tag": "@buildkitgg/cli_v0.2.0",

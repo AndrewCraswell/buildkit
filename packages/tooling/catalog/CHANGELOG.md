@@ -1,8 +1,17 @@
 # Change Log - @buildkitgg/catalog
 
-<!-- This log was last generated on Thu, 29 Oct 2026 23:24:24 GMT and should not be manually modified. -->
+<!-- This log was last generated on Fri, 30 Oct 2026 08:23:50 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.2.1
+
+Fri, 30 Oct 2026 08:23:50 GMT
+
+### Patches
+
+- Say buildkit create, not buildkit init, in the README. (ajcraswell@gmail.com)
+- Bump @buildkitgg/scaffolder to v0.6.0
 
 ## 0.2.0
 
