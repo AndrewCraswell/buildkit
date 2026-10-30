@@ -45,11 +45,17 @@ function pairUpgrade(): Upgrade {
   return { socket: pair[1], response: new Response(null, { status: 101, webSocket: pair[0] } as ResponseInit) }
 }
 
-function whenOpen(socket: WebSocketLike): Promise<void> {
-  if (socket.readyState !== 0) {
-    return Promise.resolve()
+function whenOpen(socket: WebSocketLike): Promise<boolean> {
+  if (socket.readyState === undefined || socket.readyState === 1) {
+    return Promise.resolve(true)
   }
-  return new Promise((resolve) => socket.addEventListener("open", resolve))
+  if (socket.readyState !== 0) {
+    return Promise.resolve(false)
+  }
+  return new Promise((resolve) => {
+    socket.addEventListener("open", () => resolve(true))
+    socket.addEventListener("close", () => resolve(false))
+  })
 }
 
 /**
@@ -98,7 +104,10 @@ export function localRealtime(options: LocalRealtimeOptions = {}): RealtimeAdapt
         }
         void leave(host, room, socket, current)
       })
-      void whenOpen(socket).then(() => {
+      void whenOpen(socket).then((open) => {
+        if (!open || (socket.readyState !== undefined && socket.readyState !== 1)) {
+          return
+        }
         let members = rooms.get(id)
         if (!members) {
           members = new Map()

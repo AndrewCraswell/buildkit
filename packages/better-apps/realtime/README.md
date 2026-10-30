@@ -131,3 +131,5 @@ A new room adds a binding and a migration entry with a new tag. A removed room n
 
 Browser joins default to the same origin. Set `allowedOrigins` on `handleRooms` when serving a separate frontend or
 using a proxy that rewrites the host. Requests without an Origin header are allowed for server clients.
+`RoomHandle.connect` is a trusted server API. When routing browser upgrades directly, reject disallowed Origin headers
+before resolving the actor and calling connect. Use handleRooms for the built-in origin policy.
