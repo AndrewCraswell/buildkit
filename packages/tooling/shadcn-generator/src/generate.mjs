@@ -186,7 +186,6 @@ export function generateManifests() {
       description: `Upstream shadcn Base UI components in the ${style} style, with compiled CSS and TypeScript declarations.`,
       scripts: {
         build: `node ../../tooling/shadcn-generator/src/build.mjs ${style}`,
-        "check:types": "pnpm build",
         prepack: "pnpm build"
       },
       peerDependencies: template.peerDependencies,
