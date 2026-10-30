@@ -182,10 +182,12 @@ describe("mentions", () => {
     await write("acme/n1", "y".repeat(400), ["ada"])
     await write("acme/n2", `${"y".repeat(270)} ${mentionToken("ada")}`, ["ada"])
     await write("acme/n3", `${"y".repeat(270)} \\@[ and more text`, ["ada"])
+    await write("acme/n4", `@[draft ${"y".repeat(300)} ${mentionToken("ada")}`, ["ada"])
     expect((await rows()).map((row) => row.excerpt)).toEqual([
       "y".repeat(280),
       "y".repeat(270),
-      `${"y".repeat(270)} \\@[ and m`
+      `${"y".repeat(270)} \\@[ and m`,
+      `@[draft ${"y".repeat(272)}`
     ])
   })
 

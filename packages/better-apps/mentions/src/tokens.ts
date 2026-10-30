@@ -11,6 +11,19 @@ export function parseMentions(text: string): string[] {
   return [...new Set([...text.matchAll(tokens)].flatMap(([, userId]) => (userId === undefined ? [] : [userId])))]
 }
 
+/** The start of a text, at most `length` characters, ending before a mention token the limit would cut in half. */
+export function truncateText(text: string, length: number): string {
+  for (const match of text.matchAll(tokens)) {
+    if (match.index >= length) {
+      break
+    }
+    if (match.index + match[0].length > length) {
+      return text.slice(0, match.index).trimEnd()
+    }
+  }
+  return text.slice(0, length)
+}
+
 /**
  * Text with each mention token turned into `@Name`, for previews, emails and screen readers. Users `names` can't name
  * show as "Former user", and an escaped `\@[` becomes `@[`.

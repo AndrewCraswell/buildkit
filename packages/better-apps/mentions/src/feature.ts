@@ -10,7 +10,7 @@ import {
   type Where
 } from "better-apps"
 import { z } from "zod"
-import { parseMentions } from "./tokens.js"
+import { parseMentions, truncateText } from "./tokens.js"
 
 /** The model of the mentions table. */
 export const mentionModel = "mention"
@@ -165,16 +165,7 @@ function decodeCursor(cursor: string): { time: Date; id: string } {
   throw new BetterAppsError("INVALID_INPUT", "That page cursor isn't valid.")
 }
 
-/** The start of a text, without a mention token cut in half at the end. */
-function excerptOf(text: string | null | undefined): string | null {
-  if (!text) {
-    return null
-  }
-  const cut = text.slice(0, excerptLength)
-  const open = cut.lastIndexOf("@[")
-  const partial = text.length > excerptLength && open !== -1 && cut[open - 1] !== "\\" && !cut.includes("]", open)
-  return partial ? cut.slice(0, open).trimEnd() : cut
-}
+const excerptOf = (text: string | null | undefined) => (text ? truncateText(text, excerptLength) : null)
 
 async function addMention(db: DatabaseAdapter, feature: string, mention: NewMention, at: Date): Promise<void> {
   const where: Where[] = [
