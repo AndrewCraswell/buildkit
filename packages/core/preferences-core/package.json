@@ -32,7 +32,7 @@
   "type": "module",
   "devDependencies": {
     "happy-dom": "^21.0.4",
-    "@types/node": "^24.13.2",
+    "@types/node": "^24.19.2",
     "@repo/typescript-config": "workspace:*",
     "@repo/oxlint-config": "workspace:*",
     "vitest": "5.0.5",
