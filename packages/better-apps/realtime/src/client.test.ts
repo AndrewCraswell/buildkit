@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { joinRoom } from "./client.js"
 
 /** A browser WebSocket the test drives from the server's side. */

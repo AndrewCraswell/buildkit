@@ -1,5 +1,5 @@
 import { configureBackends, type Actor, type StandardSchemaV1 } from "better-apps"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { realtimeBindingName, roomClassName } from "./cloudflare.js"
 import { defineRoom, handleRooms, type RoomHandle, type ServerFrame } from "./index.js"
 import { localRealtime, type WebSocketLike } from "./local.js"

@@ -1,7 +1,7 @@
 // The Durable Object class in Node, with fake hibernating sockets, for what src/workerd.test.ts can't reach: the
 // paths after hibernation and the attachment limit. Node can't build a 101 response, so upgrades answer 200 here.
 import { configureBackends, type Actor } from "better-apps"
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest"
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vite-plus/test"
 import { durableObjectRealtime, roomDurableObject, type RoomDurableObject } from "./cloudflare.js"
 import { defineRoom, type ServerFrame } from "./index.js"
 
