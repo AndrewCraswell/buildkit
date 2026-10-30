@@ -47,12 +47,22 @@ export async function storageAdapter(): Promise<StorageAdapter> {
   return defaultAdapter
 }
 
-/** The upload URL and signing secret, from `configureBackends` or the Worker's env. */
-export async function uploadSettings(): Promise<{ url: string; secret: string }> {
-  const uploads = getBackend("storage")?.uploads
-  const url = uploads?.url ?? defaultUploadUrl
-  if (uploads?.secret !== undefined) {
-    return { url, secret: uploads.secret }
+/** The path or URL `handleUpload` answers at. */
+export function uploadUrl(): string {
+  return getBackend("storage")?.uploads?.url ?? defaultUploadUrl
+}
+
+/**
+ * The secret that signs uploads, from `configureBackends` or the Worker's env. Read only when signing or checking an
+ * upload, so apps that never take uploads need none.
+ */
+export async function uploadSecret(): Promise<string> {
+  const configured = getBackend("storage")?.uploads?.secret
+  if (configured !== undefined) {
+    if (configured === "") {
+      throw new Error("The upload secret in configureBackends({ storage: { uploads: { secret } } }) is empty.")
+    }
+    return configured
   }
   const { cloudflareEnv } = await cloudflareModule()
   const secret = (await cloudflareEnv("Signing uploads"))[uploadSecretBinding]
@@ -62,5 +72,5 @@ export async function uploadSettings(): Promise<{ url: string; secret: string }>
         "configureBackends({ storage: { uploads: { secret } } })."
     )
   }
-  return { url, secret }
+  return secret
 }

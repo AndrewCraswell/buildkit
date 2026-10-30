@@ -284,6 +284,20 @@ describe.each(adapters)("a bucket on %s", (_name, makeAdapter) => {
     })
   })
 
+  it("takes empty uploads", async () => {
+    const upload = await files.createUpload({ key: "empty.txt", contentType: "text/plain", size: 0 })
+
+    const response = await handleUpload(
+      new Request(`https://app.test${upload.url}`, {
+        method: "PUT",
+        headers: { "content-type": "text/plain", "content-length": "0" }
+      })
+    )
+
+    expect(response?.status).toBe(201)
+    expect(await files.head("empty.txt")).toMatchObject({ size: 0 })
+  })
+
   it("refuses expired upload URLs", async () => {
     const upload = await files.createUpload({ key: "late.txt", contentType: "text/plain", size: 1 }, { expiresIn: -1 })
 

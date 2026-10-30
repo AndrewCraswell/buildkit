@@ -60,6 +60,18 @@ describe("the default R2 adapter", () => {
     ).rejects.toThrow(/STORAGE_UPLOAD_SECRET/)
   })
 
+  it("leaves other requests alone without a secret", async () => {
+    expect(await handleUpload(new Request("https://app.test/other"))).toBeNull()
+  })
+
+  it("refuses an empty configured secret", async () => {
+    configureBackends({ storage: { uploads: { secret: "" } } })
+
+    await expect(
+      defineBucket("avatars").createUpload({ key: "a", contentType: "text/plain", size: 1 })
+    ).rejects.toThrow(/empty/)
+  })
+
   it("serves uploads at the configured URL", async () => {
     configureBackends({ storage: { uploads: { url: "https://files.app.test/up/", secret: "s" } } })
     env.STORAGE_AVATARS = await miniflare.getR2Bucket("STORAGE_AVATARS")

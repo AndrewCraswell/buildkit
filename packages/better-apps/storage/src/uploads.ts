@@ -1,6 +1,6 @@
 import { BetterAppsError } from "better-apps"
 import type { StoredObject } from "./adapter.js"
-import { storageAdapter, uploadSettings } from "./backends.js"
+import { storageAdapter, uploadSecret, uploadUrl } from "./backends.js"
 import { exactLength } from "./limits.js"
 
 /** What a signed upload URL allows: one object, of one type and size, until it expires. */
@@ -82,11 +82,10 @@ async function verify(token: string, secret: string, now: Date): Promise<UploadG
 
 /** Signs an upload URL for checks a bucket has already made. */
 export async function createUploadUrl(grant: Omit<UploadGrant, "expiresAt">, expiresIn: number): Promise<Upload> {
-  const { url, secret } = await uploadSettings()
   const expiresAt = Math.floor(Date.now() / 1000) + expiresIn
-  const token = await sign({ ...grant, expiresAt }, secret)
+  const token = await sign({ ...grant, expiresAt }, await uploadSecret())
   return {
-    url: `${url.replace(/\/+$/, "")}/${token}`,
+    url: `${uploadUrl().replace(/\/+$/, "")}/${token}`,
     method: "PUT",
     headers: { "content-type": grant.contentType },
     expiresAt: new Date(expiresAt * 1000)
@@ -107,16 +106,15 @@ function mediaType(header: string | null): string | undefined {
  * the body into the bucket, stopping if it runs past the signed size. It answers `201` with the stored object.
  */
 export async function handleUpload(request: Request): Promise<Response | null> {
-  const { url, secret } = await uploadSettings()
   const requestUrl = new URL(request.url)
-  const base = `${new URL(url, requestUrl).pathname.replace(/\/+$/, "")}/`
+  const base = `${new URL(uploadUrl(), requestUrl).pathname.replace(/\/+$/, "")}/`
   if (!requestUrl.pathname.startsWith(base)) {
     return null
   }
   if (request.method !== "PUT") {
     return new Response(null, { status: 405, headers: { allow: "PUT" } })
   }
-  const grant = await verify(requestUrl.pathname.slice(base.length), secret, new Date())
+  const grant = await verify(requestUrl.pathname.slice(base.length), await uploadSecret(), new Date())
   if (!grant) {
     return errorResponse(new BetterAppsError("FORBIDDEN", "This upload URL isn't valid or has expired."))
   }
@@ -129,12 +127,14 @@ export async function handleUpload(request: Request): Promise<Response | null> {
   if (length === null) {
     return errorResponse(new BetterAppsError("LENGTH_REQUIRED", "The upload needs a Content-Length.", { status: 411 }))
   }
-  if (Number(length) !== grant.size || !request.body) {
+  // An empty upload has no body to read.
+  const body = request.body ?? (grant.size === 0 ? new Blob([]).stream() : null)
+  if (Number(length) !== grant.size || !body) {
     return errorResponse(new BetterAppsError("INVALID_INPUT", `The upload must be exactly ${grant.size} bytes.`))
   }
   let object: StoredObject
   try {
-    object = await (await storageAdapter()).bucket(grant.bucket).put(grant.key, exactLength(request.body, grant.size), {
+    object = await (await storageAdapter()).bucket(grant.bucket).put(grant.key, exactLength(body, grant.size), {
       size: grant.size,
       contentType: grant.contentType,
       cacheControl: null,
