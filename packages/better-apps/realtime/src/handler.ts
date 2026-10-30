@@ -5,6 +5,8 @@ import type { RoomHandle } from "./room.js"
 export interface HandleRoomsOptions {
   /** The rooms it serves. Requests for other names get 404. */
   rooms: readonly RoomHandle[]
+  /** Allowed browser origins. Defaults to the request URL origin; requests without Origin are allowed. */
+  allowedOrigins?: readonly string[] | undefined
   /** Reads who is joining, such as `(request) => identity.getActor(request)`. */
   getActor: (request: Request) => Actor | null | Promise<Actor | null>
   /** The default is `/api/rooms`. */
@@ -37,6 +39,10 @@ export async function handleRooms(request: Request, options: HandleRoomsOptions)
   }
   if (request.method !== "GET") {
     return new Response(null, { status: 405, headers: { allow: "GET" } })
+  }
+  const origin = request.headers.get("origin")
+  if (origin !== null && !(options.allowedOrigins ?? [new URL(request.url).origin]).includes(origin)) {
+    return new Response("Forbidden origin", { status: 403 })
   }
   return room.connect(request, { key, actor: await options.getActor(request) })
 }

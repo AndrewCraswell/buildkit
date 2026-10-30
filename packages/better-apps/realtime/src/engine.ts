@@ -139,7 +139,9 @@ export function receive(
   state: ConnectionState,
   data: string | ArrayBuffer
 ): Promise<void> {
-  const handled = (queues.get(socket) ?? Promise.resolve()).then(() => handle(host, definition, socket, state, data))
+  const handled = (queues.get(socket) ?? Promise.resolve()).then(() =>
+    runHook(socket, () => handle(host, definition, socket, state, data))
+  )
   // A failed frame mustn't stop the ones after it.
   queues.set(
     socket,

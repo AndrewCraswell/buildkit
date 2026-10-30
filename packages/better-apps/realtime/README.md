@@ -30,13 +30,17 @@ await invoiceRoom.connections(invoiceId) // [{ id, actor, presence }]
 // In the browser:
 import { joinRoom } from "@better-apps/realtime/client"
 
-const room = joinRoom<ServerMessage, ClientMessage, { field: string | null }>(`/api/rooms/invoice/${invoiceId}`, {
-  presence: { field: null },
-  onMessage: (message) => refresh(message)
-})
+const room = joinRoom<ServerMessage, ClientMessage, { field: string | null }>(
+  `/api/rooms/invoice/${encodeURIComponent(invoiceId)}`,
+  {
+    presence: { field: null },
+    onMessage: (message) => refresh(message)
+  }
+)
 room.setPresence({ field: "amount" })
 room.subscribe(() => render(room.getSnapshot())) // { status, id, peers, presence }
-room.leave()
+// In your component or page cleanup handler:
+const cleanup = () => room.leave()
 ```
 
 Declare rooms at module top level with a literal name, and export the handle: the name is the room's identity, and the
@@ -123,3 +127,6 @@ once:
 ```
 
 A new room adds a binding and a migration entry with a new tag. A removed room needs a `deleted_classes` migration.
+
+Browser joins default to the same origin. Set `allowedOrigins` on `handleRooms` when serving a separate frontend or
+using a proxy that rewrites the host. Requests without an Origin header are allowed for server clients.

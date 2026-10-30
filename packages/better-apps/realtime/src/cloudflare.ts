@@ -84,7 +84,7 @@ export function durableObjectRealtime(options: DurableObjectRealtimeOptions = {}
   return {
     async connect(room, key, request, { actor }) {
       const headers = new Headers(request.headers)
-      headers.set(joinHeader, JSON.stringify({ key, actor }))
+      headers.set(joinHeader, encodeURIComponent(JSON.stringify({ key, actor })))
       return stub(room, key).fetch(new Request(request, { headers }))
     },
     async broadcast(room, key, message, except) {
@@ -152,7 +152,13 @@ export function roomDurableObject<Message, Presence>(room: RoomHandle<Message, P
             const attachment = socket.deserializeAttachment() as Attachment | null
             return attachment?.key === key ? [{ socket, state: attachment }] : []
           }),
-        save: (socket, state) => (socket as HibernatingSocket).serializeAttachment({ ...state, key })
+        save: (socket, state) => {
+          const target = socket as HibernatingSocket
+          if (target.deserializeAttachment() === null) {
+            throw new Error("Connection left")
+          }
+          target.serializeAttachment({ ...state, key })
+        }
       }
     }
 
@@ -161,7 +167,7 @@ export function roomDurableObject<Message, Presence>(room: RoomHandle<Message, P
       if (request.headers.get("upgrade")?.toLowerCase() !== "websocket" || joined === null) {
         return new Response("Expected a WebSocket upgrade", { status: 426 })
       }
-      const { key, actor } = JSON.parse(joined) as { key: string; actor: Actor | null }
+      const { key, actor } = JSON.parse(decodeURIComponent(joined)) as { key: string; actor: Actor | null }
       const pair = new globals.WebSocketPair()
       const [client, server] = [pair[0], pair[1]]
       const state: ConnectionState = { id: crypto.randomUUID(), actor, presence: null }

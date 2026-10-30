@@ -380,3 +380,16 @@ describe("defineRoom", () => {
     expect(() => defineRoom("chat_room")).toThrow(/lowercase/)
   })
 })
+
+it("rejects foreign browser origins before resolving identity", async () => {
+  const room = defineRoom("origin")
+  const getActor = vi.fn<() => null>(() => null)
+  const response = await handleRooms(
+    new Request("https://app.test/api/rooms/origin/key", {
+      headers: { origin: "https://attacker.test", upgrade: "websocket" }
+    }),
+    { rooms: [room], getActor }
+  )
+  expect(response?.status).toBe(403)
+  expect(getActor).not.toHaveBeenCalled()
+})

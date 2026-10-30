@@ -125,11 +125,13 @@ export function joinRoom<Incoming = unknown, Outgoing = unknown, Presence = unkn
       if (typeof event.data !== "string" || event.data === pong) {
         return
       }
+      let frame: ServerFrame<Incoming, Presence>
       try {
-        handle(JSON.parse(event.data) as ServerFrame<Incoming, Presence>)
+        frame = JSON.parse(event.data) as ServerFrame<Incoming, Presence>
       } catch {
-        // Not a frame this client knows.
+        return
       }
+      handle(frame)
     })
     current.addEventListener("close", () => {
       if (socket !== current) {

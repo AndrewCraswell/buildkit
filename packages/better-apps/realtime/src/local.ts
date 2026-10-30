@@ -64,7 +64,13 @@ export function localRealtime(options: LocalRealtimeOptions = {}): RealtimeAdapt
     return {
       key,
       entries: () => Array.from(rooms.get(id) ?? [], ([socket, state]) => ({ socket, state })),
-      save: (socket, state) => void rooms.get(id)?.set(socket as WebSocketLike, state)
+      save: (socket, state) => {
+        const members = rooms.get(id)
+        if (!members?.has(socket as WebSocketLike)) {
+          throw new Error("Connection left")
+        }
+        members.set(socket as WebSocketLike, state)
+      }
     }
   }
 

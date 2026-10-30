@@ -51,6 +51,7 @@ export function handleRooms(request: Request, options: HandleRoomsOptions): Prom
 
 // @public
 export interface HandleRoomsOptions {
+    allowedOrigins?: readonly string[] | undefined;
     basePath?: string | undefined;
     getActor: (request: Request) => Actor | null | Promise<Actor | null>;
     rooms: readonly RoomHandle[];
