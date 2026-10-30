@@ -188,6 +188,10 @@
       "entry": ["src/index.ts", "src/client.ts", "src/react.tsx"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
+    "packages/better-apps/realtime": {
+      "entry": ["src/index.ts", "src/cloudflare.ts", "src/local.ts", "src/client.ts", "test/cloudflare-workers.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config", "cloudflare"]
+    },
     "packages/better-apps/storage": {
       "entry": ["src/index.ts", "src/cloudflare.ts", "src/local.ts", "test/cloudflare-workers.ts"],
       "ignoreDependencies": ["@repo/oxlint-config", "cloudflare"]

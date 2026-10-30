@@ -4,7 +4,8 @@ The design for the first two capability packages, `@better-apps/storage` and `@b
 picks their adapters without the deploy service. It follows the declaration rules in
 [better-apps-deploy.md](better-apps-deploy.md) §2 and answers its open question 8.3 (Durable Object classes).
 
-**Status (2026-10-30):** agreed. Storage is being built first, then realtime.
+**Status (2026-10-30):** agreed and built: [`@better-apps/storage`](../../packages/better-apps/storage/README.md) and
+[`@better-apps/realtime`](../../packages/better-apps/realtime/README.md).
 
 ## 1. Goals
 
