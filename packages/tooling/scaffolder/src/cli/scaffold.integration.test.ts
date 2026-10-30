@@ -103,6 +103,7 @@ async function scaffold(argv: string[], npm: { run: CommandRunner }, script: Scr
   const code = await runScaffold(argv, {
     version: "0.0.0",
     cacheDir: join(root, "cache"),
+    defaultPackage: "@fixture/catalog",
     runCommand: npm.run,
     io: {
       stdout: (text) => output.push(text),
@@ -113,6 +114,20 @@ async function scaffold(argv: string[], npm: { run: CommandRunner }, script: Scr
     }
   })
   return { code, out: output.join(""), asked: scripted.asked }
+}
+
+/** Answers every question after the template with its default, and confirms. */
+const defaults: ScriptedAnswer = (question) => {
+  switch (question.kind) {
+    case "confirm":
+      return true
+    case "multiselect":
+      return (question.initial as string[] | undefined) ?? []
+    case "select":
+      return String(question.initial ?? question.options?.[0] ?? "")
+    default:
+      return String(question.initial ?? "")
+  }
 }
 
 const envelope = (out: string): Envelope => JSON.parse(out) as Envelope
@@ -145,8 +160,11 @@ describe("scaffold", () => {
       code: "E_USAGE",
       message: "@fixture/catalog has more than one template. Pick one: @fixture/catalog#app, @fixture/catalog#bare."
     })
-    const asked = await scaffold(["@fixture/catalog", "picked", "--mode", "ssr", "--yes"], several, ["app"])
-    expect(asked.asked.map((question) => question.message)).toEqual(["Which template?"])
+    const asked = await scaffold(["@fixture/catalog", "picked", "--mode", "ssr"], several, [
+      "app",
+      ...Array<ScriptedAnswer>(20).fill(defaults)
+    ])
+    expect(asked.asked[0]?.message).toBe("Which template?")
     expect(asked.code).toBe(0)
     expect(readFileSync(join(root, "picked/fixture.jsonc"), "utf8")).toContain('"template": "app"')
   })
@@ -175,20 +193,60 @@ describe("scaffold", () => {
     expect(npm.calls.filter(([verb, spec]) => verb === "install" && spec === "@acme/tower@1.0.0")).toHaveLength(1)
   })
 
+  it("creates from the default catalog without a package, taking a template or a folder first", async () => {
+    const npm = fakeNpm({ "@fixture/catalog": { "1.0.0": catalogSource("1.0.0") } })
+    expect((await scaffold(["app", "demo", "--mode", "ssr", "--yes", "--json"], npm)).code).toBe(0)
+    expect(readFileSync(join(root, "demo/fixture.jsonc"), "utf8")).toContain('"template": "app"')
+    const folderFirst = await scaffold(["other", "--json"], npm)
+    expect(envelope(folderFirst.out).error?.message).toBe(
+      "@fixture/catalog has more than one template. Pick one: @fixture/catalog#app, @fixture/catalog#bare."
+    )
+    const asked = await scaffold(["picked", "--mode", "ssr", "--yes"], npm, ["app"])
+    expect(asked.code).toBe(2)
+    expect(asked.asked).toEqual([])
+  })
+
+  it("takes the template from --preset in either form, and never asks with --yes", async () => {
+    const npm = fakeNpm({ "@fixture/catalog": { "1.0.0": catalogSource("1.0.0") } })
+    for (const [folder, preset] of [
+      ["spaced", ["--preset", "saas"]],
+      ["inline", ["--preset=saas"]]
+    ] as const) {
+      const result = await scaffold(["@fixture/catalog", folder, ...preset, "--yes", "--json"], npm)
+      expect(result.code).toBe(0)
+      expect(readFileSync(join(root, folder, "fixture.jsonc"), "utf8")).toContain('"template": "app"')
+    }
+    // On a terminal, --yes still never makes a decision for you.
+    const unasked = await scaffold(["@fixture/catalog", "demo", "--yes"], npm, ["app"])
+    expect(unasked.asked).toEqual([])
+    expect(unasked.code).toBe(2)
+    expect(unasked.out).toContain("has more than one template")
+  })
+
+  it("applies a saved plan with the catalog version named, never a newer one", async () => {
+    const npm = fakeNpm({ "@fixture/catalog": { "1.0.0": catalogSource("1.0.0") } })
+    const saved = await scaffold(["@fixture/catalog#app", "demo", "--mode", "ssr", "--json", "--out", "plans"], npm)
+    expect(saved.code).toBe(0)
+    const newer = fakeNpm({ "@fixture/catalog": { "1.0.0": catalogSource("1.0.0"), "2.0.0": catalogSource("2.0.0") } })
+    const unnamed = await scaffold(["@fixture/catalog", "--plan", "plans/plan.json", "--json"], newer)
+    expect(envelope(unnamed.out).error?.code).toBe("E_USAGE")
+    const applied = await scaffold(["@fixture/catalog@1.0.0", "--plan=plans/plan.json", "--json"], newer)
+    expect(applied.code).toBe(0)
+    expect(lock().catalog.version).toBe("1.0.0")
+    expect(newer.calls.some(([verb, spec]) => verb === "install" && spec === "@fixture/catalog@2.0.0")).toBe(false)
+  })
+
   it("reports what it can't use, and prints usage", async () => {
     const npm = fakeNpm({ "@acme/empty": { "1.0.0": "export const nothing = 1\n" } })
     const cases: [string[], string][] = [
       [["@acme/missing", "demo", "--json"], "E_PACKAGE_UNAVAILABLE"],
       [["@acme/empty", "demo", "--json"], "E_INVALID_PACK"],
-      [["--yes", "--json"], "E_USAGE"],
-      [["Not A Package", "--json"], "E_USAGE"]
+      [["@acme", "demo", "--json"], "E_USAGE"]
     ]
     for (const [argv, code] of cases) {
       expect({ argv, code: envelope((await scaffold(argv, npm)).out).error?.code }).toEqual({ argv, code })
     }
-    const missing = await scaffold([], npm)
-    expect(missing.code).toBe(2)
-    expect(missing.out).toContain("Usage: scaffold <package>")
+    expect((await scaffold(["--help"], npm)).out).toContain("Usage: scaffold [package]")
     expect((await scaffold(["--version"], npm)).out).toBe("0.0.0\n")
   })
 })

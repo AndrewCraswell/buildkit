@@ -217,6 +217,7 @@ export function runWizard(input: {
 // @public (undocumented)
 export interface ScaffoldOptions {
     cacheDir?: string;
+    defaultPackage?: string;
     // (undocumented)
     io?: Partial<CliIo>;
     runCommand?: CommandRunner;

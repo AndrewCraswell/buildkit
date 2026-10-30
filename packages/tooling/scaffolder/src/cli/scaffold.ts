@@ -1,10 +1,13 @@
+import { resolve } from "node:path"
 import { isTemplatePack, templateSource, type TemplateSource } from "../manifest/packs.js"
 import type { CatalogManifest } from "../manifest/types.js"
 import { isCatalogManifest, PackStore, userCacheDir, type CommandRunner } from "../node/catalogs.js"
+import { readPlanFile } from "../node/project.js"
 import { exitCode, type Envelope } from "../plan/envelope.js"
 import { errorInfo, PlanError } from "../plan/errors.js"
 import { isRecord } from "../plan/json.js"
 import { defineSettings, type ProductSettings } from "../state/settings.js"
+import { isValidVersion } from "../upgrade/semver.js"
 import type { CliIo } from "./commands.js"
 import { runCli } from "./create.js"
 import { describeEnvelope } from "./output.js"
@@ -17,17 +20,23 @@ export interface ScaffoldOptions {
   runCommand?: CommandRunner
   /** Where fetched packages are cached. Defaults to the `scaffold` folder in the user's cache folder. */
   cacheDir?: string
+  /** The catalog package to create from when the arguments name none. Defaults to `@buildkitgg/catalog`. */
+  defaultPackage?: string
 }
 
-const usage = `Usage: scaffold <package>[@version][#template] [folder] [options]
+const defaultPackage = "@buildkitgg/catalog"
 
-Creates a project from a catalog package, or from a template package that extends one. The package is fetched from npm
-into your cache, and every option create takes works here: --mode, --preset, --name, --with, --without, --set, --adopt,
+const usage = `Usage: scaffold [package][@version][#template] [folder] [options]
+       scaffold [template] [folder] [options]
+
+Creates a project from a catalog package, or from a template package that extends one. A scoped name, or any name after
+npm:, is a package; without one, the project comes from @buildkitgg/catalog. The package is fetched from npm into your
+cache, and every option create takes works here: --mode, --preset, --name, --with, --without, --set, --adopt,
 --dry-run, --json and --yes.
 `
 
 /**
- * `scaffold <package> [folder]`: fetches a catalog package, or a template package and the catalog it extends, into the
+ * `scaffold [package] [folder]`: fetches a catalog package, by default `@buildkitgg/catalog`, or a template package and the catalog it extends, into the
  * user's cache and creates a project from it. A catalog package exports its catalog as `catalog` or by default, and its
  * product settings as `settings`. Product CLIs call `create` instead, with their catalog installed.
  */
@@ -39,10 +48,10 @@ export async function runScaffold(argv: readonly string[], options: ScaffoldOpti
     prompter: options.io?.prompter ?? clackPrompter,
     cwd: options.io?.cwd ?? process.cwd()
   }
-  const [first, ...rest] = argv
-  if (first === undefined || first === "--help" || first === "-h") {
-    ;(first === undefined ? io.stderr : io.stdout)(usage)
-    return first === undefined ? 2 : 0
+  const [first] = argv
+  if (first === "--help" || first === "-h") {
+    io.stdout(usage)
+    return 0
   }
   if (first === "--version" || first === "-v") {
     io.stdout(`${options.version}\n`)
@@ -52,12 +61,20 @@ export async function runScaffold(argv: readonly string[], options: ScaffoldOpti
   const cacheDir = options.cacheDir ?? userCacheDir(defineSettings({ product: "scaffold" }))
   const store = new PackStore({ cacheRoot: cacheDir, ...(options.runCommand ? { run: options.runCommand } : {}) })
   try {
-    if (first.startsWith("-")) {
-      throw new PlanError("E_USAGE", `Name the package first: scaffold <package> [folder] ${first}.`)
+    // A package is named as create names a template package. Anything else is for the default catalog.
+    const named = first !== undefined && (first.startsWith("@") || first.startsWith("npm:"))
+    const source = (named ? templateSource(first) : undefined) ?? {
+      package: options.defaultPackage ?? defaultPackage,
+      range: "latest"
     }
-    const source = packageSource(first)
-    const version = await store.resolve(source.package, source.range)
-    const { integrity, module } = await store.import(source.package, version)
+    const rest = named ? argv.slice(1) : argv
+    // A saved plan names the versions it was reviewed with, so no newer package's code runs before it's checked.
+    const planPath = flagValue(rest, "plan")
+    const reviewed = planPath === undefined ? undefined : readPlanFile(resolve(io.cwd, planPath))
+    const recorded = reviewed?.packs?.[source.package]
+    const version =
+      recorded?.version ?? (reviewed ? plannedVersion(source) : await store.resolve(source.package, source.range))
+    const { integrity, module } = await store.import(source.package, version, recorded?.integrity)
     const cli = {
       name: "scaffold",
       version: options.version,
@@ -72,12 +89,22 @@ export async function runScaffold(argv: readonly string[], options: ScaffoldOpti
         pack.extends.catalog,
         await store.resolve(pack.extends.catalog, pack.extends.versions)
       )
+      if (reviewed) {
+        // create loads the template package version the plan records.
+        return await runCli(["create", ...rest], { ...cli, ...base })
+      }
       const spec = `${specPrefix(source.package)}${source.package}@${version}${source.template === undefined ? "" : `#${source.template}`}`
       return await runCli(["create", spec, ...rest], { ...cli, ...base })
     }
     const loaded = catalogModule(module, `${source.package}@${version}`)
-    // With --preset, the template comes from the preset.
-    const template = rest.includes("--preset") ? undefined : await pickTemplate(loaded.catalog, source, io, json)
+    // With --preset, the template comes from the preset, and with --plan, from the plan. For the default catalog, a
+    // first argument that isn't one of its templates is the folder.
+    const leading = rest[0]?.startsWith("-") === false ? rest[0] : undefined
+    const namesTemplate = !named && loaded.catalog.templates.some((each) => each.id === leading)
+    const template =
+      reviewed || namesTemplate || flagValue(rest, "preset") !== undefined
+        ? undefined
+        : await pickTemplate(loaded.catalog, source, io, json || rest.includes("--yes") || rest.includes("-y"))
     if (template === cancelled) {
       const error = { code: "E_CANCELLED", message: "Cancelled. Nothing was changed.", retryable: false } as const
       return emit(io, { status: "error", error }, json)
@@ -89,13 +116,33 @@ export async function runScaffold(argv: readonly string[], options: ScaffoldOpti
   }
 }
 
-/** A package argument. An unscoped name needs no `npm:` here, since scaffold only takes packages. */
-function packageSource(argument: string): TemplateSource {
-  const source = templateSource(argument.startsWith("@") || argument.startsWith("npm:") ? argument : `npm:${argument}`)
-  if (!source) {
-    throw new PlanError("E_USAGE", `"${argument}" isn't a package name.`)
+/** A flag's value, written as `--name value` or `--name=value`. */
+function flagValue(args: readonly string[], name: string): string | undefined {
+  const flag = `--${name}`
+  for (const [index, arg] of args.entries()) {
+    if (arg === flag) {
+      return args[index + 1] ?? ""
+    }
+    if (arg.startsWith(`${flag}=`)) {
+      return arg.slice(flag.length + 1)
+    }
   }
-  return source
+  return undefined
+}
+
+/**
+ * The catalog package version to apply a saved plan with. A plan records template package versions but not the catalog's,
+ * so the argument names it exactly, and a newer release's code never runs before the plan is checked.
+ */
+function plannedVersion(source: TemplateSource): string {
+  const version = isValidVersion(source.range) ? source.range : undefined
+  if (version === undefined) {
+    throw new PlanError(
+      "E_USAGE",
+      `A plan doesn't record the catalog's version. Name the version it was made with: ${source.package}@<version>.`
+    )
+  }
+  return version
 }
 
 function specPrefix(name: string): string {
@@ -132,7 +179,7 @@ async function pickTemplate(
   catalog: CatalogManifest,
   source: TemplateSource,
   io: CliIo,
-  json: boolean
+  unattended: boolean
 ): Promise<string | typeof cancelled> {
   const ids = catalog.templates.map((template) => template.id)
   if (source.template !== undefined) {
@@ -148,7 +195,7 @@ async function pickTemplate(
   if (ids.length === 1 && only !== undefined) {
     return only
   }
-  if (json || !io.isTTY) {
+  if (unattended || !io.isTTY) {
     throw new PlanError(
       "E_USAGE",
       `${source.package} has more than one template. Pick one: ${ids.map((id) => `${source.package}#${id}`).join(", ")}.`

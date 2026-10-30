@@ -8,11 +8,11 @@ Requires Node.js 24 or later. Until 1.0, minor versions may change the catalog a
 
 ```sh
 npm install -g @buildkitgg/scaffolder
-scaffold @acme/catalog my-app
+scaffold my-app
 ```
 
-`scaffold` creates a project from any published catalog or template package. Products such as Buildkit build their own
-CLI on the engine instead, and create projects with `<product> create`.
+`scaffold` creates a project from Buildkit's catalog, or from any published catalog or template package. Products such
+as Buildkit build their own CLI on the engine instead, and create projects with `<product> create`.
 
 ## Table of contents
 
@@ -31,7 +31,7 @@ CLI on the engine instead, and create projects with `<product> create`.
 
 ## The scaffold command
 
-`scaffold <package>[@version][#template] [folder]` fetches the package from npm into your user cache, never the project,
+`scaffold [package][@version][#template] [folder]` fetches the package from npm into your user cache, never the project,
 without running its scripts, and creates a project from it. It takes every option `create` takes: `--mode`, `--preset`,
 `--name`, `--with`, `--without`, `--set`, `--adopt`, `--dry-run`, `--json` and `--yes`.
 
@@ -41,7 +41,10 @@ without running its scripts, and creates a project from it. It takes every optio
   terminal `scaffold` asks.
 - **A [template package](#template-packages)** brings the catalog version it extends, and `scaffold` fetches that too.
 
-An unscoped name needs no `npm:` here: `scaffold acme-catalog my-app`.
+A scoped name, or any name after `npm:`, is a package, as `create` reads it. Without one, `scaffold` uses
+`@buildkitgg/catalog`, and its first argument is a template or, when it isn't one, the folder: `scaffold my-app` and
+`scaffold app my-app` both work. `runScaffold` takes `defaultPackage` to use another catalog. With `--plan`, name the
+catalog's exact version, `@acme/catalog@1.2.0`, since a plan records template package versions but not the catalog's.
 
 ## Exports
 
