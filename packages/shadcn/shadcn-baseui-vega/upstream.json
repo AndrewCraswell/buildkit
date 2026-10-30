@@ -2,7 +2,7 @@
   "repository": "https://github.com/shadcn-ui/ui",
   "revision": "8f04138777c1b6996e709993362a7b0a12888ecf",
   "style": "base-vega",
-  "generator": "4.22.1",
+  "generator": "4.23.0",
   "components": [
     "accordion",
     "alert-dialog",
