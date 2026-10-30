@@ -40,6 +40,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@better-apps/anchors": "workspace:*",
+    "@better-apps/mentions": "workspace:*",
     "zod": "^4.6.7"
   },
   "peerDependencies": {

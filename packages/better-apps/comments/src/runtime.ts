@@ -1,3 +1,5 @@
+import type { AnchorKind } from "@better-apps/anchors"
+import type { MentionScope } from "@better-apps/mentions"
 import {
   BetterAppsError,
   type ActionContext,
@@ -7,7 +9,6 @@ import {
   type StandardSchemaV1
 } from "better-apps"
 import { accessTo, mentionable, nothing, orgOf, subjectOf, type Access, type Caller } from "./access.js"
-import type { AnchorKind } from "./anchors.js"
 import { CommentsError } from "./errors.js"
 import type { BodyFormat } from "./formats.js"
 import type { BeforeHooks, CommentRules, HookArgs } from "./options.js"
@@ -133,24 +134,11 @@ export async function lookupUsers(context: Context, ids: Iterable<string>): Prom
   return Object.fromEntries(found.flat().map((user) => [user.id, user]))
 }
 
-/**
- * Which mentioned users may be mentioned in a thread. They're built with one `getActorsFor` call, so users outside the
- * thread's organization are dropped, then checked with `canMention` or one `canViewMany` call. The author is skipped.
- */
-export async function checkMentions(
-  config: Config,
-  context: Context,
-  thread: CommentThread,
-  mentions: readonly string[],
-  authorId: string
-): Promise<{ allowed: string[]; dropped: string[] }> {
-  const others = mentions.filter((id) => id !== authorId)
-  if (others.length === 0) {
-    return { allowed: [], dropped: [] }
+/** Where a thread's mentions are checked: its organization, and who may be mentioned there. */
+export function mentionScope(config: Config, context: Context, thread: CommentThread): MentionScope {
+  return {
+    identity: context.identity,
+    orgId: thread.orgId === "" ? null : thread.orgId,
+    allowed: async (actors) => mentionable(config.subjects, context.subjects, actors, thread)
   }
-  const actors = await context.identity.getActorsFor(others, thread.orgId === "" ? null : thread.orgId)
-  const allowed = new Set(
-    (await mentionable(config.subjects, context.subjects, actors, thread)).map((actor) => actor.userId)
-  )
-  return { allowed: others.filter((id) => allowed.has(id)), dropped: others.filter((id) => !allowed.has(id)) }
 }

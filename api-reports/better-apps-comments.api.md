@@ -6,6 +6,7 @@
 
 import { ActionDefinition } from 'better-apps';
 import { Actor } from 'better-apps';
+import type { AnchorKind } from '@better-apps/anchors';
 import type { Author } from 'better-apps';
 import { BetterAppsError } from 'better-apps';
 import { BetterAppsEvent } from 'better-apps';
@@ -13,6 +14,7 @@ import { EventDefinition } from 'better-apps';
 import { FeatureSchema } from 'better-apps';
 import type { FieldAttribute } from 'better-apps';
 import { IdentityUser } from 'better-apps';
+import { MentionSource } from '@better-apps/mentions';
 import { StandardSchemaIssue } from 'better-apps';
 import { StandardSchemaV1 } from 'better-apps';
 import type { SubjectArgs } from 'better-apps';
@@ -24,13 +26,6 @@ export interface AdditionalFields {
     comment?: Readonly<Record<string, FieldAttribute>> | undefined;
     // (undocumented)
     thread?: Readonly<Record<string, FieldAttribute>> | undefined;
-}
-
-// @public
-export interface AnchorKind<Kind extends string = string, Value = unknown> {
-    // (undocumented)
-    kind: Kind;
-    schema: StandardSchemaV1<unknown, Value>;
 }
 
 // @public
@@ -139,6 +134,9 @@ export const commentEvents: {
     userId: string;
     }>;
 };
+
+// @public
+export const commentMentions: MentionSource;
 
 // @public (undocumented)
 export const commentModel = "comment";
@@ -469,31 +467,12 @@ export type CreateThreadInput<Types extends CommentsTypes = CommentsTypes> = Typ
 };
 
 // @public
-export function defineAnchor<const Kind extends string, Value>(anchor: AnchorKind<Kind, Value>): AnchorKind<Kind, Value>;
-
-// @public
 export function defineFormat<const Name extends string, Body>(format: BodyFormat<Name, Body>): BodyFormat<Name, Body>;
 
 // @public
 export type EditCommentInput<Types extends CommentsTypes = CommentsTypes> = Types["content"] & {
     commentId: string;
 };
-
-// @public
-export interface ElementAnchor {
-    offset?: {
-        x: number;
-        y: number;
-    } | undefined;
-    selector: string;
-    viewport?: {
-        width: number;
-        height: number;
-    } | undefined;
-}
-
-// @public
-export function elementAnchor(): AnchorKind<"element", ElementAnchor>;
 
 // @public
 export interface GetThreadInput {
@@ -520,9 +499,6 @@ export interface HookArgs<Input> {
 export type InferFields<Fields> = {
     -readonly [Name in keyof Fields]: Fields[Name] extends FieldAttribute ? Fields[Name]["required"] extends false ? FieldValueOf<Fields[Name]> | null : FieldValueOf<Fields[Name]> : never;
 };
-
-// @public
-export function isSafeSelector(selector: string): boolean;
 
 // @public
 export function isUlid(value: unknown): value is string;
@@ -556,9 +532,6 @@ export interface ListThreadsInput<SubjectType extends string = string, AnchorKin
     subjectType: SubjectType;
     where?: Record<string, string | number | boolean | null> | undefined;
 }
-
-// @public
-export function mentionToken(userId: string): string;
 
 // @public
 export type ReplyInput<Types extends CommentsTypes = CommentsTypes> = Types["content"] & {
