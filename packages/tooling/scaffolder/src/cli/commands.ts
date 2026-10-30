@@ -94,7 +94,7 @@ export class CliRuntime {
   /** The product catalog, with the project's template packages merged in once they're loaded. */
   #catalog: CatalogManifest
   #packs: PackStore | undefined
-  /** Says where a template package's template came from, in the plan `init` shows. */
+  /** Says where a template package's template came from, in the plan `create` shows. */
   readonly #sourceNotices: Plan["notices"] = []
 
   constructor(options: CliOptions) {
@@ -120,7 +120,8 @@ export class CliRuntime {
   /** Runs a handler, turning thrown errors into an error envelope. */
   async run(command: string, argv: string[]): Promise<number> {
     const handlers: Record<string, (args: string[]) => Promise<number>> = {
-      init: (args) => this.init(args),
+      create: (args) => this.create(args),
+      init: (args) => this.create(args),
       add: (args) => this.add(args),
       config: (args) => this.config(args),
       upgrade: (args) => this.upgrade(args),
@@ -295,7 +296,7 @@ export class CliRuntime {
   }
 
   /**
-   * Loads a template package for `init` and returns the template's catalog id, `<package>#<id>`, asking which one when
+   * Loads a template package for `create` and returns the template's catalog id, `<package>#<id>`, asking which one when
    * the package has several.
    */
   async #usePackage(source: TemplateSource, interactive: boolean): Promise<string | Cancelled> {
@@ -498,7 +499,7 @@ export class CliRuntime {
     if (current.status !== "planned" || flags.booleans.has("dry-run") || options.applies === false) {
       return this.#emit(envelope(current), json)
     }
-    // init asks for every variable; later commands only for required secrets, so an add doesn't ask about the rest of
+    // create asks for every variable; later commands only for required secrets, so an add doesn't ask about the rest of
     // the project. Variables the secrets file already has aren't asked again: a required one needs a value, and an
     // optional one was answered once, even if blank.
     const state = readSafely(root, this.#settings.secretsFile)
@@ -560,7 +561,7 @@ export class CliRuntime {
     return options
   }
 
-  async init(argv: string[]): Promise<number> {
+  async create(argv: string[]): Promise<number> {
     const flags = parseFlags(
       argv,
       spec({
@@ -580,7 +581,7 @@ export class CliRuntime {
     let [templateArg] = positionals
     const [, folderArg, ...extra] = positionals
     if (extra.length > 0) {
-      throw new PlanError("E_USAGE", `init takes a template and a folder. Remove ${extra.join(" ")}.`)
+      throw new PlanError("E_USAGE", `create takes a template and a folder. Remove ${extra.join(" ")}.`)
     }
     const source = templateArg === undefined ? undefined : templateSource(templateArg)
     if (source) {
@@ -663,7 +664,7 @@ export class CliRuntime {
     }
     const interactive = this.#interactive(flags)
     if (folderArg === undefined && !interactive) {
-      throw new PlanError("E_USAGE", `init needs a folder: ${this.#product} init <template> <folder>.`)
+      throw new PlanError("E_USAGE", `create needs a folder: ${this.#product} create <template> <folder>.`)
     }
     const answers = interactive
       ? await runWizard({ catalog, partial, prompter: this.io.prompter, askName: folderArg === undefined })
@@ -724,7 +725,7 @@ export class CliRuntime {
       .filter(Boolean)
     for (const [slot, value] of flags.dynamic) {
       if (value === null) {
-        throw new PlanError("E_USAGE", `--no-${slot} only applies to init.`)
+        throw new PlanError("E_USAGE", `--no-${slot} only applies to create.`)
       }
       names.push(value)
     }
@@ -765,7 +766,7 @@ export class CliRuntime {
     }
     const state = readSafely(root, this.#settings.configFile)
     if (state.kind !== "file") {
-      throw new PlanError("E_NOT_INITIALIZED", "This folder isn't a project yet. Run init first.")
+      throw new PlanError("E_NOT_INITIALIZED", "This folder isn't a project yet. Run create first.")
     }
     const config = readConfig(this.#settings.configFile, state.content)
     if (action === undefined) {

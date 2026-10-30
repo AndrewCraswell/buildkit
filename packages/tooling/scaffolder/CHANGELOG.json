@@ -2,6 +2,36 @@
   "name": "@buildkitgg/scaffolder",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 08:23:50 GMT",
+      "version": "0.6.0",
+      "tag": "@buildkitgg/scaffolder_v0.6.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/scaffolder",
+            "commit": "78d7ac9c856991b46eebc4eec5bb9cebffa0a74b",
+            "comment": "Add the scaffold command, which creates a project from @buildkitgg/catalog or any catalog or template package on npm. Product CLIs now create projects with create; init still works, unlisted, until 0.7."
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 30 Oct 2026 04:56:17 GMT",
+      "version": "0.5.0",
+      "tag": "@buildkitgg/scaffolder_v0.5.0",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/scaffolder",
+            "commit": "8cd3e0a83dbc90525a22d96b83bd17ae3cf69c78",
+            "comment": "Move @types/node to 24.19.2, the newest types for Node.js 24."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 29 Oct 2026 23:24:24 GMT",
       "version": "0.5.0",
       "tag": "@buildkitgg/scaffolder_v0.5.0",

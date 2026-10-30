@@ -1,4 +1,3 @@
-export { defineAnchor, elementAnchor, isSafeSelector, type AnchorKind, type ElementAnchor } from "./anchors.js"
 export { limits } from "./content.js"
 export { CommentsError, type CommentsErrorCode } from "./errors.js"
 export {
@@ -18,9 +17,11 @@ export {
   type ThreadCounts,
   type WriteResult
 } from "./feature.js"
-export { defineFormat, mentionToken, textFormat, type BodyFormat } from "./formats.js"
+export { defineFormat, textFormat, type BodyFormat } from "./formats.js"
+export { commentMentions } from "./mentions.js"
 export type {
   BeforeHooks,
+  CommentRules,
   CommentTarget,
   CommentsOptions,
   CommentsTypes,
@@ -28,8 +29,6 @@ export type {
   EditCommentInput,
   HookArgs,
   ReplyInput,
-  SubjectArgs,
-  SubjectType,
   ThreadTarget,
   TypesOf,
   UpdateAnchorInput,
@@ -45,5 +44,6 @@ export {
   type CommentThread,
   type InferFields
 } from "./schema.js"
+export { commentSubjectTypes } from "./subjects.js"
 export { isUlid, ulid } from "./ulid.js"
 export type { UpkeepStep } from "./upkeep.js"

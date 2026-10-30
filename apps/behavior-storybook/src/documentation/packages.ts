@@ -49,9 +49,9 @@ export const packages = [
     name: "cli",
     group: "Tooling",
     summary: "The buildkit CLI: create, extend and upgrade Buildkit apps.",
-    code: "npx @buildkitgg/cli init app my-app\n\n# Inside the app\npnpm buildkit add i18n\npnpm buildkit add database\npnpm buildkit upgrade\npnpm buildkit check",
+    code: "npx @buildkitgg/cli create app my-app\n\n# Inside the app\npnpm buildkit add i18n\npnpm buildkit add database\npnpm buildkit upgrade\npnpm buildkit check",
     api: [
-      "init [template] [folder]: in a terminal, ask the questions, show the plan, and write after one confirmation. --yes skips the prompts.",
+      "create [template] [folder]: in a terminal, ask the questions, show the plan, and write after one confirmation. --yes skips the prompts.",
       "add / config set: add an add-on, answer a question later, or change an option.",
       "upgrade / sync / check: merge template fixes into your code, or fail when generated files drift.",
       "runBuildkit(argv, options): run one command from your own tools and get its exit code."
@@ -68,7 +68,8 @@ export const packages = [
     api: [
       "defineCatalog: targets, templates, slots and add-ons, each with its own define helper.",
       "plan(options): turn answers into operations, decisions and conflicts, with a fingerprint.",
-      "createCli / runCli: init, add, config, upgrade, sync, check and more, with a wizard generated from the catalog.",
+      "scaffold <package> [folder]: after npm install -g @buildkitgg/scaffolder, create a project from any catalog or template package.",
+      "createCli / runCli: create, add, config, upgrade, sync, check and more, with a wizard generated from the catalog.",
       "definePack: publish templates for a catalog as an npm package.",
       "checkCatalog / pairwiseAnswers: find broken references and plan every pair of answers in CI."
     ],

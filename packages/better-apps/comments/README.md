@@ -1,25 +1,30 @@
 # @better-apps/comments
 
 Comment threads on any record an app owns, such as an invoice, a ticket or a preview deploy, optionally pinned to a spot
-inside it. Comments store only the record's type and id; the app's callbacks say who can see and act on its threads.
-Every write is one atomic batch through [`@better-apps/drizzle`](../drizzle/README.md), on Cloudflare D1 as on any other
-SQL database.
+inside it. Comments store only the record's type and id; the app's subject types say who can see it, and the rules here
+who can comment. Every write is one atomic batch through [`@better-apps/drizzle`](../drizzle/README.md), on Cloudflare
+D1 as on any other SQL database.
 
 ## Usage
 
 ```ts
-import { comments, CommentsError, elementAnchor } from "@better-apps/comments"
+import { elementAnchor } from "@better-apps/anchors"
+import { comments, CommentsError } from "@better-apps/comments"
 import { createBetterApps } from "better-apps"
 
 export const app = createBetterApps({
   database,
   identity,
+  subjects: {
+    invoice: {
+      getOrgId: ({ subjectId }) => invoices.orgOf(subjectId),
+      canView: ({ actor, subjectId }) => invoices.canRead(actor, subjectId)
+    }
+  },
   features: [
     comments({
       subjects: {
         invoice: {
-          getOrgId: ({ subjectId }) => invoices.orgOf(subjectId),
-          canView: ({ actor, subjectId }) => invoices.canRead(actor, subjectId),
           canComment: ({ actor, subjectId }) => invoices.canEdit(actor, subjectId),
           canModerate: ({ actor }) => actor.roles.includes("admin"),
           visibility: { staff: ({ actor }) => actor.roles.includes("staff") }
@@ -63,12 +68,15 @@ as "Former user".
 
 ## Access
 
-- Each subject type supplies `canView` and `canComment`, and optionally `canModerate`, `canViewMany`, `getOrgId`, extra
-  visibilities such as `staff`, `publicRead`, a `metadata` schema and `canMention`.
-- One rule decides whether someone can see a thread: its organization must be its subject's, `canView` must pass, and
-  the actor must pass the thread's visibility check. Reads, mentions and live updates all use it.
+- The app declares each subject type in `createBetterApps`, with `canView`, `getOrgId` and `publicRead` (see
+  [Subjects](../better-apps/README.md#subjects)). Comments add `canComment` for each, and optionally `canModerate`,
+  extra visibilities such as `staff`, a `metadata` schema and `canMention`.
+- One rule decides whether someone can see a thread: its organization must be its subject's, the subject's `canView`
+  must pass, and the actor must pass the thread's visibility check. Reads, mentions and live updates all use it.
+- Threads and comments are subject types too, `comments.thread` and `comments.comment` (`commentSubjectTypes`), so other
+  features can attach to them. Whoever can see a thread can see it and its comments.
 - `NOT_FOUND` means the caller can't see it, and `FORBIDDEN` that they can see it but can't do this. Signed-out callers
-  get `UNAUTHENTICATED`, except signed-out readers of `publicRead` subjects, who get text with names and no user ids.
+  get `UNAUTHENTICATED`, except signed-out readers of public subjects, who get text with names and no user ids.
 - Server code that passes neither an actor nor a request is trusted, so it skips access checks. It still needs an author
   to write: a user, or an external or system author with a name and an optional id.
 - Before hooks run after the access check, keyed by action. They may change the input, but not the subject or thread. A
@@ -87,10 +95,32 @@ as "Former user".
 
 ## Formats and anchors
 
-- The built-in `text` format is plain text with mention tokens such as `@[user:u_123]` (`mentionToken(id)` builds one).
-  A literal `@[` is written `\@[`. Add others with `defineFormat({ name, schema, sanitize, toText, mentions })`.
-- `elementAnchor()` pins threads to an element, found with a selector that may use only ids, data attributes, tag names
-  and structural positions. Add others with `defineAnchor({ kind, schema })`.
+- The built-in `text` format is plain text with mention tokens such as `@[user:u_123]`, from
+  [`@better-apps/mentions`](../mentions/README.md) (`mentionToken(id)` builds one). A literal `@[` is written `\@[`. Add
+  others with `defineFormat({ name, schema, sanitize, toText, mentions })`.
+- Anchors come from [`@better-apps/anchors`](../anchors/README.md). `elementAnchor()` pins threads to an element, found
+  with a selector that may use only ids, data attributes, tag names and structural positions. Add others with
+  `defineAnchor({ kind, schema })`.
+
+## Mentions
+
+Mention checks and suggestions come from `@better-apps/mentions`, so every feature that mentions people treats them the
+same. To let each user list the comments that mention them, add the mentions feature with comments as a source:
+
+```ts
+import { commentMentions, comments } from "@better-apps/comments"
+import { mentions } from "@better-apps/mentions"
+
+createBetterApps({
+  database,
+  identity,
+  subjects,
+  features: [comments(options), mentions({ sources: [commentMentions] })]
+})
+```
+
+Each mention's record is the comment, `comments.comment`, and its group the thread. Edits drop users a comment no longer
+mentions, and deleting a comment or thread removes its mentions.
 
 ## In the browser
 
@@ -121,11 +151,10 @@ function InvoiceComments({ invoiceId }: { invoiceId: string }) {
   create a new Better Apps client, so they never see the previous person's threads. `reset()` also cancels calls still
   under way, which reject with `ABORTED`; a mutation hook whose write was cancelled goes back to `idle`.
 - Hooks: `useThreads(subject, { status, order })`, `useThread(id)`, `useThreadCounts(subjectType, subjectIds)`, which
-  splits lists over 50, `useSuggestMentions`, `useAnchorPosition(thread, rootRef, version)`, and a mutation hook per
-  write, from `useCreateThread()` to `useDeleteThread()`, each with `mutate`, `status`, `error` and `reset`.
-- `resolveAnchor(thread, root, version)` finds an element anchor on the page: `attached` with a position, `outdated`
-  when the content version on screen differs from the anchor's, or `detached`. `elementAnchorFor(element, root, point)`
-  builds one from a click, with a selector from `selectorFor`.
+  splits lists over 50, `useSuggestMentions`, and a mutation hook per write, from `useCreateThread()` to
+  `useDeleteThread()`, each with `mutate`, `status`, `error` and `reset`.
+- To place a pin, pass a thread to `useAnchorPosition` from `@better-apps/anchors/react`, or `resolveAnchor` from
+  `@better-apps/anchors/dom`.
 - Dates in core fields are `Date`s again in the store. Dates in additional fields stay ISO strings.
 
 ## Events

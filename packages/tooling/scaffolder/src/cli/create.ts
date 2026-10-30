@@ -18,7 +18,7 @@ const shared: ArgsDef = {
 }
 
 const descriptions: Record<string, string> = {
-  init: "Create a project from a template",
+  create: "Create a project from a template",
   add: "Add an add-on, or answer a question such as which database",
   config: "Show the config, get an option, or set options",
   upgrade: "Upgrade to the installed catalog version, running migrations",
@@ -50,7 +50,7 @@ export function createCli(options: CliOptions): CommandDef {
     description: "Add an add-on with this change, as a decision's choice does. Repeatable, or comma-separated"
   }
   const extra: Record<string, ArgsDef> = {
-    init: {
+    create: {
       template: positional("Template to start from"),
       folder: positional("Folder to create"),
       mode: { type: "string", description: "Target mode, when the template offers more than one" },
@@ -87,6 +87,14 @@ export function createCli(options: CliOptions): CommandDef {
       })
     ])
   )
+  // init was create's name before 0.6. It still works, unlisted, for a release.
+  subCommands.init = defineCommand({
+    meta: { name: "init", description: descriptions.create, hidden: true },
+    args: { ...extra.create, ...shared },
+    async run({ rawArgs }) {
+      process.exitCode = await runtime.run("create", rawArgs)
+    }
+  })
   return defineCommand({
     meta: {
       name: options.name,

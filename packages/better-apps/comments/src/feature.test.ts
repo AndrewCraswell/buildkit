@@ -1,17 +1,10 @@
+import { defineAnchor, elementAnchor } from "@better-apps/anchors"
 import { createTestApp } from "@better-apps/testing"
 import { getFeatureTables } from "better-apps"
 import { describe, expect, expectTypeOf, it } from "vitest"
-import {
-  comments,
-  defineAnchor,
-  defineFormat,
-  elementAnchor,
-  textFormat,
-  type Comment,
-  type CommentThread
-} from "./index.js"
+import { comments, defineFormat, textFormat, type Comment, type CommentThread } from "./index.js"
 
-const invoice = { canView: () => true, canComment: () => true }
+const invoice = { canComment: () => true }
 
 describe("comments", () => {
   it("declares its two tables, with the app's additional fields and portable indexes", () => {
@@ -65,6 +58,7 @@ describe("comments", () => {
       }
     })
     const { app } = createTestApp({
+      subjects: { invoice: { canView: () => true } },
       features: [comments({ subjects: { invoice }, formats: [markdown], anchors: [region] })],
       users: [{ id: "ada" }]
     })

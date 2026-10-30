@@ -1,3 +1,5 @@
+import type { AnchorKind } from "@better-apps/anchors"
+import type { MentionScope } from "@better-apps/mentions"
 import {
   BetterAppsError,
   type ActionContext,
@@ -6,16 +8,15 @@ import {
   type IdentityUser,
   type StandardSchemaV1
 } from "better-apps"
-import { accessTo, mentionable, orgOf, subjectOf, type Access, type Caller } from "./access.js"
-import type { AnchorKind } from "./anchors.js"
+import { accessTo, mentionable, nothing, orgOf, subjectOf, type Access, type Caller } from "./access.js"
 import { CommentsError } from "./errors.js"
 import type { BodyFormat } from "./formats.js"
-import type { BeforeHooks, HookArgs, SubjectType } from "./options.js"
+import type { BeforeHooks, CommentRules, HookArgs } from "./options.js"
 import { threadModel, type Comment, type CommentThread } from "./schema.js"
 
 /** The options, resolved once when the feature is created. */
 export interface Config {
-  subjects: Readonly<Record<string, SubjectType>>
+  subjects: Readonly<Record<string, CommentRules>>
   anchors: ReadonlyMap<string, AnchorKind>
   formats: ReadonlyMap<string, BodyFormat>
   hooks: BeforeHooks
@@ -68,13 +69,14 @@ export async function loadThread(context: Context, threadId: string): Promise<Co
 
 /** What the caller may do with a thread. A thread outside its subject's current organization can't be seen. */
 export async function threadAccess(config: Config, context: Context, thread: CommentThread) {
-  const subject = subjectOf(config.subjects, thread.subjectType)
+  const rules = subjectOf(config.subjects, thread.subjectType)
   const caller = callerOf(context)
-  let access: Access = { view: false, comment: false, moderate: false }
-  if (caller.trusted || (await orgOf(subject, caller, thread.subjectType, thread.subjectId)) === thread.orgId) {
-    access = await accessTo(subject, caller, thread.subjectType, thread.subjectId, thread.visibility)
+  const ref = { subjectType: thread.subjectType, subjectId: thread.subjectId }
+  let access: Access = nothing
+  if (caller.trusted || (await orgOf(context.subjects, caller, ref)) === thread.orgId) {
+    access = await accessTo(rules, context.subjects, caller, ref, thread.visibility)
   }
-  return { subject, caller, access }
+  return { rules, caller, access }
 }
 
 /** Refuses an action the caller can view but can't take. */
@@ -132,22 +134,11 @@ export async function lookupUsers(context: Context, ids: Iterable<string>): Prom
   return Object.fromEntries(found.flat().map((user) => [user.id, user]))
 }
 
-/**
- * Which mentioned users may be mentioned in a thread. They're built with one `getActorsFor` call, so users outside the
- * thread's organization are dropped, then checked with `canMention` or one `canViewMany` call. The author is skipped.
- */
-export async function checkMentions(
-  context: Context,
-  subject: SubjectType,
-  thread: CommentThread,
-  mentions: readonly string[],
-  authorId: string
-): Promise<{ allowed: string[]; dropped: string[] }> {
-  const others = mentions.filter((id) => id !== authorId)
-  if (others.length === 0) {
-    return { allowed: [], dropped: [] }
+/** Where a thread's mentions are checked: its organization, and who may be mentioned there. */
+export function mentionScope(config: Config, context: Context, thread: CommentThread): MentionScope {
+  return {
+    identity: context.identity,
+    orgId: thread.orgId === "" ? null : thread.orgId,
+    allowed: async (actors) => mentionable(config.subjects, context.subjects, actors, thread)
   }
-  const actors = await context.identity.getActorsFor(others, thread.orgId === "" ? null : thread.orgId)
-  const allowed = new Set((await mentionable(subject, actors, thread)).map((actor) => actor.userId))
-  return { allowed: others.filter((id) => allowed.has(id)), dropped: others.filter((id) => !allowed.has(id)) }
 }

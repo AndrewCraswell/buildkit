@@ -6,6 +6,7 @@
 
 import { ActionDefinition } from 'better-apps';
 import { Actor } from 'better-apps';
+import type { AnchorKind } from '@better-apps/anchors';
 import type { Author } from 'better-apps';
 import { BetterAppsError } from 'better-apps';
 import { BetterAppsEvent } from 'better-apps';
@@ -13,8 +14,11 @@ import { EventDefinition } from 'better-apps';
 import { FeatureSchema } from 'better-apps';
 import type { FieldAttribute } from 'better-apps';
 import { IdentityUser } from 'better-apps';
+import { MentionSource } from '@better-apps/mentions';
 import { StandardSchemaIssue } from 'better-apps';
 import { StandardSchemaV1 } from 'better-apps';
+import type { SubjectArgs } from 'better-apps';
+import { SubjectDefinition } from 'better-apps';
 
 // @public
 export interface AdditionalFields {
@@ -22,13 +26,6 @@ export interface AdditionalFields {
     comment?: Readonly<Record<string, FieldAttribute>> | undefined;
     // (undocumented)
     thread?: Readonly<Record<string, FieldAttribute>> | undefined;
-}
-
-// @public
-export interface AnchorKind<Kind extends string = string, Value = unknown> {
-    // (undocumented)
-    kind: Kind;
-    schema: StandardSchemaV1<unknown, Value>;
 }
 
 // @public
@@ -138,8 +135,24 @@ export const commentEvents: {
     }>;
 };
 
+// @public
+export const commentMentions: MentionSource;
+
 // @public (undocumented)
 export const commentModel = "comment";
+
+// @public
+export interface CommentRules {
+    // Warning: (ae-forgotten-export) The symbol "Check" needs to be exported by the entry point index.d.ts
+    canComment: Check<SubjectArgs>;
+    canMention?: Check<{
+        actor: Actor;
+        thread: CommentThread;
+    }> | undefined;
+    canModerate?: Check<SubjectArgs> | undefined;
+    metadata?: StandardSchemaV1<unknown, Record<string, unknown>> | undefined;
+    visibility?: Readonly<Record<string, Check<SubjectArgs>>> | undefined;
+}
 
 // @public
 export function comments<const Options extends CommentsOptions>(options: Options): {
@@ -181,6 +194,8 @@ export function comments<const Options extends CommentsOptions>(options: Options
         userId: string;
         }>;
     };
+    readonly subjects: Record<string, SubjectDefinition>;
+    readonly usesSubjects: string[];
     readonly options: Options;
     readonly actions: {
         listThreads: ActionDefinition<StandardSchemaV1<ListThreadsInput<keyof Options["subjects"] & string, (Options["anchors"] extends infer T ? T extends Options["anchors"] ? T extends readonly (infer Anchor)[] ? Anchor extends AnchorKind<infer Kind extends string, infer Value> ? {
@@ -368,7 +383,7 @@ export interface CommentsOptions {
     hooks?: {
         before?: BeforeHooks | undefined;
     } | undefined;
-    subjects: Readonly<Record<string, SubjectType>>;
+    subjects: Readonly<Record<string, CommentRules>>;
 }
 
 // @public
@@ -396,6 +411,12 @@ export interface CommentsTypes {
     // (undocumented)
     visibility: string;
 }
+
+// @public
+export const commentSubjectTypes: {
+    readonly thread: "comments.thread";
+    readonly comment: "comments.comment";
+};
 
 // @public
 export interface CommentTarget {
@@ -446,31 +467,12 @@ export type CreateThreadInput<Types extends CommentsTypes = CommentsTypes> = Typ
 };
 
 // @public
-export function defineAnchor<const Kind extends string, Value>(anchor: AnchorKind<Kind, Value>): AnchorKind<Kind, Value>;
-
-// @public
 export function defineFormat<const Name extends string, Body>(format: BodyFormat<Name, Body>): BodyFormat<Name, Body>;
 
 // @public
 export type EditCommentInput<Types extends CommentsTypes = CommentsTypes> = Types["content"] & {
     commentId: string;
 };
-
-// @public
-export interface ElementAnchor {
-    offset?: {
-        x: number;
-        y: number;
-    } | undefined;
-    selector: string;
-    viewport?: {
-        width: number;
-        height: number;
-    } | undefined;
-}
-
-// @public
-export function elementAnchor(): AnchorKind<"element", ElementAnchor>;
 
 // @public
 export interface GetThreadInput {
@@ -497,9 +499,6 @@ export interface HookArgs<Input> {
 export type InferFields<Fields> = {
     -readonly [Name in keyof Fields]: Fields[Name] extends FieldAttribute ? Fields[Name]["required"] extends false ? FieldValueOf<Fields[Name]> | null : FieldValueOf<Fields[Name]> : never;
 };
-
-// @public
-export function isSafeSelector(selector: string): boolean;
 
 // @public
 export function isUlid(value: unknown): value is string;
@@ -535,9 +534,6 @@ export interface ListThreadsInput<SubjectType extends string = string, AnchorKin
 }
 
 // @public
-export function mentionToken(userId: string): string;
-
-// @public
 export type ReplyInput<Types extends CommentsTypes = CommentsTypes> = Types["content"] & {
     id?: string | undefined;
     threadId: string;
@@ -552,36 +548,6 @@ export interface StoredAnchor {
     value: unknown;
     // (undocumented)
     version: string | null;
-}
-
-// @public
-export interface SubjectArgs {
-    // (undocumented)
-    actor: Actor;
-    // (undocumented)
-    subjectId: string;
-    // (undocumented)
-    subjectType: string;
-}
-
-// @public
-export interface SubjectType {
-    canComment: Check<SubjectArgs>;
-    canMention?: Check<{
-        actor: Actor;
-        thread: CommentThread;
-    }> | undefined;
-    canModerate?: Check<SubjectArgs> | undefined;
-    // Warning: (ae-forgotten-export) The symbol "Check" needs to be exported by the entry point index.d.ts
-    canView: Check<SubjectArgs>;
-    canViewMany?: ((pairs: readonly SubjectArgs[]) => readonly boolean[] | Promise<readonly boolean[]>) | undefined;
-    getOrgId?: ((args: {
-        subjectType: string;
-        subjectId: string;
-    }) => string | null | Promise<string | null>) | undefined;
-    metadata?: StandardSchemaV1<unknown, Record<string, unknown>> | undefined;
-    publicRead?: boolean | undefined;
-    visibility?: Readonly<Record<string, Check<SubjectArgs>>> | undefined;
 }
 
 // @public

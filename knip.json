@@ -21,7 +21,7 @@
       "ignoreDependencies": ["@chromatic-com/storybook", "@storybook/addon-a11y", "@storybook/addon-vitest"]
     },
     "packages/tooling/scaffolder": {
-      "entry": ["src/core.ts", "src/edit.ts", "src/edit-code.ts", "src/node.ts", "src/cli.ts"]
+      "entry": ["src/core.ts", "src/edit.ts", "src/edit-code.ts", "src/node.ts", "src/cli.ts", "src/bin.ts"]
     },
     "packages/tooling/catalog": {
       "entry": ["src/index.ts"],
@@ -173,6 +173,14 @@
       "ignoreDependencies": ["@repo/oxlint-config"]
     },
     "packages/better-apps/testing": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/anchors": {
+      "entry": ["src/index.ts", "src/dom.ts", "src/react.ts"],
+      "ignoreDependencies": ["@repo/oxlint-config"]
+    },
+    "packages/better-apps/mentions": {
       "entry": ["src/index.ts"],
       "ignoreDependencies": ["@repo/oxlint-config"]
     },

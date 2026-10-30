@@ -6,7 +6,7 @@ const config = `${generatedFolder}/config.ts`
 const client = `${generatedFolder}/client.ts`
 const server = `${generatedFolder}/server.ts`
 
-/** The TanStack Start target's extension points. Each is wired into a starter file at `init`. */
+/** The TanStack Start target's extension points. Each is wired into a starter file at `create`. */
 export const startPoints = [
   definePoint({
     id: "vite.plugins",

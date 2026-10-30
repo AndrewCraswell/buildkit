@@ -1,7 +1,7 @@
 # @buildkitgg/catalog
 
 Buildkit's scaffolding catalog for [`@buildkitgg/scaffolder`](../scaffolder/README.md): the TanStack Start target, the
-`app` template, and the add-ons `buildkit init` and `buildkit add` offer. You run it through the
+`app` template, and the add-ons `buildkit create` and `buildkit add` offer. You run it through the
 [`buildkit` CLI](../cli/README.md); import it directly only to plan Buildkit apps in your own tools.
 
 Requires Node.js 24 or later. Until 1.0, minor versions may change what the catalog generates.
@@ -25,8 +25,8 @@ secrets the wizard asks for.
 
 `tanstack-start` is a React app on TanStack Start with two modes: `ssr` (server-rendered) and `spa` (one prerendered
 shell at `/index.html`). It names no cloud: the app has no Wrangler config, no bindings and no cloud names in its code
-or `buildkit.jsonc`. Its starter files import the generated glue in `src/generated/buildkit/` once, at `init`, so adding
-an add-on only changes generated files.
+or `buildkit.jsonc`. Its starter files import the generated glue in `src/generated/buildkit/` once, at `create`, so
+adding an add-on only changes generated files.
 
 | Point                      | Kind   | Generated file | Used by                                                                         |
 | -------------------------- | ------ | -------------- | ------------------------------------------------------------------------------- |
