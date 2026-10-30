@@ -132,11 +132,12 @@ export interface FileStorageOptions {
 
 interface StoredFile extends Omit<StoredObject, "uploadedAt"> {
   uploadedAt: string
+  body: string
 }
 
 /**
  * Keeps buckets in a folder on Node's filesystem, for local development without Cloudflare's runtime. Files are named
- * by a hash of their key, so any key works on any filesystem; a JSON file beside each holds its key and metadata.
+ * by a hash of their key, so any key works on any filesystem; each JSON record holds its body and metadata and is published with an atomic rename.
  */
 export function fileStorage(options: FileStorageOptions): StorageAdapter {
   return {
@@ -148,10 +149,10 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
           import("node:crypto")
         ])
         const root = path.resolve(options.directory, name)
-        const dataDir = path.join(root, "data")
-        const metaDir = path.join(root, "meta")
+        const dataDir = path.join(root, "objects")
+        const metaDir = dataDir
         const id = (key: string) => crypto.createHash("sha256").update(key).digest("hex")
-        const readMeta = async (file: string): Promise<StoredObject | null> => {
+        const readMeta = async (file: string): Promise<(StoredObject & { body: string }) | null> => {
           try {
             const stored = JSON.parse(await fs.readFile(file, "utf8")) as StoredFile
             return { ...stored, uploadedAt: new Date(stored.uploadedAt) }
@@ -164,7 +165,7 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
         }
         return {
           fs,
-          dataFile: (key: string) => path.join(dataDir, id(key)),
+          dataFile: (key: string) => path.join(dataDir, `${id(key)}.json`),
           metaFile: (key: string) => path.join(metaDir, `${id(key)}.json`),
           dataDir,
           metaDir,
@@ -176,8 +177,13 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
               }
               throw error
             })
-            const objects = await Promise.all(names.map(async (file) => readMeta(path.join(metaDir, file))))
-            return objects.filter((object) => object !== null).sort(byKey)
+            const objects = await Promise.all(
+              names.filter((file) => file.endsWith(".json")).map(async (file) => readMeta(path.join(metaDir, file)))
+            )
+            return objects
+              .filter((object) => object !== null)
+              .map(({ body: _body, ...metadata }) => metadata)
+              .sort(byKey)
           }
         }
       }
@@ -188,9 +194,34 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
           const object = await storedObject(key, bytes, putOptions)
           await store.fs.mkdir(store.dataDir, { recursive: true })
           await store.fs.mkdir(store.metaDir, { recursive: true })
-          await store.fs.writeFile(store.dataFile(key), bytes)
-          const stored: StoredFile = { ...object, uploadedAt: object.uploadedAt.toISOString() }
-          await store.fs.writeFile(store.metaFile(key), JSON.stringify(stored))
+          const stored: StoredFile = {
+            ...object,
+            uploadedAt: object.uploadedAt.toISOString(),
+            body: Buffer.from(bytes).toString("base64")
+          }
+          const temporary = `${store.dataFile(key)}.${crypto.randomUUID()}.tmp`
+          try {
+            await store.fs.writeFile(temporary, JSON.stringify(stored), { flag: "wx" })
+            for (let attempt = 0; ; attempt++) {
+              try {
+                await store.fs.rename(temporary, store.dataFile(key))
+                break
+              } catch (error) {
+                const code = (error as NodeJS.ErrnoException).code
+                if (
+                  process.platform !== "win32" ||
+                  !["EPERM", "EACCES", "EBUSY"].includes(code ?? "") ||
+                  attempt === 20
+                ) {
+                  throw error
+                }
+                // Windows can temporarily deny replacement while another reader holds the destination open.
+                await new Promise((resolve) => setTimeout(resolve, 10 * (attempt + 1)))
+              }
+            }
+          } finally {
+            await store.fs.rm(temporary, { force: true })
+          }
           return object
         },
         async get(key) {
@@ -199,17 +230,22 @@ export function fileStorage(options: FileStorageOptions): StorageAdapter {
           if (!object) {
             return null
           }
-          return { object, body: streamOf(await store.fs.readFile(store.dataFile(key))) }
+          const { body, ...metadata } = object
+          return { object: metadata, body: streamOf(Buffer.from(body, "base64")) }
         },
         async head(key) {
           const store = await files()
-          return store.readMeta(store.metaFile(key))
+          const record = await store.readMeta(store.metaFile(key))
+          if (!record) {
+            return null
+          }
+          const { body: _body, ...metadata } = record
+          return metadata
         },
         async delete(keys) {
           const store = await files()
           for (const key of keys) {
             await store.fs.rm(store.metaFile(key), { force: true })
-            await store.fs.rm(store.dataFile(key), { force: true })
           }
         },
         async list(listOptions) {

@@ -96,6 +96,9 @@ async function r2Body(
   if (body instanceof Uint8Array) {
     return { value: body, piped: Promise.resolve() }
   }
+  if (size === 0) {
+    return { value: await readAll(body), piped: Promise.resolve() }
+  }
   const FixedLengthStream = (globalThis as { FixedLengthStream?: FixedLengthStreamConstructor }).FixedLengthStream
   if (FixedLengthStream && size !== undefined) {
     const fixed = new FixedLengthStream(size)
