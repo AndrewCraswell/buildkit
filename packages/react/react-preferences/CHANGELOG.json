@@ -2,6 +2,21 @@
   "name": "@buildkitgg/react-preferences",
   "entries": [
     {
+      "date": "Sat, 31 Oct 2026 00:37:23 GMT",
+      "version": "0.1.2",
+      "tag": "@buildkitgg/react-preferences_v0.1.2",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/react-preferences",
+            "commit": "063d609caa08375fd9bc535186db4d5e38a4cf79",
+            "comment": "Build, lint and test with Vite+; published code is unchanged"
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 30 Oct 2026 04:56:17 GMT",
       "version": "0.1.2",
       "tag": "@buildkitgg/react-preferences_v0.1.2",

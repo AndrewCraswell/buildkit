@@ -1,8 +1,16 @@
 # Change Log - @buildkitgg/shadcn-baseui-rhea
 
-<!-- This log was last generated on Thu, 29 Oct 2026 04:54:16 GMT and should not be manually modified. -->
+<!-- This log was last generated on Sat, 31 Oct 2026 00:37:23 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 0.4.3
+
+Sat, 31 Oct 2026 00:37:23 GMT
+
+### Patches
+
+- Update dependencies and regenerate Base UI sources with the current shadcn generator. (noreply@anthropic.com)
 
 ## 0.4.2
 

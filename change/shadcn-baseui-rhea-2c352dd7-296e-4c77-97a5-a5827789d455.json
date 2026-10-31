@@ -1,7 +1,0 @@
-{
-  "type": "patch",
-  "comment": "Update dependencies and regenerate Base UI sources with the current shadcn generator.",
-  "packageName": "@buildkitgg/shadcn-baseui-rhea",
-  "email": "noreply@anthropic.com",
-  "dependentChangeType": "patch"
-}

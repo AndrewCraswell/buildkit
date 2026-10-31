@@ -31,7 +31,7 @@
     "test": "vp test run",
     "build": "tsc -p tsconfig.build.json"
   },
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "devDependencies": {
     "react-dom": "19.3.1",
