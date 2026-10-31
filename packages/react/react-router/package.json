@@ -45,7 +45,7 @@
     "react": "19.3.1",
     "happy-dom": "^21.0.4",
     "@types/react-dom": "^19.3.0",
-    "react-router": "^8.5.0",
+    "react-router": "^8.5.1",
     "vite-plus": "catalog:"
   },
   "types": "./dist/index.d.ts",

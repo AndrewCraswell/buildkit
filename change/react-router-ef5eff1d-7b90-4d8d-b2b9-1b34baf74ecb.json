@@ -1,0 +1,7 @@
+{
+  "type": "patch",
+  "comment": "Update the React Router development dependency while retaining the supported peer range.",
+  "packageName": "@buildkitgg/react-router",
+  "email": "noreply@anthropic.com",
+  "dependentChangeType": "patch"
+}
