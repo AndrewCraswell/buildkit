@@ -1,7 +1,0 @@
-{
-  "type": "none",
-  "comment": "Build, lint and test with Vite+; published code is unchanged",
-  "packageName": "@buildkitgg/react-modals",
-  "email": "ajcraswell@gmail.com",
-  "dependentChangeType": "none"
-}

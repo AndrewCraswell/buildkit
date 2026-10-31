@@ -38,7 +38,7 @@
     "test": "vp test run",
     "build": "tsc -p tsconfig.build.json"
   },
-  "version": "1.1.1",
+  "version": "1.1.2",
   "type": "module",
   "devDependencies": {
     "@base-ui/react": "^1.9.0",

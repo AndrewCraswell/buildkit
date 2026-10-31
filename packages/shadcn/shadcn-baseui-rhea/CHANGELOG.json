@@ -2,6 +2,29 @@
   "name": "@buildkitgg/shadcn-baseui-rhea",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 23:56:42 GMT",
+      "version": "0.4.3",
+      "tag": "@buildkitgg/shadcn-baseui-rhea_v0.4.3",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/shadcn-baseui-rhea",
+            "commit": "063d609caa08375fd9bc535186db4d5e38a4cf79",
+            "comment": "Build, lint and test with Vite+; published code is unchanged"
+          }
+        ],
+        "patch": [
+          {
+            "author": "noreply@anthropic.com",
+            "package": "@buildkitgg/shadcn-baseui-rhea",
+            "commit": "a64cc47404931bc1c62a89f7782ecbe8a03849b7",
+            "comment": "Update dependencies and regenerate Base UI sources with the current shadcn generator."
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 29 Oct 2026 04:54:16 GMT",
       "version": "0.4.2",
       "tag": "@buildkitgg/shadcn-baseui-rhea_v0.4.2",

@@ -2,6 +2,21 @@
   "name": "@buildkitgg/modal-core",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 23:56:42 GMT",
+      "version": "0.2.0",
+      "tag": "@buildkitgg/modal-core_v0.2.0",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/modal-core",
+            "commit": "063d609caa08375fd9bc535186db4d5e38a4cf79",
+            "comment": "Build, lint and test with Vite+; published code is unchanged"
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 30 Oct 2026 04:56:17 GMT",
       "version": "0.2.0",
       "tag": "@buildkitgg/modal-core_v0.2.0",

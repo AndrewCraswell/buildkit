@@ -1,6 +1,6 @@
 {
   "name": "@buildkitgg/shadcn-baseui-sera",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Upstream shadcn Base UI components in the sera style, with compiled CSS and TypeScript declarations.",
   "homepage": "https://github.com/AndrewCraswell/buildkit/tree/main/packages/shadcn/shadcn-baseui-sera#readme",
   "bugs": {

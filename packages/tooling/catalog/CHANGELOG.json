@@ -2,6 +2,21 @@
   "name": "@buildkitgg/catalog",
   "entries": [
     {
+      "date": "Fri, 30 Oct 2026 23:56:42 GMT",
+      "version": "0.2.1",
+      "tag": "@buildkitgg/catalog_v0.2.1",
+      "comments": {
+        "none": [
+          {
+            "author": "ajcraswell@gmail.com",
+            "package": "@buildkitgg/catalog",
+            "commit": "063d609caa08375fd9bc535186db4d5e38a4cf79",
+            "comment": "Build, lint and test with Vite+; published code is unchanged"
+          }
+        ]
+      }
+    },
+    {
       "date": "Fri, 30 Oct 2026 08:23:50 GMT",
       "version": "0.2.1",
       "tag": "@buildkitgg/catalog_v0.2.1",

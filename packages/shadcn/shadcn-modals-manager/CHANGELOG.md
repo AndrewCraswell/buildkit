@@ -1,8 +1,16 @@
 # Change Log - @buildkitgg/shadcn-modals-manager
 
-<!-- This log was last generated on Thu, 29 Oct 2026 04:54:16 GMT and should not be manually modified. -->
+<!-- This log was last generated on Fri, 30 Oct 2026 23:56:42 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 1.1.2
+
+Fri, 30 Oct 2026 23:56:42 GMT
+
+### Patches
+
+- Bump @buildkitgg/fluentui-modals-manager to v1.0.2
 
 ## 1.1.1
 
